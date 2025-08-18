@@ -2,7 +2,7 @@ import React from 'react'
 import { useRouter } from 'next/router'
 import Footer from './components/Footer'
 import NavbarCTA from './components/NavbarCTA'
-import { getOrganizationSchema } from './lib/seo'
+import { getOrganizationSchema, getBreadcrumbSchema } from './lib/seo'
 
 const BASE_URL = 'https://qbcore.net'
 
@@ -50,10 +50,10 @@ const config = {
         siteName: 'QBCore Framework',
         images: [
           {
-            url: `${BASE_URL}/logo.webp`,
+            url: `${BASE_URL}/og-image.svg`,
             width: 1200,
             height: 630,
-            alt: 'QBCore Framework Logo',
+            alt: 'QBCore Framework - The #1 FiveM Framework',
           },
         ],
       },
@@ -133,16 +133,16 @@ const config = {
         <meta property="og:site_name" content="QBCore Framework" />
         <meta property="og:locale" content={locale || 'en_US'} />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content={`${BASE_URL}/logo.webp`} />
+        <meta property="og:image" content={`${BASE_URL}/og-image.svg`} />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
-        <meta property="og:image:alt" content="QBCore Framework Logo" />
+        <meta property="og:image:alt" content="QBCore Framework - The #1 FiveM Framework" />
 
         {/* Twitter Card Meta Tags */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:site" content="@qbcoreframework" />
         <meta name="twitter:creator" content="@qbcoreframework" />
-        <meta name="twitter:image" content={`${BASE_URL}/logo.webp`} />
+        <meta name="twitter:image" content={`${BASE_URL}/og-image.svg`} />
 
         {/* Canonical URL */}
         <link rel="canonical" href={`${BASE_URL}${asPath}`} />

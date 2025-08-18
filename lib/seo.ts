@@ -154,15 +154,82 @@ export function getOrganizationSchema() {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'QBCore Framework',
-    description: 'The #1 FiveM Framework',
+    alternateName: 'QBCore',
+    description: 'The #1 FiveM Framework for building roleplay servers',
     url: BASE_URL,
-    logo: `${BASE_URL}/logo.webp`,
-    sameAs: ['https://github.com/qbcore-framework'],
+    logo: `${BASE_URL}/og-image.svg`,
+    image: `${BASE_URL}/og-image.svg`,
+    sameAs: [
+      'https://github.com/qbcore-framework',
+      'https://discord.gg/qbcore',
+      'https://twitter.com/qbcoreframework'
+    ],
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'technical support',
       url: `${BASE_URL}/support`,
+      availableLanguage: 'English'
     },
+    foundingDate: '2021-01-01',
+    keywords: 'FiveM, Framework, GTA5, Roleplay, Server Development, Lua, Gaming',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Cross-platform'
+  }
+}
+
+/**
+ * Generate WebSite schema with search action
+ */
+export function getWebsiteSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'QBCore Framework Documentation',
+    alternateName: 'QBCore Docs',
+    description: 'Comprehensive documentation for the QBCore FiveM framework',
+    url: BASE_URL,
+    publisher: {
+      '@type': 'Organization',
+      name: 'QBCore Framework'
+    },
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${BASE_URL}/search?q={search_term_string}`
+      },
+      'query-input': 'required name=search_term_string'
+    },
+    mainEntity: {
+      '@type': 'ItemList',
+      name: 'Documentation Sections',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: 'Installation',
+          url: `${BASE_URL}/docs/installation`
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: 'Core Concepts',
+          url: `${BASE_URL}/docs/core`
+        },
+        {
+          '@type': 'ListItem',
+          position: 3,
+          name: 'Resources',
+          url: `${BASE_URL}/docs/resources`
+        },
+        {
+          '@type': 'ListItem',
+          position: 4,
+          name: 'Tutorials',
+          url: `${BASE_URL}/tutorials`
+        }
+      ]
+    }
   }
 }
 
@@ -176,15 +243,137 @@ export function getDocumentationSchema(title: string, description: string, url: 
     headline: title,
     description: description,
     url: url,
+    image: `${BASE_URL}/og-image.svg`,
+    datePublished: new Date().toISOString(),
+    dateModified: new Date().toISOString(),
+    author: {
+      '@type': 'Organization',
+      name: 'QBCore Framework',
+      url: BASE_URL,
+    },
     publisher: {
       '@type': 'Organization',
       name: 'QBCore Framework',
       url: BASE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${BASE_URL}/og-image.svg`,
+        width: 1200,
+        height: 630
+      }
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
       '@id': url,
     },
+    about: {
+      '@type': 'Thing',
+      name: 'FiveM Framework Development'
+    },
+    keywords: 'QBCore, FiveM, Framework, Documentation, Tutorial, Server Development'
+  }
+}
+
+/**
+ * Generate FAQ schema for troubleshooting pages
+ */
+export function getFAQSchema(faqs: Array<{ question: string; answer: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.question,
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: faq.answer
+      }
+    }))
+  }
+}
+
+/**
+ * Generate HowTo schema for tutorial pages
+ */
+export function getHowToSchema(title: string, description: string, steps: Array<{ name: string; text: string }>) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name: title,
+    description: description,
+    image: `${BASE_URL}/og-image.svg`,
+    totalTime: 'PT30M',
+    estimatedCost: {
+      '@type': 'MonetaryAmount',
+      currency: 'USD',
+      value: '0'
+    },
+    supply: [
+      {
+        '@type': 'HowToSupply',
+        name: 'Computer with internet connection'
+      },
+      {
+        '@type': 'HowToSupply', 
+        name: 'FiveM Server'
+      }
+    ],
+    tool: [
+      {
+        '@type': 'HowToTool',
+        name: 'QBCore Framework'
+      }
+    ],
+    step: steps.map((step, index) => ({
+      '@type': 'HowToStep',
+      position: index + 1,
+      name: step.name,
+      text: step.text
+    }))
+  }
+}
+
+/**
+ * Generate SoftwareApplication schema for QBCore
+ */
+export function getSoftwareApplicationSchema() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'SoftwareApplication',
+    name: 'QBCore Framework',
+    applicationCategory: 'DeveloperApplication',
+    operatingSystem: 'Cross-platform',
+    description: 'The #1 FiveM Framework for building roleplay servers',
+    url: BASE_URL,
+    downloadUrl: `${BASE_URL}/download`,
+    softwareVersion: 'latest',
+    releaseNotes: 'Regular updates with new features and bug fixes',
+    screenshot: `${BASE_URL}/og-image.svg`,
+    offers: {
+      '@type': 'Offer',
+      price: '0',
+      priceCurrency: 'USD',
+      availability: 'https://schema.org/InStock'
+    },
+    author: {
+      '@type': 'Organization',
+      name: 'QBCore Framework Team'
+    },
+    maintainer: {
+      '@type': 'Organization',
+      name: 'QBCore Framework Team'
+    },
+    programmingLanguage: ['Lua', 'JavaScript', 'SQL'],
+    runtimePlatform: 'FiveM',
+    requirements: 'FiveM Server, MySQL Database',
+    featureList: [
+      'Player Management System',
+      'Job Framework',
+      'Inventory System', 
+      'Economy System',
+      'Security Features',
+      'Modular Architecture'
+    ]
   }
 }
 
