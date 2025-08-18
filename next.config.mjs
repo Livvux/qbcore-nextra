@@ -105,9 +105,9 @@ const config = {
   },
   
   // Enable experimental features for better performance
-  experimental: {
-    optimizeCss: true,
-  },
+  // experimental: {
+  //   optimizeCss: true,
+  // },
 }
 
 // Add static export configuration for production build
