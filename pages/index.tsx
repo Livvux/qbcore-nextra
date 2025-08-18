@@ -11,35 +11,35 @@ import Footer from '../components/Footer'
 export default function HomePage() {
   return (
     <>
-      <style global>{`
+      <style jsx global>{`
         /* Hide sidebar and toc for landing page only */
         .nextra-sidebar-container,
         .nextra-sidebar,
         aside,
-        [role="complementary"],
+        [role='complementary'],
         .nextra-toc {
           display: none !important;
         }
-        
+
         /* Ensure full width layout for landing page */
         .nextra-container {
           max-width: none !important;
           padding: 0 !important;
           margin: 0 !important;
         }
-        
+
         /* Reset any Nextra layout styles */
         main {
           margin: 0 !important;
           padding: 0 !important;
           max-width: none !important;
         }
-        
+
         /* Ensure body takes full width */
         body {
           --nextra-sidebar-width: 0px !important;
         }
-        
+
         /* Customize landing page background */
         .nextra-content {
           padding: 0 !important;
