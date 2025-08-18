@@ -8,7 +8,10 @@
     "build": "pnpm run typecheck && next build",
     "build:static": "pnpm run typecheck && NEXT_EXPORT=true next build",
     "export": "pnpm run build:static",
-    "start": "next start",
+    "postbuild": "pnpm run seo:validate",
+    "start": "node start.js",
+    "start:dev": "next start",
+    "start:standalone": "node .next/standalone/server.js",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
     "typecheck": "tsc --noEmit",
@@ -22,7 +25,9 @@
     "clean": "rm -rf .next node_modules coverage",
     "check-all": "pnpm run lint && pnpm run typecheck && pnpm run test --run",
     "analyze": "ANALYZE=true pnpm build",
-    "prepare": "husky"
+    "prepare": "husky",
+    "seo:validate": "node scripts/validate-seo.js",
+    "seo:test": "curl -I https://qbcore.net/sitemap.xml || echo 'Sitemap validation: Please check sitemap accessibility after deployment'"
   },
   "repository": {
     "type": "git",
