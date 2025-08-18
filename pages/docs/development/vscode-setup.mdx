@@ -1,0 +1,605 @@
+# VS Code Setup for QBCore Development
+
+Visual Studio Code is the recommended IDE for QBCore development. This guide will help you set up an optimal development environment with the right extensions, settings, and configurations.
+
+## Prerequisites
+
+- [Visual Studio Code](https://code.visualstudio.com/) installed
+- [Git](https://git-scm.com/) installed
+- [Node.js](https://nodejs.org/) (for some extensions)
+- Basic knowledge of Lua and JavaScript
+
+## Essential Extensions
+
+### Lua Development
+
+#### 1. Lua Language Server (sumneko.lua)
+**Most important extension for Lua development**
+
+```json
+"luau-lsp.require.mode": "relativeToFile",
+"luau-lsp.require.directoryAliases": {
+    "@": "src"
+}
+```
+
+**Features:**
+- Intelligent code completion
+- Error detection
+- Function signatures
+- Hover documentation
+- Go to definition
+
+#### 2. Lua (keyring.Lua)
+Basic Lua syntax highlighting and snippets.
+
+#### 3. FiveM Development Tools
+**Custom extension for FiveM/QBCore:**
+- Natives autocompletion
+- Resource template generation
+- Built-in documentation
+
+### Web Development (for NUI)
+
+#### 4. HTML/CSS/JavaScript Extensions
+```
+- HTML CSS Support
+- Auto Rename Tag
+- Live Server
+- Prettier - Code formatter
+- ESLint
+```
+
+### Git Integration
+
+#### 5. GitLens
+**Supercharge Git in VS Code**
+- Inline git blame
+- Repository insights
+- Commit history
+- Branch comparisons
+
+#### 6. Git Graph
+Visual git repository management.
+
+### Productivity Extensions
+
+#### 7. Better Comments
+Enhanced comment highlighting.
+
+#### 8. Bracket Pair Colorizer 2
+Matching bracket highlighting.
+
+#### 9. File Utils
+Create, duplicate, move files easily.
+
+#### 10. Path Intellisense
+Autocomplete for file paths.
+
+## VS Code Configuration
+
+### User Settings (settings.json)
+
+Create or modify your VS Code settings:
+
+```json
+{
+    // Lua Configuration
+    "lua.diagnostics.globals": [
+        "exports",
+        "source",
+        "GetPlayerPed",
+        "GetEntityCoords",
+        "CreateThread",
+        "Wait",
+        "AddEventHandler",
+        "RegisterNetEvent",
+        "TriggerEvent",
+        "TriggerClientEvent",
+        "TriggerServerEvent",
+        "GetPlayerName",
+        "GetPlayers",
+        "MySQL",
+        "json",
+        "QBCore",
+        "Config",
+        "GetCurrentResourceName",
+        "GetResourcePath",
+        "LoadResourceFile",
+        "SaveResourceFile"
+    ],
+    "lua.workspace.checkThirdParty": false,
+    "lua.telemetry.enable": false,
+    "lua.diagnostics.disable": [
+        "lowercase-global"
+    ],
+    "lua.workspace.library": {
+        "[path-to-your-server]/resources/[qb]/qb-core": true
+    },
+    
+    // General Editor Settings
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+    "editor.detectIndentation": true,
+    "editor.wordWrap": "on",
+    "editor.minimap.enabled": true,
+    "editor.fontSize": 14,
+    "editor.fontFamily": "'Fira Code', 'Courier New', monospace",
+    "editor.fontLigatures": true,
+    
+    // File Associations
+    "files.associations": {
+        "*.lua": "lua",
+        "fxmanifest.lua": "lua",
+        "*.meta": "xml"
+    },
+    
+    // Auto Save
+    "files.autoSave": "onFocusChange",
+    
+    // Terminal
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.fontSize": 12,
+    
+    // Git
+    "git.enableSmartCommit": true,
+    "git.autofetch": true,
+    
+    // Formatting
+    "editor.formatOnSave": false,
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true
+    },
+    
+    // Theme
+    "workbench.colorTheme": "Dark+ (default dark)",
+    "workbench.iconTheme": "material-icon-theme"
+}
+```
+
+### Workspace Settings
+
+For project-specific settings, create `.vscode/settings.json` in your resource folder:
+
+```json
+{
+    "lua.workspace.library": {
+        "../qb-core": true,
+        "../qb-menu": true,
+        "../qb-input": true
+    },
+    "files.exclude": {
+        "**/node_modules": true,
+        "**/.git": true,
+        "**/stream": false
+    }
+}
+```
+
+## Code Snippets
+
+Create custom Lua snippets for QBCore development:
+
+### File: `.vscode/lua.json`
+
+```json
+{
+    "QBCore GetCoreObject": {
+        "prefix": "qbcore",
+        "body": [
+            "local QBCore = exports['qb-core']:GetCoreObject()"
+        ],
+        "description": "Get QBCore object"
+    },
+    "Register Net Event": {
+        "prefix": "rne",
+        "body": [
+            "RegisterNetEvent('$1', function($2)",
+            "    local src = source",
+            "    $0",
+            "end)"
+        ],
+        "description": "Register a net event"
+    },
+    "Get Player": {
+        "prefix": "getplayer",
+        "body": [
+            "local Player = QBCore.Functions.GetPlayer($1)",
+            "if not Player then return end",
+            "$0"
+        ],
+        "description": "Get player with validation"
+    },
+    "Add Event Handler": {
+        "prefix": "aeh",
+        "body": [
+            "AddEventHandler('$1', function($2)",
+            "    $0",
+            "end)"
+        ],
+        "description": "Add event handler"
+    },
+    "Create Thread": {
+        "prefix": "thread",
+        "body": [
+            "CreateThread(function()",
+            "    while true do",
+            "        Wait($1)",
+            "        $0",
+            "    end",
+            "end)"
+        ],
+        "description": "Create a thread with loop"
+    },
+    "QBCore Command": {
+        "prefix": "qbcommand",
+        "body": [
+            "QBCore.Commands.Add('$1', '$2', {}, false, function(source, args)",
+            "    local src = source",
+            "    local Player = QBCore.Functions.GetPlayer(src)",
+            "    if not Player then return end",
+            "    ",
+            "    $0",
+            "end, '$3')"
+        ],
+        "description": "QBCore command template"
+    },
+    "MySQL Execute": {
+        "prefix": "mysql",
+        "body": [
+            "MySQL.Async.execute('$1', {",
+            "    $2",
+            "}, function(affectedRows)",
+            "    $0",
+            "end)"
+        ],
+        "description": "MySQL execute query"
+    },
+    "MySQL Fetch": {
+        "prefix": "mysqlfetch",
+        "body": [
+            "MySQL.Async.fetchAll('$1', {",
+            "    $2",
+            "}, function(result)",
+            "    if result[1] then",
+            "        $0",
+            "    end",
+            "end)"
+        ],
+        "description": "MySQL fetch query"
+    }
+}
+```
+
+## FiveM Natives IntelliSense
+
+### Setup Natives Autocompletion
+
+1. Download the latest natives file from [FiveM Docs](https://docs.fivem.net/)
+2. Create a folder structure in your workspace:
+
+```
+workspace/
+├── .vscode/
+│   └── settings.json
+├── typings/
+│   └── natives.lua
+└── resources/
+    └── [qb]/
+```
+
+3. Add to workspace settings:
+
+```json
+{
+    "lua.workspace.library": {
+        "./typings": true
+    }
+}
+```
+
+### Create Custom Types
+
+Create `typings/qbcore.lua` for QBCore-specific types:
+
+```lua
+---@class QBCore
+---@field Functions table
+---@field Players table
+---@field Shared table
+---@field Config table
+---@field Commands table
+QBCore = {}
+
+---@class Player
+---@field PlayerData table
+---@field Functions table
+Player = {}
+
+---@param source number
+---@return Player|nil
+function QBCore.Functions.GetPlayer(source) end
+
+---@param citizenid string
+---@return Player|nil
+function QBCore.Functions.GetPlayerByCitizenId(citizenid) end
+
+---@return table
+function QBCore.Functions.GetPlayers() end
+
+-- Add more type definitions as needed
+```
+
+## Project Structure
+
+### Recommended Folder Structure
+
+```
+my-qbcore-resource/
+├── .vscode/
+│   ├── settings.json
+│   ├── tasks.json
+│   └── launch.json
+├── client/
+│   ├── main.lua
+│   └── functions.lua
+├── server/
+│   ├── main.lua
+│   └── callbacks.lua
+├── shared/
+│   └── config.lua
+├── html/
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
+├── locales/
+│   ├── en.lua
+│   └── es.lua
+├── sql/
+│   └── install.sql
+├── fxmanifest.lua
+└── README.md
+```
+
+### VS Code Tasks
+
+Create `.vscode/tasks.json` for common tasks:
+
+```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Restart Resource",
+            "type": "shell",
+            "command": "echo",
+            "args": ["restart ${workspaceFolderBasename}"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Start Resource",
+            "type": "shell",
+            "command": "echo",
+            "args": ["start ${workspaceFolderBasename}"],
+            "group": "build"
+        },
+        {
+            "label": "Stop Resource",
+            "type": "shell",
+            "command": "echo",
+            "args": ["stop ${workspaceFolderBasename}"],
+            "group": "build"
+        }
+    ]
+}
+```
+
+## Debugging Setup
+
+### Launch Configuration
+
+Create `.vscode/launch.json` for debugging:
+
+```json
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Lua",
+            "type": "lua",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": false
+        }
+    ]
+}
+```
+
+### Live Server for NUI
+
+For NUI development, use the Live Server extension:
+
+1. Right-click on `html/index.html`
+2. Select "Open with Live Server"
+3. Test your UI at `http://localhost:5500`
+
+## Git Integration
+
+### .gitignore Template
+
+Create a `.gitignore` file:
+
+```gitignore
+# VS Code
+.vscode/settings.json
+!.vscode/settings.example.json
+
+# Logs
+*.log
+
+# Runtime files
+stream/
+cache/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Node modules (if using)
+node_modules/
+
+# Environment files
+.env
+
+# Temporary files
+*.tmp
+*.temp
+```
+
+## Useful Keyboard Shortcuts
+
+### Default VS Code Shortcuts
+- `Ctrl+Shift+P` - Command Palette
+- `Ctrl+P` - Quick Open
+- `Ctrl+Shift+E` - Explorer
+- `Ctrl+Shift+F` - Search
+- `Ctrl+Shift+G` - Git
+- `Ctrl+`` - Terminal
+- `F12` - Go to Definition
+- `Shift+F12` - Find References
+
+### Custom Shortcuts
+
+Add to `keybindings.json`:
+
+```json
+[
+    {
+        "key": "ctrl+r",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Restart Resource"
+    },
+    {
+        "key": "f5",
+        "command": "workbench.action.tasks.runTask",
+        "args": "Start Resource"
+    }
+]
+```
+
+## File Templates
+
+### Basic Resource Template
+
+Create file templates for quick resource creation:
+
+**fxmanifest.lua template:**
+```lua
+fx_version 'cerulean'
+game 'gta5'
+
+description 'My QBCore Resource'
+author 'Your Name'
+version '1.0.0'
+
+shared_scripts {
+    'shared/config.lua'
+}
+
+client_scripts {
+    'client/main.lua'
+}
+
+server_scripts {
+    'server/main.lua'
+}
+
+dependencies {
+    'qb-core'
+}
+```
+
+**server/main.lua template:**
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Resource started
+AddEventHandler('onResourceStart', function(resourceName)
+    if GetCurrentResourceName() ~= resourceName then return end
+    print('Resource ' .. resourceName .. ' started')
+end)
+
+-- Player loaded
+AddEventHandler('QBCore:Server:PlayerLoaded', function(source)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if Player then
+        -- Player loaded logic
+    end
+end)
+```
+
+## Productivity Tips
+
+### 1. Use Multi-Cursor Editing
+- `Alt+Click` - Add cursor
+- `Ctrl+Alt+Down` - Add cursor below
+- `Ctrl+Shift+L` - Select all occurrences
+
+### 2. Quick File Navigation
+- `Ctrl+P` then type filename
+- `Ctrl+Shift+O` - Go to symbol
+- `Ctrl+G` - Go to line
+
+### 3. Code Folding
+- `Ctrl+Shift+[` - Fold region
+- `Ctrl+Shift+]` - Unfold region
+
+### 4. Split Editor
+- `Ctrl+\` - Split editor
+- `Ctrl+1/2/3` - Focus editor group
+
+### 5. Zen Mode
+- `Ctrl+K Z` - Enter Zen mode (distraction-free)
+
+## Troubleshooting
+
+### Common Issues
+
+**Lua Language Server not working:**
+1. Check if extension is installed
+2. Verify workspace library paths
+3. Restart VS Code
+4. Check output panel for errors
+
+**Autocompletion not working:**
+1. Ensure correct file associations
+2. Check global variables in settings
+3. Verify workspace configuration
+
+**Git integration issues:**
+1. Ensure Git is installed and in PATH
+2. Check repository initialization
+3. Verify credentials
+
+## Next Steps
+
+With VS Code properly configured:
+
+1. [Learn Debugging Techniques](/docs/development/debugging)
+2. [Explore Best Practices](/docs/development/best-practices)
+3. [Performance Optimization](/docs/development/performance)
+4. [Start Building Resources](/docs/tutorials)
+
+This setup will provide you with a powerful development environment for creating QBCore resources efficiently.

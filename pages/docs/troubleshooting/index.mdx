@@ -1,0 +1,434 @@
+# 🛠️ Troubleshooting Guide
+
+Comprehensive troubleshooting guide for diagnosing and resolving common QBCore server issues, from basic problems to complex system failures.
+
+import { Callout } from 'nextra/components'
+
+## Troubleshooting Overview
+
+Effective troubleshooting requires a systematic approach to identify, isolate, and resolve issues quickly. This guide provides step-by-step procedures for common problems and diagnostic techniques for complex issues.
+
+### Troubleshooting Methodology
+
+1. **Identify the Problem** - Gather symptoms and error messages
+2. **Isolate the Cause** - Narrow down to specific components
+3. **Test Solutions** - Apply fixes in a controlled manner
+4. **Verify Resolution** - Confirm the issue is resolved
+5. **Document Solution** - Record the fix for future reference
+
+## Quick Diagnostic Checklist
+
+### Immediate Checks
+
+- ✅ **Server Status** - Is the server running and responsive?
+- ✅ **Resource Status** - Are all resources loaded correctly?
+- ✅ **Database Connection** - Is the database accessible?
+- ✅ **Log Files** - Check for recent error messages
+- ✅ **Player Connectivity** - Can players connect and stay connected?
+
+### Emergency Actions
+
+```bash
+# Check server status
+sudo systemctl status fivem
+
+# View recent logs
+tail -f /path/to/server/logs/server.log
+
+# Check resource status in server console
+resmon
+status
+
+# Test database connection
+mysql -u username -p -h localhost qbcore
+```
+
+## Common Issue Categories
+
+### Server Won't Start
+
+**Symptoms:**
+- Server fails to launch
+- Immediate crash on startup
+- Stuck in loading loop
+
+**Common Causes:**
+1. Configuration errors in `server.cfg`
+2. Missing or corrupted resource files
+3. Database connection issues
+4. Port conflicts
+5. Insufficient permissions
+
+**Quick Fix Steps:**
+```bash
+# Check configuration syntax
+cat server.cfg | grep -E "^(ensure|start)"
+
+# Verify port availability
+netstat -tuln | grep 30120
+
+# Check file permissions
+ls -la /path/to/server/
+```
+
+### Resource Loading Issues
+
+**Symptoms:**
+- Resources fail to start
+- Missing functionality
+- Script errors in console
+
+**Diagnostic Commands:**
+```bash
+# In FiveM console
+restart resource-name
+ensure resource-name
+refresh
+resmon
+```
+
+### Database Connection Problems
+
+**Symptoms:**
+- "Connection refused" errors
+- Player data not saving
+- Empty server responses
+
+**Resolution Steps:**
+```sql
+-- Test database connection
+mysql -u qbuser -p qbcore
+
+-- Check connection limits
+SHOW VARIABLES LIKE 'max_connections';
+SHOW STATUS LIKE 'Connections';
+
+-- Verify user permissions
+SELECT User, Host FROM mysql.user WHERE User = 'qbuser';
+```
+
+## Diagnostic Tools
+
+### Built-in FiveM Commands
+
+```bash
+# Resource monitoring
+resmon                  # Resource usage stats
+status                  # Server and player status
+citizens               # Player list and IDs
+
+# Resource management
+start resource-name     # Start a resource
+stop resource-name      # Stop a resource
+restart resource-name   # Restart a resource
+refresh                # Refresh resource cache
+
+# Debugging
+strdbg                 # String debugging info
+rdrdbg                 # Render debugging
+```
+
+### Custom Diagnostic Scripts
+
+```lua
+-- Server health check resource
+RegisterCommand('healthcheck', function(source, args, rawCommand)
+    if source ~= 0 then return end -- Console only
+    
+    print("^2=== QBCore Health Check ===^7")
+    
+    -- Check QBCore status
+    local qbCore = exports['qb-core']:GetCoreObject()
+    if qbCore then
+        print("^2✓^7 QBCore loaded successfully")
+    else
+        print("^1✗^7 QBCore not loaded")
+    end
+    
+    -- Check database connection
+    local success = pcall(function()
+        MySQL.query.await('SELECT 1', {})
+    end)
+    
+    if success then
+        print("^2✓^7 Database connection OK")
+    else
+        print("^1✗^7 Database connection failed")
+    end
+    
+    -- Check player count
+    local playerCount = #GetPlayers()
+    print("^3ℹ^7 Players online: " .. playerCount)
+    
+    -- Check resource status
+    local resources = {'qb-core', 'qb-multicharacter', 'qb-spawn', 'qb-inventory'}
+    for _, resource in ipairs(resources) do
+        local state = GetResourceState(resource)
+        if state == 'started' then
+            print("^2✓^7 " .. resource .. " - " .. state)
+        else
+            print("^1✗^7 " .. resource .. " - " .. state)
+        end
+    end
+    
+    print("^2=== Health Check Complete ===^7")
+end, true)
+```
+
+## Issue Resolution Procedures
+
+### Performance Issues
+
+**Step 1: Identify Resource Usage**
+```bash
+# In server console
+resmon
+
+# Look for resources using high CPU/memory
+# Check for infinite loops or excessive threading
+```
+
+**Step 2: Check Database Performance**
+```sql
+-- Check slow queries
+SHOW PROCESSLIST;
+
+-- Check for long-running queries
+SELECT * FROM information_schema.processlist 
+WHERE time > 30;
+
+-- Review slow query log
+SHOW VARIABLES LIKE 'slow_query_log%';
+```
+
+**Step 3: Monitor System Resources**
+```bash
+# System monitoring
+htop
+iostat -x 1
+netstat -i
+
+# Check disk space
+df -h
+
+# Check memory usage
+free -h
+```
+
+### Player Connection Issues
+
+**Step 1: Network Diagnostics**
+```bash
+# Check port accessibility
+nmap -p 30120 your-server-ip
+
+# Test from client machine
+telnet your-server-ip 30120
+```
+
+**Step 2: Firewall Configuration**
+```bash
+# Check firewall rules
+sudo ufw status
+sudo iptables -L
+
+# Common ports needed
+# 30120/tcp - FiveM server
+# 30120/udp - FiveM server
+```
+
+**Step 3: Server Configuration**
+```cfg
+# Verify server.cfg settings
+sv_maxclients 128
+sv_hostname "Your Server Name"
+endpoint_add_tcp "0.0.0.0:30120"
+endpoint_add_udp "0.0.0.0:30120"
+```
+
+### Database Issues
+
+**Step 1: Connection Testing**
+```bash
+# Test basic connection
+mysql -u qbuser -p -h localhost qbcore
+
+# Test from application
+mysql -u qbuser -p -h localhost -e "SELECT VERSION();"
+```
+
+**Step 2: Permission Verification**
+```sql
+-- Check user permissions
+SHOW GRANTS FOR 'qbuser'@'%';
+SHOW GRANTS FOR 'qbuser'@'localhost';
+
+-- Grant necessary permissions if missing
+GRANT ALL PRIVILEGES ON qbcore.* TO 'qbuser'@'%';
+FLUSH PRIVILEGES;
+```
+
+**Step 3: Performance Analysis**
+```sql
+-- Check for table locks
+SHOW OPEN TABLES WHERE In_use > 0;
+
+-- Analyze table performance
+EXPLAIN SELECT * FROM players WHERE citizenid = 'ABC123';
+
+-- Check index usage
+SHOW INDEX FROM players;
+```
+
+## Advanced Troubleshooting
+
+### Memory Leak Detection
+
+```lua
+-- Memory monitoring script
+local memoryStats = {}
+
+CreateThread(function()
+    while true do
+        Wait(30000) -- Check every 30 seconds
+        
+        local currentMem = collectgarbage("count")
+        table.insert(memoryStats, {
+            timestamp = os.time(),
+            memory = currentMem
+        })
+        
+        -- Keep only last hour of data
+        if #memoryStats > 120 then
+            table.remove(memoryStats, 1)
+        end
+        
+        -- Check for potential memory leak
+        if #memoryStats >= 10 then
+            local oldMem = memoryStats[#memoryStats - 9].memory
+            local growth = currentMem - oldMem
+            
+            if growth > 10240 then -- 10MB growth in 5 minutes
+                print("^1[WARNING] Potential memory leak detected. Growth: " .. 
+                      math.floor(growth/1024) .. "MB in 5 minutes^7")
+            end
+        end
+    end
+end)
+
+-- Export memory stats
+RegisterNetEvent('debug:getMemoryStats', function()
+    TriggerClientEvent('debug:receiveMemoryStats', source, memoryStats)
+end)
+```
+
+### Resource Conflict Detection
+
+```lua
+-- Check for conflicting exports
+RegisterCommand('checkconflicts', function()
+    local resources = {}
+    local conflicts = {}
+    
+    for i = 0, GetNumResources() - 1 do
+        local resource = GetResourceByFindIndex(i)
+        if GetResourceState(resource) == 'started' then
+            local metadata = GetResourceMetadata(resource, 'exports', 0)
+            if metadata then
+                for export in metadata:gmatch('([^,]+)') do
+                    export = export:trim()
+                    if resources[export] then
+                        table.insert(conflicts, {
+                            export = export,
+                            resources = {resources[export], resource}
+                        })
+                    else
+                        resources[export] = resource
+                    end
+                end
+            end
+        end
+    end
+    
+    if #conflicts > 0 then
+        print("^1Export conflicts detected:^7")
+        for _, conflict in ipairs(conflicts) do
+            print("  " .. conflict.export .. " - " .. table.concat(conflict.resources, ", "))
+        end
+    else
+        print("^2No export conflicts detected^7")
+    end
+end, true)
+```
+
+## Log Analysis
+
+### Common Error Patterns
+
+**SQL Errors:**
+```
+Error: ER_NO_SUCH_TABLE: Table 'qbcore.players' doesn't exist
+Error: ER_ACCESS_DENIED_ERROR: Access denied for user 'qbuser'@'localhost'
+```
+
+**Resource Errors:**
+```
+Error loading script server/main.lua in resource qb-example: 
+syntax error near 'end'
+```
+
+**Network Errors:**
+```
+Failed to establish connection to 127.0.0.1:3306
+Connection refused (os error 111)
+```
+
+### Log Monitoring Script
+
+```bash
+#!/bin/bash
+# log-monitor.sh
+
+LOG_FILE="/path/to/server/logs/server.log"
+ALERT_EMAIL="admin@yourserver.com"
+
+tail -F "$LOG_FILE" | while read line; do
+    # Check for critical errors
+    if echo "$line" | grep -E "(ERROR|CRITICAL|FATAL)" > /dev/null; then
+        echo "$(date): ALERT - $line" >> /tmp/server_alerts.log
+        
+        # Send email alert for critical issues
+        if echo "$line" | grep -E "(FATAL|database.*error)" > /dev/null; then
+            echo "Critical server error detected: $line" | mail -s "Server Alert" "$ALERT_EMAIL"
+        fi
+    fi
+    
+    # Check for memory warnings
+    if echo "$line" | grep "memory.*high\|out of memory" > /dev/null; then
+        echo "$(date): MEMORY WARNING - $line" >> /tmp/server_alerts.log
+    fi
+done
+```
+
+## Prevention Strategies
+
+### Proactive Monitoring
+
+1. **Health Checks** - Regular automated system checks
+2. **Performance Baselines** - Track normal performance metrics
+3. **Log Analysis** - Automated log parsing and alerting
+4. **Backup Verification** - Regular backup testing
+5. **Update Management** - Systematic update procedures
+
+### Documentation
+
+1. **Issue Database** - Record all issues and solutions
+2. **Change Log** - Track all system modifications
+3. **Recovery Procedures** - Step-by-step recovery guides
+4. **Contact Information** - Emergency contact procedures
+
+<Callout type="info">
+  Effective troubleshooting combines systematic methodology with comprehensive monitoring and documentation practices.
+</Callout>
+
+This troubleshooting guide provides systematic approaches to resolving QBCore server issues. Regular maintenance and proactive monitoring help prevent many problems before they impact players.

@@ -1,0 +1,481 @@
+# QB-MultiCharacter
+
+QB-MultiCharacter provides a comprehensive character creation and selection system, allowing players to create multiple characters per account and switch between them seamlessly.
+
+## 📋 Overview
+
+QB-MultiCharacter enables:
+- **Multiple Characters** - Players can create up to a configurable number of characters
+- **Character Selection** - Beautiful UI for selecting characters on login
+- **Character Creation** - Comprehensive character customization system
+- **Character Management** - Delete, rename, and manage characters
+- **Apartment Integration** - Automatic apartment assignment for new characters
+- **Spawn Selection** - Choose where to spawn your character
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- **QB-Core** framework installed
+- **QB-Spawn** (recommended for spawn selection)
+- **QB-Apartments** (recommended for automatic apartment assignment)
+- **QB-Clothing** or **qb-appearance** (for character customization)
+
+### Installation Steps
+
+1. **Download Resource**
+   ```bash
+   git clone https://github.com/qbcore-framework/qb-multicharacter.git
+   ```
+
+2. **Place in Resources**
+   ```
+   resources/
+   └── [qb]/
+       └── qb-multicharacter/
+   ```
+
+3. **Database Setup**
+   - Import SQL file: `/qb-multicharacter/qb-multicharacter.sql`
+   ```sql
+   CREATE TABLE IF NOT EXISTS `player_outfits` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `citizenid` varchar(50) DEFAULT NULL,
+     `outfitname` varchar(50) NOT NULL,
+     `model` varchar(50) DEFAULT NULL,
+     `skin` text DEFAULT NULL,
+     `outfitId` varchar(50) NOT NULL,
+     PRIMARY KEY (`id`),
+     KEY `citizenid` (`citizenid`),
+     KEY `outfitId` (`outfitId`)
+   );
+   ```
+
+4. **Server Configuration**
+   ```cfg
+   # server.cfg
+   ensure qb-multicharacter
+   ```
+
+## 🔧 Configuration
+
+### Main Configuration
+```lua
+-- config.lua
+Config = Config or {}
+
+-- Maximum number of characters per account
+Config.MaxCharacters = 5
+
+-- Enable character deletion
+Config.AllowCharacterDeletion = true
+
+-- Default spawn location
+Config.DefaultSpawn = vector4(-1035.71, -2731.87, 12.86, 0.0)
+
+-- Enable apartment assignment
+Config.AssignApartment = true
+
+-- Starting money for new characters
+Config.StartingMoney = {
+    bank = 5000,
+    cash = 500
+}
+
+-- Character creation settings
+Config.CharacterCreation = {
+    enableClothing = true,
+    enableApartments = true,
+    enableSpawnSelection = true
+}
+```
+
+### Spawn Locations
+```lua
+-- Configuration for spawn selection
+Config.Spawns = {
+    ["apartments"] = {
+        coords = vector4(-1037.17, -2738.01, 13.76, 331.47),
+        location = "apartments",
+        label = "Apartments"
+    },
+    ["motel"] = {
+        coords = vector4(327.56, -205.08, 53.22, 163.5),
+        location = "motel", 
+        label = "Motel"
+    },
+    ["hotel"] = {
+        coords = vector4(-1330.23, -1578.08, 2.61, 214.14),
+        location = "hotel",
+        label = "Hotel"
+    }
+}
+```
+
+## 🎮 Player Experience
+
+### Character Selection Screen
+
+When players connect, they see:
+- **Character List** - All created characters with preview
+- **Character Info** - Name, job, last played, money
+- **Character Actions** - Play, Delete, Rename
+- **Create New** - Button to create a new character (if under limit)
+
+### Character Creation Process
+
+1. **Basic Information**
+   - First Name
+   - Last Name
+   - Date of Birth
+   - Gender
+   - Nationality
+
+2. **Appearance Customization**
+   - Face structure
+   - Skin tone
+   - Hair style and color
+   - Eye color
+   - Facial features
+
+3. **Clothing Selection**
+   - Starting outfit
+   - Accessories
+   - Color variations
+
+4. **Spawn Location**
+   - Choose starting location
+   - Apartment assignment (if enabled)
+
+## 🔌 API Reference
+
+### Server Events
+
+#### Character Selection
+```lua
+-- When player selects a character
+RegisterNetEvent('qb-multicharacter:server:loadUserData', function(cData)
+    local src = source
+    local license = QBCore.Functions.GetIdentifier(src, 'license')
+    
+    if QBCore.Player.Login(src, cData.citizenid) then
+        print('Player ' .. cData.citizenid .. ' has successfully loaded')
+    end
+end)
+```
+
+#### Character Creation
+```lua
+-- When player creates a new character
+RegisterNetEvent('qb-multicharacter:server:createCharacter', function(data)
+    local src = source
+    local newData = {}
+    
+    newData.cid = data.cid
+    newData.charinfo = data
+    
+    if QBCore.Player.Login(src, false, newData) then
+        print('New character created: ' .. data.firstname .. ' ' .. data.lastname)
+    end
+end)
+```
+
+#### Character Deletion
+```lua
+-- When player deletes a character
+RegisterNetEvent('qb-multicharacter:server:deleteCharacter', function(citizenid)
+    local src = source
+    local license = QBCore.Functions.GetIdentifier(src, 'license')
+    
+    MySQL.Async.execute('DELETE FROM players WHERE citizenid = ? AND license = ?', {
+        citizenid, license
+    }, function(result)
+        if result.affectedRows > 0 then
+            TriggerClientEvent('QBCore:Notify', src, 'Character deleted successfully', 'success')
+        end
+    end)
+end)
+```
+
+### Client Events
+
+#### Setup Character Selection
+```lua
+-- Trigger character selection screen
+RegisterNetEvent('qb-multicharacter:client:setupCharacters', function(characters)
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = "setupCharacters",
+        characters = characters,
+        maxCharacters = Config.MaxCharacters
+    })
+end)
+```
+
+#### Character Preview
+```lua
+-- Setup character preview
+RegisterNetEvent('qb-multicharacter:client:previewCharacter', function(charData)
+    if charData and charData.skin then
+        local model = charData.skin.model
+        local skin = json.decode(charData.skin)
+        
+        -- Load character model and apply skin
+        SetupCharacterPreview(model, skin)
+    end
+end)
+```
+
+## 🎨 UI Customization
+
+### HTML Structure
+```html
+<!-- Character selection interface -->
+<div class="character-selection">
+    <div class="character-list">
+        <!-- Character cards -->
+    </div>
+    <div class="character-actions">
+        <button id="play-character">Play</button>
+        <button id="delete-character">Delete</button>
+        <button id="create-character">Create New</button>
+    </div>
+</div>
+```
+
+### CSS Styling
+```css
+/* Custom styling for character selection */
+.character-selection {
+    background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+    font-family: 'Roboto', sans-serif;
+}
+
+.character-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin: 10px;
+    transition: all 0.3s ease;
+}
+
+.character-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+}
+```
+
+### JavaScript Events
+```javascript
+// Handle character selection
+$(document).on('click', '.character-card', function() {
+    const cid = $(this).data('cid');
+    selectCharacter(cid);
+});
+
+// Handle character creation
+$(document).on('click', '#create-character', function() {
+    $.post('https://qb-multicharacter/createCharacter', JSON.stringify({
+        firstname: $('#firstname').val(),
+        lastname: $('#lastname').val(),
+        birthdate: $('#birthdate').val(),
+        gender: $('#gender').val(),
+        nationality: $('#nationality').val()
+    }));
+});
+```
+
+## 🏠 Integration Examples
+
+### With QB-Apartments
+```lua
+-- Automatically assign apartment to new character
+RegisterNetEvent('qb-multicharacter:server:createCharacter', function(data)
+    local src = source
+    
+    if QBCore.Player.Login(src, false, data) then
+        -- Assign default apartment
+        if Config.AssignApartment then
+            TriggerEvent('qb-apartments:server:CreateApartment', src, 'apartment1')
+        end
+    end
+end)
+```
+
+### With QB-Spawn
+```lua
+-- Integrate with spawn selection
+exports['qb-spawn']:openUI(function(coords, location)
+    TriggerServerEvent('qb-multicharacter:server:setSpawnLocation', coords, location)
+end)
+```
+
+### With QB-Clothing
+```lua
+-- Character appearance customization
+RegisterNetEvent('qb-multicharacter:client:openCreator', function()
+    TriggerEvent('qb-clothing:client:openCreator', function(skin)
+        TriggerServerEvent('qb-multicharacter:server:saveCharacterSkin', skin)
+    end)
+end)
+```
+
+## 💾 Database Schema
+
+### Characters Table
+```sql
+-- Enhanced player data for multicharacter
+ALTER TABLE `players` ADD COLUMN `last_updated` timestamp DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- Character metadata
+CREATE TABLE IF NOT EXISTS `character_meta` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `citizenid` varchar(50) NOT NULL,
+    `meta_key` varchar(100) NOT NULL,
+    `meta_value` longtext,
+    PRIMARY KEY (`id`),
+    KEY `citizenid` (`citizenid`),
+    KEY `meta_key` (`meta_key`)
+);
+```
+
+### Player Outfits
+```sql
+-- Character outfit storage
+CREATE TABLE IF NOT EXISTS `player_outfits` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `citizenid` varchar(50) DEFAULT NULL,
+    `outfitname` varchar(50) NOT NULL,
+    `model` varchar(50) DEFAULT NULL,
+    `skin` text DEFAULT NULL,
+    `outfitId` varchar(50) NOT NULL,
+    PRIMARY KEY (`id`),
+    KEY `citizenid` (`citizenid`)
+);
+```
+
+## 🛡️ Security Features
+
+### Character Validation
+```lua
+-- Validate character data before creation
+local function ValidateCharacterData(data)
+    if not data.firstname or data.firstname == '' then
+        return false, 'First name is required'
+    end
+    
+    if not data.lastname or data.lastname == '' then
+        return false, 'Last name is required'
+    end
+    
+    if string.len(data.firstname) > 50 then
+        return false, 'First name too long'
+    end
+    
+    return true, 'Valid'
+end
+```
+
+### Anti-Exploitation
+```lua
+-- Prevent character spam creation
+local characterCreationCooldown = {}
+
+RegisterNetEvent('qb-multicharacter:server:createCharacter', function(data)
+    local src = source
+    local license = QBCore.Functions.GetIdentifier(src, 'license')
+    
+    -- Check cooldown
+    if characterCreationCooldown[license] and 
+       characterCreationCooldown[license] > GetGameTimer() then
+        return TriggerClientEvent('QBCore:Notify', src, 'Please wait before creating another character', 'error')
+    end
+    
+    -- Set cooldown (30 seconds)
+    characterCreationCooldown[license] = GetGameTimer() + 30000
+    
+    -- Continue with character creation
+end)
+```
+
+## ⚡ Performance Tips
+
+### Optimization
+```lua
+-- Cache character data to reduce database queries
+local characterCache = {}
+
+local function GetCharacterData(license)
+    if characterCache[license] then
+        return characterCache[license]
+    end
+    
+    local result = MySQL.Sync.fetchAll('SELECT * FROM players WHERE license = ?', {license})
+    characterCache[license] = result
+    
+    return result
+end
+
+-- Clear cache on character update
+AddEventHandler('qb-multicharacter:server:characterUpdated', function(license)
+    characterCache[license] = nil
+end)
+```
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+**Issue**: Characters not loading
+```lua
+-- Check database connection and table structure
+MySQL.ready(function()
+    local result = MySQL.Sync.fetchAll('SHOW TABLES LIKE "players"')
+    if #result == 0 then
+        print('ERROR: Players table does not exist!')
+    end
+end)
+```
+
+**Issue**: UI not showing
+```lua
+-- Check NUI callbacks
+RegisterNUICallback('closeUI', function(data, cb)
+    SetNuiFocus(false, false)
+    cb('ok')
+end)
+```
+
+**Issue**: Character creation fails
+```lua
+-- Add detailed error logging
+TriggerServerEvent('qb-multicharacter:server:createCharacter', data, function(success, message)
+    if not success then
+        print('Character creation failed: ' .. message)
+    end
+end)
+```
+
+### Debug Commands
+```lua
+-- Admin commands for debugging
+QBCore.Commands.Add('getcharacters', 'Get player characters', {
+    {name = 'license', help = 'Player license'}
+}, true, function(source, args)
+    local characters = GetCharacterData(args[1])
+    print(json.encode(characters, {indent = true}))
+end, 'admin')
+```
+
+## 🔗 Related Resources
+
+- [QB-Spawn](/docs/resources/qb-spawn) - Spawn selection system
+- [QB-Apartments](/docs/resources/qb-apartments) - Housing integration
+- [QB-Clothing](qb-clothing) - Character appearance
+- [QB-Core](/docs/resources/qb-core) - Core framework
+
+## 📚 Additional Resources
+
+- [GitHub Repository](https://github.com/qbcore-framework/qb-multicharacter)
+- [Character Creation Guide](character-creation)
+- [UI Customization](ui-customization)
+- [API Documentation](/docs/api)

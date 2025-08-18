@@ -1,0 +1,805 @@
+# QB-Apartments
+
+QB-Apartments provides a comprehensive apartment housing system for QBCore servers, offering players the ability to purchase, customize, and manage apartment properties with advanced features and integrations.
+
+## 📋 Overview
+
+QB-Apartments includes:
+- **Multiple Apartment Types** - Studios, 1-bedroom, 2-bedroom, and luxury apartments
+- **Apartment Ownership** - Buy, sell, and transfer property ownership
+- **Interior Customization** - Furniture placement and decoration options
+- **Storage System** - Personal storage with configurable limits
+- **Wardrobe Integration** - Save and change outfits in your apartment
+- **Visitor System** - Invite friends and manage access permissions
+- **Utility Bills** - Realistic electricity and water bills
+- **Real Estate Market** - Dynamic pricing and availability
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- **QB-Core** framework installed
+- **QB-Inventory** for storage functionality
+- **QB-Banking** for financial transactions
+- **QB-Phone** (optional, for real estate notifications)
+- **QB-Interior** (optional, for advanced interior customization)
+
+### Installation Steps
+
+1. **Download Resource**
+   ```bash
+   git clone https://github.com/qbcore-framework/qb-apartments.git
+   ```
+
+2. **Place in Resources**
+   ```
+   resources/
+   └── [qb]/
+       └── qb-apartments/
+   ```
+
+3. **Database Setup**
+   ```sql
+   -- Import the SQL file
+   SOURCE qb-apartments.sql;
+   
+   -- Main apartments table
+   CREATE TABLE IF NOT EXISTS `apartments` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `name` varchar(255) DEFAULT NULL,
+     `type` varchar(255) DEFAULT NULL,
+     `label` varchar(255) DEFAULT NULL,
+     `citizenid` varchar(255) DEFAULT NULL,
+     `price` int(11) DEFAULT NULL,
+     `tier` tinyint(2) DEFAULT 1,
+     PRIMARY KEY (`id`),
+     KEY `citizenid` (`citizenid`),
+     KEY `name` (`name`)
+   );
+   
+   -- Apartment objects (furniture)
+   CREATE TABLE IF NOT EXISTS `apartment_objects` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `apartment_id` int(11) NOT NULL,
+     `object_id` varchar(255) NOT NULL,
+     `coords` text NOT NULL,
+     `rotation` text NOT NULL,
+     `model` varchar(255) NOT NULL,
+     PRIMARY KEY (`id`),
+     KEY `apartment_id` (`apartment_id`)
+   );
+   ```
+
+4. **Server Configuration**
+   ```cfg
+   # server.cfg
+   ensure qb-apartments
+   ```
+
+## 🔧 Configuration
+
+### Main Configuration
+```lua
+-- config.lua
+Config = Config or {}
+
+-- Apartment settings
+Config.Payment = 0 -- Apartment payment time (0 = disabled, time in days)
+Config.RentPayment = true -- Enable rent payments
+Config.PaymentAccount = 'bank' -- Payment account (bank/cash)
+
+-- Apartment spawn settings
+Config.SpawnInside = true -- Spawn inside apartment on login
+Config.EnableGarages = true -- Enable apartment garages
+
+-- Utility bills
+Config.UtilityBills = {
+    enabled = true,
+    electricity = 150, -- Daily electricity cost
+    water = 80, -- Daily water cost
+    internet = 50 -- Daily internet cost
+}
+
+-- Apartment interaction
+Config.InteractionDistance = 2.0
+Config.DrawMarkers = true
+Config.Use3DText = true
+```
+
+### Apartment Types
+```lua
+-- config.lua - Apartment configurations
+Config.Apartments = {
+    ["apartment1"] = {
+        label = "South Rockford Drive",
+        coords = {
+            enter = vector4(-1037.17, -2738.01, 13.76, 331.47),
+            exit = vector4(-1037.17, -2738.01, 13.76, 331.47)
+        },
+        objects = {
+            exit = vector3(-1037.17, -2738.01, 13.76),
+            stash = vector3(-1035.17, -2738.01, 13.76),
+            wardrobe = vector3(-1034.17, -2737.01, 13.76),
+            logout = vector3(-1033.17, -2738.01, 13.76)
+        },
+        type = "shell", -- shell or mlo
+        tier = 1,
+        price = 50000,
+        maxStorage = 4000000, -- Storage weight limit
+        garage = {
+            enabled = true,
+            coords = vector4(-1039.17, -2740.01, 13.76, 331.47),
+            spawnCoords = vector4(-1041.17, -2742.01, 13.76, 331.47),
+            maxVehicles = 2
+        }
+    },
+    
+    ["apartment2"] = {
+        label = "Morningwood Blvd",
+        coords = {
+            enter = vector4(-1289.78, -430.57, 35.15, 218.5),
+            exit = vector4(-1289.78, -430.57, 35.15, 218.5)
+        },
+        objects = {
+            exit = vector3(-1289.78, -430.57, 35.15),
+            stash = vector3(-1287.78, -430.57, 35.15),
+            wardrobe = vector3(-1286.78, -429.57, 35.15),
+            logout = vector3(-1285.78, -430.57, 35.15)
+        },
+        type = "shell",
+        tier = 2,
+        price = 85000,
+        maxStorage = 6000000,
+        garage = {
+            enabled = true,
+            coords = vector4(-1291.78, -432.57, 35.15, 218.5),
+            spawnCoords = vector4(-1293.78, -434.57, 35.15, 218.5),
+            maxVehicles = 3
+        }
+    }
+}
+```
+
+### Shell Interiors
+```lua
+-- Shell interior configurations
+Config.Shells = {
+    ["shell_apartment1"] = {
+        label = "Basic Studio",
+        hash = `shell_apartment1`,
+        price = 0, -- Additional cost for this shell
+        objects = {
+            stash = vector3(4.42, 1.06, 1.2),
+            wardrobe = vector3(8.81, 4.74, 1.2),
+            logout = vector3(-0.3, -2.74, 1.2)
+        }
+    },
+    ["shell_apartment2"] = {
+        label = "Modern Studio",
+        hash = `shell_apartment2`,
+        price = 10000,
+        objects = {
+            stash = vector3(-1.24, 4.84, 1.2),
+            wardrobe = vector3(7.84, 3.18, 1.2),
+            logout = vector3(-0.92, -5.32, 1.2)
+        }
+    },
+    ["shell_loft"] = {
+        label = "Urban Loft",
+        hash = `shell_loft`,
+        price = 25000,
+        objects = {
+            stash = vector3(-8.25, 2.72, 1.2),
+            wardrobe = vector3(3.46, 7.65, 1.2),
+            logout = vector3(-1.28, -6.59, 1.2)
+        }
+    }
+}
+```
+
+## 🏠 Apartment Management
+
+### Purchasing Process
+
+1. **View Available Apartments**
+   - Players visit apartment buildings
+   - Interact with entrance markers
+   - Browse available units and pricing
+
+2. **Purchase Decision**
+   - Select apartment type and shell
+   - Choose payment method (cash/bank)
+   - Confirm purchase and receive keys
+
+3. **Move In**
+   - Automatic apartment assignment
+   - Access to storage and wardrobe
+   - Set as spawn location
+
+### Ownership Features
+
+```lua
+-- Example apartment ownership data
+local apartmentData = {
+    citizenid = "ABC12345",
+    apartment_id = "apartment1_unit_5",
+    apartment_type = "apartment1",
+    shell = "shell_apartment1",
+    purchase_date = "2025-01-15",
+    rent_due = "2025-02-15",
+    utilities = {
+        electricity = true,
+        water = true,
+        internet = true
+    },
+    access_list = {
+        "DEF67890", -- Friend's citizenid
+        "GHI11111"  -- Partner's citizenid
+    }
+}
+```
+
+## 🔌 API Reference
+
+### Server Events
+
+#### Apartment Management
+```lua
+-- Create new apartment
+RegisterNetEvent('qb-apartments:server:CreateApartment', function(apartmentType, citizenid)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    
+    local apartment = CreatePlayerApartment(apartmentType, citizenid or Player.PlayerData.citizenid)
+    if apartment then
+        TriggerClientEvent('QBCore:Notify', source, 'Apartment created successfully', 'success')
+    end
+end)
+
+-- Transfer apartment ownership
+RegisterNetEvent('qb-apartments:server:TransferApartment', function(apartmentId, newOwner)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player and CanTransferApartment(apartmentId, Player.PlayerData.citizenid) then
+        TransferApartmentOwnership(apartmentId, newOwner)
+        TriggerClientEvent('QBCore:Notify', src, 'Apartment transferred successfully', 'success')
+    end
+end)
+```
+
+#### Storage System
+```lua
+-- Open apartment storage
+RegisterNetEvent('qb-apartments:server:openStorage', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local apartment = GetPlayerApartment(Player.PlayerData.citizenid)
+    
+    if apartment then
+        exports['qb-inventory']:OpenInventory(src, 'stash', 'apartment_' .. apartment.id, {
+            maxweight = apartment.maxStorage,
+            slots = 50,
+        })
+    end
+end)
+```
+
+#### Utility System
+```lua
+-- Pay utility bills
+RegisterNetEvent('qb-apartments:server:payBills', function(apartmentId)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local bills = GetApartmentBills(apartmentId)
+    
+    if Player.Functions.RemoveMoney('bank', bills.total) then
+        ClearApartmentBills(apartmentId)
+        TriggerClientEvent('QBCore:Notify', src, 'Bills paid successfully', 'success')
+    end
+end)
+```
+
+### Client Events
+
+#### Apartment Access
+```lua
+-- Enter apartment
+RegisterNetEvent('qb-apartments:client:enterApartment', function(apartmentData)
+    local playerPed = PlayerPedId()
+    
+    -- Fade out screen
+    DoScreenFadeOut(500)
+    Wait(500)
+    
+    -- Teleport to apartment interior
+    SetEntityCoords(playerPed, apartmentData.interior.coords.x, 
+                   apartmentData.interior.coords.y, apartmentData.interior.coords.z)
+    SetEntityHeading(playerPed, apartmentData.interior.coords.w)
+    
+    -- Load shell if needed
+    if apartmentData.shell then
+        LoadApartmentShell(apartmentData.shell, apartmentData.interior.coords)
+    end
+    
+    DoScreenFadeIn(500)
+    TriggerEvent('qb-apartments:client:setupApartmentInteractions')
+end)
+
+-- Setup apartment interactions
+RegisterNetEvent('qb-apartments:client:setupApartmentInteractions', function()
+    -- Storage interaction
+    exports['qb-target']:AddBoxZone("apartment_storage", vector3(-1.24, 4.84, 1.2), 1.0, 1.0, {
+        name = "apartment_storage",
+        heading = 0,
+        debugPoly = false,
+        minZ = 0.2,
+        maxZ = 2.2,
+    }, {
+        options = {
+            {
+                type = "client",
+                event = "qb-apartments:client:openStorage",
+                icon = "fas fa-box",
+                label = "Open Storage",
+            }
+        },
+        distance = 2.0
+    })
+end)
+```
+
+### Exports
+
+#### Apartment Information
+```lua
+-- Get player's apartment
+local apartment = exports['qb-apartments']:GetOwnedApartment(citizenid)
+if apartment then
+    print('Player owns apartment: ' .. apartment.label)
+end
+
+-- Check if player has access to apartment
+local hasAccess = exports['qb-apartments']:HasApartmentAccess(apartmentId, citizenid)
+```
+
+#### Real Estate Functions
+```lua
+-- Get available apartments for sale
+local availableApartments = exports['qb-apartments']:GetAvailableApartments()
+
+-- Calculate apartment value
+local value = exports['qb-apartments']:CalculateApartmentValue(apartmentType, upgrades)
+
+-- Get apartment market data
+local marketData = exports['qb-apartments']:GetMarketData()
+```
+
+## 🎮 Player Experience
+
+### Daily Life Features
+
+1. **Storage Management**
+   - Personal inventory extension
+   - Item organization and sorting
+   - Shared storage for roommates
+
+2. **Wardrobe System**
+   - Save custom outfits
+   - Quick outfit changes
+   - Seasonal clothing storage
+
+3. **Utility Management**
+   - Monitor electricity usage
+   - Pay bills to avoid disconnection
+   - Energy-saving features
+
+4. **Security Features**
+   - Key management system
+   - Access permission controls
+   - Security camera integration
+
+### Social Features
+
+```lua
+-- Invite system example
+RegisterNetEvent('qb-apartments:client:invitePlayer', function(targetId)
+    local apartment = GetPlayerApartment()
+    if apartment and CanInviteToApartment(apartment.id) then
+        TriggerServerEvent('qb-apartments:server:sendInvite', targetId, apartment.id)
+    end
+end)
+
+-- Roommate system
+RegisterNetEvent('qb-apartments:server:addRoommate', function(apartmentId, citizenid)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if IsApartmentOwner(apartmentId, Player.PlayerData.citizenid) then
+        AddApartmentRoommate(apartmentId, citizenid)
+        TriggerClientEvent('QBCore:Notify', src, 'Roommate added successfully', 'success')
+    end
+end)
+```
+
+## 🛠️ Furniture System
+
+### Furniture Placement
+```lua
+-- Place furniture in apartment
+local function PlaceFurniture(model, coords, rotation)
+    local object = CreateObject(model, coords.x, coords.y, coords.z, false, false, false)
+    SetEntityRotation(object, rotation.x, rotation.y, rotation.z, 2, true)
+    FreezeEntityPosition(object, true)
+    
+    -- Save to database
+    TriggerServerEvent('qb-apartments:server:saveFurniture', {
+        apartmentId = GetCurrentApartment(),
+        model = model,
+        coords = coords,
+        rotation = rotation
+    })
+    
+    return object
+end
+
+-- Furniture categories
+Config.Furniture = {
+    ["seating"] = {
+        ["sofa_01"] = {
+            model = `prop_couch_01`,
+            label = "Modern Sofa",
+            price = 1500,
+            category = "seating"
+        },
+        ["chair_office"] = {
+            model = `prop_chair_office_01`,
+            label = "Office Chair",
+            price = 400,
+            category = "seating"
+        }
+    },
+    ["tables"] = {
+        ["coffee_table"] = {
+            model = `prop_coffee_table_01`,
+            label = "Coffee Table",
+            price = 800,
+            category = "tables"
+        }
+    },
+    ["decorations"] = {
+        ["plant_01"] = {
+            model = `prop_plant_01a`,
+            label = "House Plant",
+            price = 150,
+            category = "decorations"
+        }
+    }
+}
+```
+
+### Furniture Store Integration
+```lua
+-- Furniture shopping system
+RegisterNetEvent('qb-apartments:client:openFurnitureShop', function()
+    local elements = {}
+    
+    for category, items in pairs(Config.Furniture) do
+        for itemId, item in pairs(items) do
+            table.insert(elements, {
+                label = item.label .. ' - $' .. item.price,
+                value = itemId,
+                item = item
+            })
+        end
+    end
+    
+    -- Open furniture catalog
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = "openFurnitureShop",
+        furniture = elements
+    })
+end)
+```
+
+## 🏗️ Integration Examples
+
+### With QB-Banking
+```lua
+-- Apartment mortgage system
+RegisterNetEvent('qb-apartments:server:processMortgage', function(apartmentData)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    local mortgageAmount = apartmentData.price * 0.8 -- 80% financing
+    local downPayment = apartmentData.price * 0.2   -- 20% down
+    
+    if Player.Functions.RemoveMoney('bank', downPayment) then
+        -- Create mortgage account
+        exports['qb-banking']:CreateLoan(Player.PlayerData.citizenid, {
+            amount = mortgageAmount,
+            rate = 3.5, -- 3.5% interest
+            term = 360, -- 30 years
+            type = 'mortgage',
+            collateral = apartmentData.id
+        })
+        
+        -- Process apartment purchase
+        CreatePlayerApartment(apartmentData.type, Player.PlayerData.citizenid)
+    end
+end)
+```
+
+### With QB-Phone
+```lua
+-- Real estate app integration
+RegisterNetEvent('qb-apartments:client:openRealEstateApp', function()
+    local apartments = GetAvailableApartments()
+    
+    TriggerEvent('qb-phone:client:app:open', 'realestate', {
+        apartments = apartments,
+        owned = GetPlayerApartment(),
+        market = GetMarketData()
+    })
+end)
+
+-- Property notifications
+RegisterNetEvent('qb-apartments:server:sendPropertyAlert', function(citizenid, message)
+    TriggerClientEvent('qb-phone:client:addNotification', GetPlayerByCitizenId(citizenid), {
+        title = "Property Alert",
+        text = message,
+        icon = "fas fa-home"
+    })
+end)
+```
+
+### With QB-Inventory
+```lua
+-- Apartment storage integration
+exports['qb-inventory']:CreateStorage('apartment_' .. apartmentId, {
+    maxweight = apartment.maxStorage,
+    slots = 50,
+    restricted = {apartment.citizenid} -- Only owner can access
+})
+
+-- Moving boxes for apartment transfers
+local function CreateMovingBox(citizenid, items)
+    local boxId = 'moving_box_' .. citizenid .. '_' .. os.time()
+    
+    exports['qb-inventory']:CreateStorage(boxId, {
+        maxweight = 100000,
+        slots = 40,
+        items = items,
+        temporary = true -- Auto-delete after 7 days
+    })
+    
+    return boxId
+end
+```
+
+## 💰 Economic System
+
+### Dynamic Pricing
+```lua
+-- Real estate market calculations
+local function CalculateApartmentValue(apartmentType, factors)
+    local basePrice = Config.Apartments[apartmentType].price
+    local multiplier = 1.0
+    
+    -- Location desirability
+    multiplier = multiplier + (factors.location_score * 0.1)
+    
+    -- Market demand
+    local occupancyRate = GetAreaOccupancyRate(apartmentType)
+    if occupancyRate > 0.8 then
+        multiplier = multiplier + 0.15 -- High demand
+    elseif occupancyRate < 0.3 then
+        multiplier = multiplier - 0.15 -- Low demand
+    end
+    
+    -- Neighborhood safety
+    multiplier = multiplier + (factors.safety_rating * 0.05)
+    
+    -- Amenities bonus
+    if factors.has_garage then multiplier = multiplier + 0.1 end
+    if factors.has_gym then multiplier = multiplier + 0.08 end
+    if factors.has_pool then multiplier = multiplier + 0.12 end
+    
+    return math.floor(basePrice * multiplier)
+end
+```
+
+### Rent and Utilities
+```lua
+-- Automated billing system
+CreateThread(function()
+    while true do
+        Wait(86400000) -- Run once per day
+        
+        for apartmentId, apartment in pairs(GetAllApartments()) do
+            if apartment.citizenid then
+                local bills = CalculateUtilityBills(apartmentId)
+                local rent = CalculateRent(apartment.type)
+                
+                -- Add bills to player's account
+                AddPlayerBills(apartment.citizenid, {
+                    rent = rent,
+                    electricity = bills.electricity,
+                    water = bills.water,
+                    internet = bills.internet
+                })
+                
+                -- Send notification
+                TriggerEvent('qb-apartments:server:sendPropertyAlert', 
+                    apartment.citizenid, 
+                    'Your monthly bills are ready for payment: $' .. (rent + bills.total)
+                )
+            end
+        end
+    end
+end)
+```
+
+## 🛡️ Security Features
+
+### Access Control
+```lua
+-- Advanced security system
+local function CheckApartmentAccess(apartmentId, citizenid)
+    local apartment = GetApartmentData(apartmentId)
+    
+    -- Owner access
+    if apartment.citizenid == citizenid then
+        return true, 'owner'
+    end
+    
+    -- Roommate access
+    if IsRoommate(apartmentId, citizenid) then
+        return true, 'roommate'
+    end
+    
+    -- Temporary access (key sharing)
+    if HasTemporaryAccess(apartmentId, citizenid) then
+        return true, 'temporary'
+    end
+    
+    -- Emergency access (police/medical)
+    if HasEmergencyAccess(citizenid) then
+        return true, 'emergency'
+    end
+    
+    return false, 'denied'
+end
+
+-- Security logging
+local function LogApartmentAccess(apartmentId, citizenid, accessType, action)
+    MySQL.insert('INSERT INTO apartment_logs (apartment_id, citizenid, access_type, action, timestamp) VALUES (?, ?, ?, ?, ?)', {
+        apartmentId, citizenid, accessType, action, os.time()
+    })
+end
+```
+
+### Anti-Griefing Protection
+```lua
+-- Prevent apartment exploitation
+local apartmentCooldowns = {}
+
+RegisterNetEvent('qb-apartments:server:enterApartment', function(apartmentId)
+    local src = source
+    local citizenid = QBCore.Functions.GetIdentifier(src, 'citizenid')
+    
+    -- Check access permissions
+    local hasAccess, accessType = CheckApartmentAccess(apartmentId, citizenid)
+    if not hasAccess then
+        TriggerClientEvent('QBCore:Notify', src, 'You do not have access to this apartment', 'error')
+        return
+    end
+    
+    -- Check cooldown to prevent spam
+    local cooldownKey = citizenid .. '_' .. apartmentId
+    if apartmentCooldowns[cooldownKey] and apartmentCooldowns[cooldownKey] > GetGameTimer() then
+        TriggerClientEvent('QBCore:Notify', src, 'Please wait before entering again', 'error')
+        return
+    end
+    
+    apartmentCooldowns[cooldownKey] = GetGameTimer() + 5000 -- 5 second cooldown
+    
+    -- Log access
+    LogApartmentAccess(apartmentId, citizenid, accessType, 'enter')
+    
+    -- Process apartment entry
+    TriggerClientEvent('qb-apartments:client:enterApartment', src, GetApartmentData(apartmentId))
+end)
+```
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+**Issue**: Players can't enter apartments
+```lua
+-- Debug apartment access
+RegisterCommand('debugapartment', function(source, args)
+    local apartmentId = args[1]
+    local apartment = GetApartmentData(apartmentId)
+    
+    if apartment then
+        print('Apartment Data:')
+        print(json.encode(apartment, {indent = true}))
+    else
+        print('Apartment not found: ' .. apartmentId)
+    end
+end, true)
+```
+
+**Issue**: Storage not working
+```lua
+-- Verify storage setup
+local function VerifyApartmentStorage(apartmentId)
+    local storageId = 'apartment_' .. apartmentId
+    local storage = exports['qb-inventory']:GetStorage(storageId)
+    
+    if not storage then
+        print('Creating missing storage for apartment: ' .. apartmentId)
+        exports['qb-inventory']:CreateStorage(storageId, {
+            maxweight = 4000000,
+            slots = 50
+        })
+    end
+end
+```
+
+**Issue**: Bills not calculating correctly
+```lua
+-- Debug utility calculations
+RegisterCommand('checkbills', function(source, args)
+    local citizenid = args[1] or QBCore.Functions.GetIdentifier(source, 'citizenid')
+    local apartment = GetPlayerApartment(citizenid)
+    
+    if apartment then
+        local bills = CalculateUtilityBills(apartment.id)
+        print('Bills for ' .. citizenid .. ':')
+        print('Electricity: $' .. bills.electricity)
+        print('Water: $' .. bills.water)
+        print('Internet: $' .. bills.internet)
+        print('Total: $' .. bills.total)
+    end
+end, true)
+```
+
+### Performance Optimization
+```lua
+-- Optimize apartment loading
+local loadedApartments = {}
+
+local function LoadApartmentShell(shellType, coords)
+    local shellHash = GetHashKey(shellType)
+    
+    if not loadedApartments[shellHash] then
+        RequestModel(shellHash)
+        while not HasModelLoaded(shellHash) do
+            Wait(10)
+        end
+        
+        loadedApartments[shellHash] = CreateObject(shellHash, coords.x, coords.y, coords.z, false, false, false)
+        FreezeEntityPosition(loadedApartments[shellHash], true)
+    end
+    
+    return loadedApartments[shellHash]
+end
+```
+
+## 🔗 Related Resources
+
+- [QB-Core](/docs/resources/qb-core) - Core framework
+- [QB-Inventory](qb-inventory) - Storage system
+- [QB-Banking](qb-banking) - Financial transactions
+- [QB-Spawn](/docs/resources/qb-spawn) - Spawn integration
+- [QB-Phone](qb-phone) - Real estate app integration
+
+## 📚 Additional Resources
+
+- [GitHub Repository](https://github.com/qbcore-framework/qb-apartments)
+- [Interior Design Guide](interior-design)
+- [Real Estate API](real-estate-api)
+- [Security Configuration](security-config)

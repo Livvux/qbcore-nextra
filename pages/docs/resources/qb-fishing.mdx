@@ -1,0 +1,586 @@
+# QB-Fishing - Angling and Marine Harvesting System
+
+import { Callout } from 'nextra/components'
+
+The **qb-fishing** resource provides a comprehensive fishing system for QBCore servers, featuring various fishing methods, bait systems, fish species, and equipment management.
+
+## Overview
+
+QB-Fishing creates a realistic angling experience with multiple fishing techniques, seasonal fish behavior, equipment requirements, and fish processing. Players can fish in various water bodies, from ocean fishing to lake angling.
+
+### Key Features
+
+- **Multiple Fishing Methods**: Rod fishing, net fishing, and spear fishing
+- **Bait System**: Different baits for different fish species
+- **Fish Species**: Variety of fish with different rarity and value
+- **Equipment Management**: Rods, reels, nets, and fishing gear
+- **Seasonal Fishing**: Time and weather-based fish behavior
+- **Fish Processing**: Cleaning and selling fish products
+- **Fishing Licenses**: Legal requirements for fishing
+- **Boat Fishing**: Deep sea and offshore fishing
+- **Competition System**: Fishing tournaments and competitions
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for fishing menus)
+- qb-inventory (for fishing equipment)
+- qb-weather (for weather effects)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-fishing.git
+```
+
+2. **Database Setup**
+```sql
+-- Fishing tables
+CREATE TABLE IF NOT EXISTS `fishing_licenses` (
+  `citizenid` varchar(50) NOT NULL,
+  `license_type` varchar(50) DEFAULT 'recreational',
+  `issued_date` timestamp DEFAULT current_timestamp(),
+  `expires_date` timestamp DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'active',
+  PRIMARY KEY (`citizenid`)
+);
+
+CREATE TABLE IF NOT EXISTS `fishing_catches` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `fish_type` varchar(100) DEFAULT NULL,
+  `weight` float DEFAULT 0,
+  `length` float DEFAULT 0,
+  `location` varchar(255) DEFAULT NULL,
+  `bait_used` varchar(100) DEFAULT NULL,
+  `weather` varchar(50) DEFAULT NULL,
+  `time_caught` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `fishing_competitions` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) DEFAULT NULL,
+  `start_time` timestamp DEFAULT NULL,
+  `end_time` timestamp DEFAULT NULL,
+  `fish_type` varchar(100) DEFAULT NULL,
+  `prize_pool` int(11) DEFAULT 0,
+  `status` varchar(50) DEFAULT 'upcoming',
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Fishing Equipment
+['fishing_rod'] = {
+    ['name'] = 'fishing_rod',
+    ['label'] = 'Fishing Rod',
+    ['weight'] = 1500,
+    ['type'] = 'item',
+    ['image'] = 'fishing_rod.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Basic fishing rod for angling'
+},
+['fishing_net'] = {
+    ['name'] = 'fishing_net',
+    ['label'] = 'Fishing Net',
+    ['weight'] = 2000,
+    ['type'] = 'item',
+    ['image'] = 'fishing_net.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Net for catching multiple fish'
+},
+['worm_bait'] = {
+    ['name'] = 'worm_bait',
+    ['label'] = 'Worm Bait',
+    ['weight'] = 50,
+    ['type'] = 'item',
+    ['image'] = 'worm_bait.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Live worms for fishing bait'
+},
+-- Fish
+['bass'] = {
+    ['name'] = 'bass',
+    ['label'] = 'Bass',
+    ['weight'] = 300,
+    ['type'] = 'item',
+    ['image'] = 'bass.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Fresh bass fish'
+},
+['salmon'] = {
+    ['name'] = 'salmon',
+    ['label'] = 'Salmon',
+    ['weight'] = 500,
+    ['type'] = 'item',
+    ['image'] = 'salmon.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Premium salmon fish'
+}
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-fishing
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.LicenseRequired = true
+Config.FishRespawnTime = 120000 -- 2 minutes
+
+-- Fishing Locations
+Config.FishingSpots = {
+    ["pier"] = {
+        label = "Del Perro Pier",
+        coords = vector3(-1850.02, -1248.19, 8.61),
+        radius = 50,
+        fish_types = {
+            ["mackerel"] = {weight = 0.4, min_weight = 0.5, max_weight = 2.0},
+            ["sea_bass"] = {weight = 0.3, min_weight = 1.0, max_weight = 4.0},
+            ["tuna"] = {weight = 0.2, min_weight = 5.0, max_weight = 15.0},
+            ["shark"] = {weight = 0.1, min_weight = 20.0, max_weight = 50.0}
+        },
+        required_license = "recreational",
+        best_times = {"dawn", "dusk"}
+    },
+    ["lake"] = {
+        label = "Alamo Sea",
+        coords = vector3(740.0, 4169.0, 40.0),
+        radius = 200,
+        fish_types = {
+            ["bass"] = {weight = 0.5, min_weight = 1.0, max_weight = 3.0},
+            ["catfish"] = {weight = 0.3, min_weight = 2.0, max_weight = 8.0},
+            ["pike"] = {weight = 0.2, min_weight = 3.0, max_weight = 10.0}
+        },
+        required_license = "recreational"
+    },
+    ["deep_sea"] = {
+        label = "Pacific Ocean Deep",
+        coords = vector3(-3500.0, 3500.0, 0.0),
+        radius = 1000,
+        fish_types = {
+            ["marlin"] = {weight = 0.15, min_weight = 50.0, max_weight = 200.0},
+            ["swordfish"] = {weight = 0.2, min_weight = 30.0, max_weight = 100.0},
+            ["mahi_mahi"] = {weight = 0.35, min_weight = 5.0, max_weight = 20.0},
+            ["yellowfin_tuna"] = {weight = 0.3, min_weight = 10.0, max_weight = 80.0}
+        },
+        required_license = "commercial",
+        boat_required = true
+    }
+}
+
+-- Fish Configuration
+Config.Fish = {
+    ["bass"] = {
+        label = "Largemouth Bass",
+        value_per_kg = 150,
+        preferred_bait = {"worm_bait", "lure_bait"},
+        preferred_weather = {"clear", "overcast"},
+        rarity = "common"
+    },
+    ["salmon"] = {
+        label = "Atlantic Salmon",
+        value_per_kg = 300,
+        preferred_bait = {"fly_bait", "lure_bait"},
+        preferred_weather = {"clear", "rain"},
+        rarity = "uncommon"
+    },
+    ["tuna"] = {
+        label = "Bluefin Tuna",
+        value_per_kg = 500,
+        preferred_bait = {"live_bait", "lure_bait"},
+        preferred_weather = {"clear"},
+        rarity = "rare"
+    },
+    ["marlin"] = {
+        label = "Blue Marlin",
+        value_per_kg = 1000,
+        preferred_bait = {"live_bait"},
+        preferred_weather = {"clear"},
+        rarity = "legendary",
+        trophy_fish = true
+    }
+}
+
+-- Bait Configuration
+Config.Bait = {
+    ["worm_bait"] = {
+        label = "Earthworms",
+        effectiveness = {
+            bass = 0.8,
+            catfish = 0.9,
+            pike = 0.6
+        },
+        cost = 5
+    },
+    ["lure_bait"] = {
+        label = "Artificial Lure",
+        effectiveness = {
+            bass = 0.7,
+            salmon = 0.8,
+            tuna = 0.6
+        },
+        cost = 15
+    },
+    ["live_bait"] = {
+        label = "Live Minnows",
+        effectiveness = {
+            tuna = 0.9,
+            marlin = 0.8,
+            swordfish = 0.7
+        },
+        cost = 25
+    }
+}
+```
+
+### Equipment System
+
+```lua
+-- Fishing Equipment
+Config.Equipment = {
+    ["fishing_rod"] = {
+        label = "Basic Fishing Rod",
+        durability = 100,
+        repair_cost = 50,
+        catch_bonus = 1.0,
+        fish_types = {"bass", "mackerel", "catfish"}
+    },
+    ["pro_fishing_rod"] = {
+        label = "Professional Fishing Rod",
+        durability = 200,
+        repair_cost = 150,
+        catch_bonus = 1.5,
+        fish_types = {"bass", "salmon", "tuna", "pike"}
+    },
+    ["deep_sea_rod"] = {
+        label = "Deep Sea Fishing Rod",
+        durability = 150,
+        repair_cost = 200,
+        catch_bonus = 2.0,
+        fish_types = {"tuna", "marlin", "swordfish", "shark"}
+    },
+    ["fishing_net"] = {
+        label = "Fishing Net",
+        durability = 80,
+        repair_cost = 75,
+        multiple_catch = true,
+        max_catches = 5
+    }
+}
+
+-- License Types
+Config.LicenseTypes = {
+    ["recreational"] = {
+        label = "Recreational Fishing License",
+        cost = 500,
+        duration = 30, -- days
+        daily_limit = 10, -- fish per day
+        areas_allowed = {"pier", "lake"}
+    },
+    ["commercial"] = {
+        label = "Commercial Fishing License",
+        cost = 2500,
+        duration = 30,
+        daily_limit = 50,
+        areas_allowed = {"pier", "lake", "deep_sea"},
+        boat_fishing = true
+    },
+    ["tournament"] = {
+        label = "Tournament License",
+        cost = 1000,
+        duration = 7,
+        special_events = true,
+        areas_allowed = {"pier", "lake", "deep_sea"}
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### StartFishing
+Begin fishing at current location.
+
+```lua
+-- Start basic fishing
+exports['qb-fishing']:StartFishing()
+
+-- Start fishing with specific equipment
+exports['qb-fishing']:StartFishing("pro_fishing_rod", "worm_bait")
+
+-- Parameters:
+-- equipment (optional): Fishing equipment to use
+-- bait (optional): Bait type to use
+```
+
+#### CastLine
+Cast fishing line into water.
+
+```lua
+local success = exports['qb-fishing']:CastLine(targetCoords, power)
+
+-- Parameters:
+-- targetCoords: Vector3 coordinates to cast to
+-- power: Casting power (0.1 to 1.0)
+-- Returns: boolean success status
+```
+
+#### ReelIn
+Reel in fishing line.
+
+```lua
+local fishCaught = exports['qb-fishing']:ReelIn(timing, strength)
+
+-- Parameters:
+-- timing: Player reaction timing
+-- strength: Reeling strength
+-- Returns: fish data or nil
+```
+
+### Server Exports
+
+#### CheckFishingLicense
+Verify player's fishing license.
+
+```lua
+local isValid = exports['qb-fishing']:CheckFishingLicense(source, licenseType)
+
+-- Parameters:
+-- source: Player server ID
+-- licenseType: Required license type
+-- Returns: boolean license validity
+```
+
+#### SpawnFish
+Spawn fish in specific area.
+
+```lua
+local fishId = exports['qb-fishing']:SpawnFish(fishType, coords, area)
+
+-- Parameters:
+-- fishType: Type of fish to spawn
+-- coords: Vector3 spawn coordinates
+-- area: Fishing area name
+```
+
+#### ProcessCatch
+Process caught fish and give rewards.
+
+```lua
+exports['qb-fishing']:ProcessCatch(source, fishData, equipment)
+
+-- Parameters:
+-- source: Player server ID
+-- fishData: Fish information
+-- equipment: Equipment used
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Fish hooked
+RegisterNetEvent('qb-fishing:client:fishHooked', function(fishType, difficulty)
+    -- Handle fish hooking
+end)
+
+-- Catch successful
+RegisterNetEvent('qb-fishing:client:catchSuccessful', function(fishData)
+    -- Handle successful catch
+end)
+
+-- Line broken
+RegisterNetEvent('qb-fishing:client:lineBroken', function()
+    -- Handle line breaking
+end)
+
+-- Competition started
+RegisterNetEvent('qb-fishing:client:competitionStarted', function(compData)
+    -- Handle competition start
+end)
+```
+
+#### Server Events
+
+```lua
+-- Player started fishing
+RegisterNetEvent('qb-fishing:server:startFishing', function(location, equipment)
+    -- Handle fishing start
+end)
+
+-- Fish caught
+RegisterNetEvent('qb-fishing:server:fishCaught', function(fishData, location)
+    -- Handle fish catch
+end)
+
+-- Competition entry
+RegisterNetEvent('qb-fishing:server:joinCompetition', function(compId)
+    -- Handle competition entry
+end)
+```
+
+## Usage Examples
+
+### Basic Fishing System
+
+```lua
+-- Client-side fishing mechanics
+local isFishing = false
+local fishingData = {}
+local currentBait = nil
+
+RegisterNetEvent('qb-fishing:client:startFishing', function(baitType)
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    
+    -- Check if near water
+    if not IsNearWater(coords) then
+        QBCore.Functions.Notify("You need to be near water to fish", "error")
+        return
+    end
+    
+    -- Check for fishing equipment
+    QBCore.Functions.TriggerCallback('qb-fishing:server:hasEquipment', function(hasRod, hasBait)
+        if not hasRod then
+            QBCore.Functions.Notify("You need a fishing rod", "error")
+            return
+        end
+        
+        if not hasBait then
+            QBCore.Functions.Notify("You need bait to fish", "error")
+            return
+        end
+        
+        -- Start fishing
+        isFishing = true
+        currentBait = baitType
+        
+        -- Play fishing animation
+        local animDict = "amb@world_human_stand_fishing@idle_a"
+        RequestAnimDict(animDict)
+        while not HasAnimDictLoaded(animDict) do
+            Wait(1)
+        end
+        
+        TaskPlayAnim(ped, animDict, "idle_c", 8.0, -8.0, -1, 1, 0, false, false, false)
+        
+        QBCore.Functions.Notify("Fishing started! Wait for a bite...", "success")
+        
+        -- Start fishing logic
+        CreateThread(function()
+            while isFishing do
+                Wait(math.random(5000, 15000)) -- Random wait for fish
+                
+                if isFishing then
+                    -- Fish bite chance
+                    local biteChance = math.random()
+                    if biteChance < 0.3 then -- 30% chance
+                        TriggerEvent('qb-fishing:client:fishBite')
+                        break
+                    end
+                end
+            end
+        end)
+        
+    end, baitType)
+end)
+
+RegisterNetEvent('qb-fishing:client:fishBite', function()
+    QBCore.Functions.Notify("Fish on the line! Press [E] to reel in!", "primary")
+    
+    -- Start reeling minigame
+    local reelSuccess = false
+    local reelTime = GetGameTimer() + 5000 -- 5 seconds to reel
+    
+    CreateThread(function()
+        while GetGameTimer() < reelTime and isFishing do
+            Wait(1)
+            
+            if IsControlJustPressed(0, 38) then -- E key
+                -- Simple timing-based minigame
+                local timing = (reelTime - GetGameTimer()) / 5000
+                if timing > 0.3 and timing < 0.8 then
+                    reelSuccess = true
+                    break
+                end
+            end
+        end
+        
+        if reelSuccess then
+            TriggerServerEvent('qb-fishing:server:catchFish', currentBait)
+        else
+            QBCore.Functions.Notify("The fish got away!", "error")
+        end
+        
+        -- Stop fishing
+        isFishing = false
+        ClearPedTasks(PlayerPedId())
+    end)
+end)
+```
+
+### Fish Processing System
+
+```lua
+-- Server-side fish catch processing
+RegisterNetEvent('qb-fishing:server:catchFish', function(baitUsed)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    
+    if not player then return end
+    
+    -- Check fishing license
+    local hasLicense = exports['qb-fishing']:CheckFishingLicense(src, 'recreational')
+    if not hasLicense then
+        TriggerClientEvent('QBCore:Notify', src, 'You need a valid fishing license', 'error')
+        return
+    end
+    
+    -- Determine fish type based on location and bait
+    local playerCoords = GetEntityCoords(GetPlayerPed(src))
+    local fishingSpot = GetNearestFishingSpot(playerCoords)
+    
+    if not fishingSpot then
+        TriggerClientEvent('QBCore:Notify', src, 'No fish in this area', 'error')
+        return
+    end
+    
+    -- Roll for fish type
+    local caughtFish = RollForFish(fishingSpot, baitUsed)
+    
+    if caughtFish then
+        -- Calculate fish weight and value
+        local fishConfig = Config.Fish[caughtFish.type]\n        local weight = math.random(fishConfig.min_weight * 100, fishConfig.max_weight * 100) / 100\n        local value = math.floor(weight * fishConfig.value_per_kg)\n        \n        -- Give fish to player\n        player.Functions.AddItem(caughtFish.type, 1, false, {\n            weight = weight,\n            value = value,\n            caught_at = fishingSpot.label,\n            bait_used = baitUsed,\n            timestamp = os.date(\"%Y-%m-%d %H:%M:%S\")\n        })\n        \n        -- Remove bait\n        player.Functions.RemoveItem(baitUsed, 1)\n        \n        -- Log the catch\n        MySQL.insert('INSERT INTO fishing_catches (citizenid, fish_type, weight, location, bait_used, weather) VALUES (?, ?, ?, ?, ?, ?)', {\n            player.PlayerData.citizenid,\n            caughtFish.type,\n            weight,\n            fishingSpot.label,\n            baitUsed,\n            GetCurrentWeather()\n        })\n        \n        TriggerClientEvent('QBCore:Notify', src, 'Caught a ' .. weight .. 'kg ' .. fishConfig.label .. '!', 'success')\n        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[caughtFish.type], \"add\")\n    else\n        TriggerClientEvent('QBCore:Notify', src, 'No fish caught this time', 'error')\n        \n        -- Still remove bait (consumed)\n        player.Functions.RemoveItem(baitUsed, 1)\n    end\nend)\n\nfunction RollForFish(fishingSpot, baitUsed)\n    local fishRoll = math.random()\n    local currentWeight = 0\n    \n    for fishType, fishData in pairs(fishingSpot.fish_types) do\n        currentWeight = currentWeight + fishData.weight\n        \n        if fishRoll <= currentWeight then\n            -- Check bait effectiveness\n            local baitEffectiveness = Config.Bait[baitUsed].effectiveness[fishType] or 0.5\n            local baitRoll = math.random()\n            \n            if baitRoll <= baitEffectiveness then\n                return {\n                    type = fishType,\n                    min_weight = fishData.min_weight,\n                    max_weight = fishData.max_weight\n                }\n            end\n        end\n    end\n    \n    return nil\nend\n```\n\n### Fishing Competition System\n\n```lua\n-- Fishing tournament management\nlocal activeCompetitions = {}\n\nRegisterNetEvent('qb-fishing:server:createCompetition', function(compData)\n    local src = source\n    local player = QBCore.Functions.GetPlayer(src)\n    \n    -- Only allow authorized players to create competitions\n    if player.PlayerData.job.name ~= \"fishing_guide\" then\n        TriggerClientEvent('QBCore:Notify', src, 'Only fishing guides can create competitions', 'error')\n        return\n    end\n    \n    local competitionId = math.random(10000, 99999)\n    \n    activeCompetitions[competitionId] = {\n        id = competitionId,\n        name = compData.name,\n        start_time = os.time(),\n        end_time = os.time() + (compData.duration * 60), -- Duration in minutes\n        fish_type = compData.fish_type,\n        prize_pool = compData.prize_pool,\n        participants = {},\n        leaderboard = {},\n        status = 'active'\n    }\n    \n    -- Announce competition to all players\n    TriggerClientEvent('QBCore:Notify', -1, 'Fishing Competition Started: ' .. compData.name, 'primary')\n    TriggerClientEvent('qb-fishing:client:competitionAnnouncement', -1, activeCompetitions[competitionId])\nend)\n\n-- Handle competition fish catches\nRegisterNetEvent('qb-fishing:server:competitionCatch', function(compId, fishData)\n    local src = source\n    local player = QBCore.Functions.GetPlayer(src)\n    local competition = activeCompetitions[compId]\n    \n    if not competition or competition.status ~= 'active' then\n        return\n    end\n    \n    -- Check if fish type matches competition\n    if fishData.type == competition.fish_type then\n        local citizenId = player.PlayerData.citizenid\n        \n        -- Update leaderboard\n        if not competition.leaderboard[citizenId] or \n           competition.leaderboard[citizenId].weight < fishData.weight then\n            \n            competition.leaderboard[citizenId] = {\n                name = player.PlayerData.charinfo.firstname .. \" \" .. player.PlayerData.charinfo.lastname,\n                weight = fishData.weight,\n                fish_type = fishData.type\n            }\n            \n            -- Notify participants of new leader\n            for participantId, _ in pairs(competition.participants) do\n                TriggerClientEvent('QBCore:Notify', participantId, 'New leader in competition!', 'primary')\n            end\n        end\n    end\nend)\n\n-- End competition and award prizes\nfunction EndCompetition(compId)\n    local competition = activeCompetitions[compId]\n    if not competition then return end\n    \n    competition.status = 'completed'\n    \n    -- Sort leaderboard by weight\n    local sortedResults = {}\n    for citizenId, data in pairs(competition.leaderboard) do\n        table.insert(sortedResults, {citizenId = citizenId, data = data})\n    end\n    \n    table.sort(sortedResults, function(a, b)\n        return a.data.weight > b.data.weight\n    end)\n    \n    -- Award prizes to top 3\n    local prizes = {competition.prize_pool * 0.5, competition.prize_pool * 0.3, competition.prize_pool * 0.2}\n    \n    for i = 1, math.min(3, #sortedResults) do\n        local winner = sortedResults[i]\n        local player = QBCore.Functions.GetPlayerByCitizenId(winner.citizenId)\n        \n        if player then\n            player.Functions.AddMoney('bank', prizes[i], 'fishing-competition-prize')\n            TriggerClientEvent('QBCore:Notify', player.PlayerData.source, 'You won place #' .. i .. ' in the fishing competition! Prize: $' .. prizes[i], 'success')\n        end\n    end\n    \n    -- Announce results\n    TriggerClientEvent('qb-fishing:client:competitionResults', -1, sortedResults, competition)\n    \n    -- Clean up\n    activeCompetitions[compId] = nil\nend\n```\n\n## Troubleshooting\n\n### Common Issues\n\n#### Fish Not Spawning\n```lua\n-- Debug fish spawning\nRegisterCommand('debugfish', function()\n    local coords = GetEntityCoords(PlayerPedId())\n    local spot = GetNearestFishingSpot(coords)\n    if spot then\n        print(\"Fishing spot:\", spot.label)\n        print(\"Fish types:\", json.encode(spot.fish_types))\n    else\n        print(\"No fishing spot nearby\")\n    end\nend)\n```\n\n#### License Verification Issues\n- Check database table structure for fishing_licenses\n- Verify license expiration calculations\n- Ensure proper license type checking\n\n#### Bait Effectiveness Problems\n```lua\n-- Debug bait effectiveness\nRegisterNetEvent('qb-fishing:debug:baitCheck', function(baitType, fishType)\n    local effectiveness = Config.Bait[baitType].effectiveness[fishType]\n    print(\"Bait:\", baitType, \"Fish:\", fishType, \"Effectiveness:\", effectiveness)\nend)\n```\n\n### Debug Commands\n\n```lua\n-- Give fishing equipment\n/givefishgear [player_id]\n\n-- Start fishing competition\n/startfishcomp [name] [duration] [fish_type] [prize]\n\n-- Check fishing license\n/checkfishlicense [player_id]\n\n-- Spawn fish for testing\n/spawnfish [type] [x] [y] [z]\n```\n\n<Callout type=\"warning\">\n  Test fishing mechanics thoroughly, especially the timing-based minigames, to ensure they work well with server latency.\n</Callout>

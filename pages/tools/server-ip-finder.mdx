@@ -1,0 +1,198 @@
+# FiveM Server IP Finder
+
+Find the IP address of any FiveM server using just the server code.
+
+## How It Works
+
+The FiveM Server IP Finder is easy to use: Just type in the server code (the last 6 numbers of the server link) and click the button.
+
+import { useState } from 'react'
+
+export function ServerIPFinder() {
+  const [serverCode, setServerCode] = useState('')
+  const [result, setResult] = useState(null)
+  const [loading, setLoading] = useState(false)
+
+  const findServerIP = async () => {
+    if (!serverCode || serverCode.length !== 6) {
+      alert('Please enter a valid 6-digit server code')
+      return
+    }
+
+    setLoading(true)
+    try {
+      // This would typically call an API to resolve the server IP
+      // For now, we'll show a placeholder
+      const response = await fetch(`https://servers-frontend.fivem.net/api/servers/single/${serverCode}`)
+      const data = await response.json()
+      
+      if (data && data.Data) {
+        setResult({
+          ip: data.Data.connectEndPoints?.[0] || 'Not found',
+          name: data.Data.hostname || 'Unknown',
+          players: `${data.Data.clients}/${data.Data.svMaxclients}` || 'Unknown'
+        })
+      } else {
+        setResult({ error: 'Server not found' })
+      }
+    } catch (error) {
+      setResult({ error: 'Error finding server' })
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div className="p-6 border rounded-lg bg-gray-50 dark:bg-gray-800 my-6">
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="serverCode" className="block text-sm font-medium mb-2">
+            Server Code (6 digits)
+          </label>
+          <input
+            id="serverCode"
+            type="text"
+            value={serverCode}
+            onChange={(e) => setServerCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+            placeholder="123456"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600"
+            maxLength={6}
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Enter the 6-digit code from the FiveM server URL (e.g., fivem://connect/123.456.789.10:30120/123456)
+          </p>
+        </div>
+        
+        <button
+          onClick={findServerIP}
+          disabled={loading || serverCode.length !== 6}
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? 'Finding...' : 'Find Server IP'}
+        </button>
+
+        {result && (
+          <div className="mt-4 p-4 border rounded-md bg-white dark:bg-gray-700">
+            {result.error ? (
+              <p className="text-red-600 dark:text-red-400">{result.error}</p>
+            ) : (
+              <div className="space-y-2">
+                <div>
+                  <strong>Server IP:</strong> <code className="bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded">{result.ip}</code>
+                </div>
+                <div>
+                  <strong>Server Name:</strong> {result.name}
+                </div>
+                <div>
+                  <strong>Players:</strong> {result.players}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+<ServerIPFinder />
+
+## What is a FiveM Server Code?
+
+FiveM server codes are unique 6-digit identifiers that help players connect to specific servers. These codes are typically found in:
+
+- Server browser listings
+- Community Discord servers
+- Server advertisements
+- Direct connection links
+
+## How to Use the Server Code
+
+1. **Find the Server Code**: Look for a 6-digit number in the server information
+2. **Enter the Code**: Type the 6 digits into the input field above
+3. **Get Server Info**: Click "Find Server IP" to retrieve the server details
+4. **Connect**: Use the IP address to connect directly to the server
+
+## Common Use Cases
+
+### Server Administrators
+- **Monitor Server Status**: Check if your server is online and accessible
+- **Verify Configuration**: Ensure your server is properly configured
+- **Troubleshoot Connectivity**: Diagnose connection issues
+
+### Players
+- **Direct Connection**: Connect to servers using IP instead of browser
+- **Bookmark Servers**: Save IP addresses for quick access
+- **Server Information**: Get details about player count and status
+
+### Developers
+- **API Integration**: Use server IPs for custom applications
+- **Monitoring Tools**: Build server status monitoring systems
+- **Database Updates**: Keep server lists current with accurate IPs
+
+## Technical Information
+
+### How Server Discovery Works
+
+FiveM uses a distributed server discovery system:
+
+1. **Registration**: Servers register with the FiveM master list
+2. **Code Assignment**: Each server receives a unique 6-digit identifier
+3. **Resolution**: The code can be resolved to an IP address and port
+4. **Updates**: Server information is regularly updated
+
+### Connection Methods
+
+#### Method 1: Direct IP Connection
+```
+fivem://connect/[IP_ADDRESS]:[PORT]
+```
+
+#### Method 2: Server Code Connection  
+```
+fivem://connect/cfx.re/join/[SERVER_CODE]
+```
+
+#### Method 3: Browser Connection
+Use the in-game server browser to find and join servers
+
+## Troubleshooting
+
+### Server Not Found
+- **Check Code**: Ensure you've entered the correct 6-digit code
+- **Server Status**: The server might be offline or temporarily unavailable
+- **Code Expiry**: Very old codes might no longer be valid
+
+### Connection Issues
+- **Firewall**: Check if your firewall is blocking FiveM
+- **Network**: Verify your internet connection is stable
+- **Server Capacity**: The server might be full
+
+### Common Error Messages
+- **"Server not found"**: Invalid or expired server code
+- **"Connection timeout"**: Server is unreachable
+- **"Server full"**: Maximum player capacity reached
+
+## Privacy & Security
+
+### Data Usage
+- **No Logging**: We don't store or log your searches
+- **Public Information**: Server IPs are publicly available information
+- **No Personal Data**: No personal information is collected or transmitted
+
+### Safe Usage
+- **Trusted Sources**: Only use server codes from trusted sources
+- **Official Servers**: Prefer official or well-known community servers
+- **Moderation**: Be aware that server content varies by administrator
+
+## Additional Tools
+
+Looking for more FiveM utilities? Check out these helpful tools:
+
+- [QBCore Scripts](/scripts) - Free scripts for your server
+- [Server Setup Guide](/tutorials/getting-started) - Complete installation guide  
+- [Performance Optimization](/tutorials/optimization) - Improve server performance
+- [Community Support](/support) - Get help from the community
+
+---
+
+**Need help setting up your own FiveM server?** Check out our [comprehensive tutorials](/tutorials) and join our [GitHub community](https://github.com/qbcore-framework/qb-core/discussions) for support!

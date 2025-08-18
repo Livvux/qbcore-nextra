@@ -1,0 +1,757 @@
+# QB-VehicleShop - Vehicle Dealership System
+
+import { Callout } from 'nextra/components'
+
+The **qb-vehicleshop** resource provides a comprehensive vehicle dealership system for QBCore servers, featuring multiple dealership locations, financing options, test drives, and dealership management.
+
+## Overview
+
+QB-VehicleShop creates realistic vehicle purchasing experiences with multiple dealership types, financing systems, trade-ins, and complete dealership operations. Players can buy, sell, and manage vehicle inventory.
+
+### Key Features
+
+- **Multiple Dealerships**: Various vehicle categories and locations
+- **Financing System**: Loans and payment plans
+- **Test Drive System**: Try before you buy
+- **Trade-In System**: Vehicle exchange and valuation
+- **Dealership Management**: Inventory and sales tracking
+- **Custom Orders**: Special vehicle requests
+- **Insurance Integration**: Vehicle protection plans
+- **Sales Analytics**: Performance tracking
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for dealership menus)
+- qb-vehiclekeys (for vehicle access)
+- qb-garage (for vehicle storage)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-vehicleshop.git
+```
+
+2. **Database Setup**
+```sql
+-- Vehicle shop tables
+CREATE TABLE IF NOT EXISTS `vehicle_sales` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `vehicle` varchar(100) DEFAULT NULL,
+  `plate` varchar(50) DEFAULT NULL,
+  `price` int(11) DEFAULT 0,
+  `dealership` varchar(100) DEFAULT NULL,
+  `salesperson` varchar(50) DEFAULT NULL,
+  `financing` tinyint(1) DEFAULT 0,
+  `sale_date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `vehicle_financing` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `vehicle_plate` varchar(50) DEFAULT NULL,
+  `total_amount` int(11) DEFAULT 0,
+  `monthly_payment` int(11) DEFAULT 0,
+  `payments_remaining` int(11) DEFAULT 0,
+  `next_payment_date` timestamp DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'active',
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `dealership_inventory` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `dealership` varchar(100) DEFAULT NULL,
+  `vehicle` varchar(100) DEFAULT NULL,
+  `stock` int(11) DEFAULT 0,
+  `price` int(11) DEFAULT 0,
+  `cost` int(11) DEFAULT 0,
+  `last_updated` timestamp DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Job Configuration to qb-core/shared/jobs.lua**
+```lua
+['cardealer'] = {
+    label = 'Vehicle Dealer',
+    defaultDuty = true,
+    offDutyPay = false,
+    grades = {
+        ['0'] = {
+            name = 'Sales Associate',
+            payment = 50
+        },
+        ['1'] = {
+            name = 'Sales Representative',
+            payment = 75
+        },
+        ['2'] = {
+            name = 'Senior Salesperson',
+            payment = 100
+        },
+        ['3'] = {
+            name = 'Sales Manager',
+            payment = 125,
+            isboss = true
+        },
+        ['4'] = {
+            name = 'General Manager',
+            payment = 150,
+            isboss = true
+        }
+    }
+}
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-vehicleshop
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.TestDriveTime = 300 -- 5 minutes
+Config.FinancingEnabled = true
+Config.TradeInEnabled = true
+
+-- Dealership Locations
+Config.Dealerships = {
+    ["pdm"] = {
+        label = "Premium Deluxe Motorsport",
+        coords = vector3(-56.79, -1098.75, 26.42),
+        blip = {
+            sprite = 326,
+            color = 3,
+            scale = 0.8
+        },
+        categories = {"compacts", "sedans", "suvs", "coupes", "sports", "super"},
+        commission_rate = 0.10, -- 10% commission for salespeople
+        zones = {
+            management = vector3(-27.47, -1107.13, 27.27),
+            testdrive = vector4(-56.79, -1109.85, 26.43, 71.5),
+            delivery = vector4(-11.36, -1097.71, 26.67, 339.85)
+        }
+    },
+    ["luxury"] = {
+        label = "Luxury Autos",
+        coords = vector3(-1255.6, -361.16, 36.91),
+        categories = {"super", "sports", "sportsclassics"},
+        commission_rate = 0.15,
+        zones = {
+            management = vector3(-1267.0, -349.86, 36.91),
+            testdrive = vector4(-1244.27, -349.97, 36.91, 202.5),
+            delivery = vector4(-1231.46, -349.97, 36.91, 294.5)
+        }
+    },
+    ["boats"] = {
+        label = "Boat Shop",
+        coords = vector3(-729.89, -1315.83, 1.6),
+        categories = {"boats"},
+        commission_rate = 0.12,
+        zones = {
+            testdrive = vector4(-722.89, -1327.83, 1.6, 137.5),
+            delivery = vector4(-705.89, -1327.83, 1.6, 137.5)
+        }
+    },
+    ["aircraft"] = {
+        label = "Aircraft Dealer",
+        coords = vector3(-1652.06, -3143.34, 13.99),
+        categories = {"helicopters", "planes"},
+        commission_rate = 0.20,
+        zones = {
+            testdrive = vector4(-1617.49, -3155.35, 13.99, 329.5),
+            delivery = vector4(-1652.06, -3120.34, 13.99, 60.5)
+        }
+    }
+}
+
+-- Vehicle Categories and Pricing
+Config.VehicleCategories = {
+    ["compacts"] = {
+        label = "Compact Cars",
+        vehicles = {
+            ["blista"] = {price = 15000, stock = 10},
+            ["brioso"] = {price = 18000, stock = 8},
+            ["dilettante"] = {price = 12000, stock = 12},
+            ["issi2"] = {price = 16000, stock = 6}
+        }
+    },
+    ["sedans"] = {
+        label = "Sedans",
+        vehicles = {
+            ["asea"] = {price = 25000, stock = 8},
+            ["asterope"] = {price = 28000, stock = 6},
+            ["cognoscenti"] = {price = 45000, stock = 4},
+            ["emperor"] = {price = 22000, stock = 10}
+        }
+    },
+    ["suvs"] = {
+        label = "SUVs",
+        vehicles = {
+            ["baller"] = {price = 65000, stock = 5},
+            ["cavalcade"] = {price = 55000, stock = 6},
+            ["dubsta"] = {price = 70000, stock = 4},
+            ["fq2"] = {price = 50000, stock = 7}
+        }
+    },
+    ["sports"] = {
+        label = "Sports Cars",
+        vehicles = {
+            ["alpha"] = {price = 150000, stock = 3},
+            ["banshee"] = {price = 120000, stock = 4},
+            ["comet2"] = {price = 135000, stock = 3},
+            ["feltzer2"] = {price = 145000, stock = 2}
+        }
+    },
+    ["super"] = {
+        label = "Supercars",
+        vehicles = {
+            ["adder"] = {price = 1000000, stock = 1},
+            ["entityxf"] = {price = 800000, stock = 1},
+            ["t20"] = {price = 2200000, stock = 1},
+            ["zentorno"] = {price = 725000, stock = 2}
+        }
+    }
+}
+
+-- Financing Options
+Config.FinancingPlans = {
+    [12] = {months = 12, interest_rate = 0.05}, -- 5% APR
+    [24] = {months = 24, interest_rate = 0.07}, -- 7% APR
+    [36] = {months = 36, interest_rate = 0.09}, -- 9% APR
+    [48] = {months = 48, interest_rate = 0.11}  -- 11% APR
+}
+```
+
+### Trade-In System
+
+```lua
+-- Vehicle Depreciation Calculation
+Config.TradeInSystem = {
+    enabled = true,
+    base_depreciation = 0.20, -- 20% immediate depreciation
+    age_depreciation = 0.05,  -- 5% per month
+    condition_multipliers = {
+        perfect = 1.0,
+        excellent = 0.95,
+        good = 0.85,
+        fair = 0.70,
+        poor = 0.50,
+        damaged = 0.30
+    },
+    modification_bonus = 0.10 -- 10% bonus for modifications
+}
+
+-- Vehicle Condition Assessment
+Config.ConditionFactors = {
+    engine_health = 0.3,   -- 30% weight
+    body_health = 0.25,    -- 25% weight
+    mileage = 0.2,         -- 20% weight
+    modifications = 0.15,  -- 15% weight
+    age = 0.1              -- 10% weight
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### OpenDealership
+Open dealership interface.
+
+```lua
+exports['qb-vehicleshop']:OpenDealership(dealershipId)
+
+-- Parameters:
+-- dealershipId: ID of dealership to open
+```
+
+#### StartTestDrive
+Begin test drive for a vehicle.
+
+```lua
+local success = exports['qb-vehicleshop']:StartTestDrive(vehicleModel, dealershipId)
+
+-- Parameters:
+-- vehicleModel: Vehicle model to test drive
+-- dealershipId: Dealership ID
+-- Returns: boolean success status
+```
+
+#### CalculateTradeValue
+Calculate trade-in value for a vehicle.
+
+```lua
+local tradeValue = exports['qb-vehicleshop']:CalculateTradeValue(vehicleData)
+
+-- Parameters:
+-- vehicleData: Vehicle information including condition
+-- Returns: trade-in value
+```
+
+### Server Exports
+
+#### ProcessVehicleSale
+Complete a vehicle purchase.
+
+```lua
+local success = exports['qb-vehicleshop']:ProcessVehicleSale(buyerId, vehicleData, paymentMethod)
+
+-- Parameters:
+-- buyerId: Buyer's server ID
+-- vehicleData: Vehicle information
+-- paymentMethod: "cash" or "finance"
+```
+
+#### CreateFinancingPlan
+Set up vehicle financing.
+
+```lua
+local planId = exports['qb-vehicleshop']:CreateFinancingPlan(citizenId, vehicleData, planDetails)
+
+-- Parameters:
+-- citizenId: Customer citizen ID
+-- vehicleData: Vehicle information
+-- planDetails: Financing plan details
+```
+
+#### UpdateInventory
+Update dealership inventory.
+
+```lua
+exports['qb-vehicleshop']:UpdateInventory(dealership, vehicle, newStock, newPrice)
+
+-- Parameters:
+-- dealership: Dealership ID
+-- vehicle: Vehicle model
+-- newStock: New stock amount
+-- newPrice: New price
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Vehicle purchased
+RegisterNetEvent('qb-vehicleshop:client:vehiclePurchased', function(vehicleData)
+    -- Handle vehicle purchase
+end)
+
+-- Test drive started
+RegisterNetEvent('qb-vehicleshop:client:testDriveStarted', function(vehicleModel, timeLimit)
+    -- Handle test drive start
+end)
+
+-- Financing approved
+RegisterNetEvent('qb-vehicleshop:client:financingApproved', function(planDetails)
+    -- Handle financing approval
+end)
+```
+
+#### Server Events
+
+```lua
+-- Sale completed
+RegisterNetEvent('qb-vehicleshop:server:saleCompleted', function(saleData)
+    -- Handle sale completion
+end)
+
+-- Inventory updated
+RegisterNetEvent('qb-vehicleshop:server:inventoryUpdated', function(dealership, vehicle, change)
+    -- Handle inventory changes
+end)
+
+-- Payment due
+RegisterNetEvent('qb-vehicleshop:server:paymentDue', function(citizenId, amount)
+    -- Handle financing payment
+end)
+```
+
+## Usage Examples
+
+### Vehicle Purchase System
+
+```lua
+-- Client-side vehicle purchasing
+RegisterNetEvent('qb-vehicleshop:client:purchaseVehicle', function(vehicleModel, dealership)
+    local vehicleConfig = GetVehicleConfig(vehicleModel)
+    if not vehicleConfig then
+        QBCore.Functions.Notify("Vehicle not available", "error")
+        return
+    end
+    
+    -- Create purchase menu
+    local purchaseMenu = {
+        {
+            header = "Purchase " .. vehicleConfig.label,
+            isMenuHeader = true
+        },
+        {
+            header = "Cash Purchase",
+            txt = "Pay full amount: $" .. vehicleConfig.price,
+            params = {
+                event = "qb-vehicleshop:client:processPurchase",
+                args = {
+                    vehicle = vehicleModel,
+                    dealership = dealership,
+                    method = "cash"
+                }
+            }
+        },
+        {
+            header = "Financing Options",
+            txt = "View available financing plans",
+            params = {
+                event = "qb-vehicleshop:client:viewFinancing",
+                args = {
+                    vehicle = vehicleModel,
+                    dealership = dealership
+                }
+            }
+        },
+        {
+            header = "Trade-In + Purchase",
+            txt = "Trade current vehicle",
+            params = {
+                event = "qb-vehicleshop:client:tradeInPurchase",
+                args = {
+                    vehicle = vehicleModel,
+                    dealership = dealership
+                }
+            }
+        }
+    }
+    
+    exports['qb-menu']:openMenu(purchaseMenu)
+end)
+
+-- Process cash purchase
+RegisterNetEvent('qb-vehicleshop:client:processPurchase', function(data)
+    QBCore.Functions.TriggerCallback('qb-vehicleshop:server:canAfford', function(canAfford)
+        if canAfford then
+            TriggerServerEvent('qb-vehicleshop:server:purchaseVehicle', data)
+        else
+            QBCore.Functions.Notify("Insufficient funds", "error")
+        end
+    end, data.vehicle, data.method)
+end)
+
+-- Server-side purchase processing
+RegisterNetEvent('qb-vehicleshop:server:purchaseVehicle', function(purchaseData)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    local vehicleConfig = Config.VehicleCategories[GetVehicleCategory(purchaseData.vehicle)].vehicles[purchaseData.vehicle]
+    
+    if not player or not vehicleConfig then return end
+    
+    -- Check payment method
+    if purchaseData.method == "cash" then
+        if player.Functions.RemoveMoney('bank', vehicleConfig.price, 'vehicle-purchase') then
+            -- Generate vehicle
+            local plate = GenerateRandomPlate()
+            local vehicleData = {
+                model = purchaseData.vehicle,
+                plate = plate,
+                mods = {},
+                fuel = 100
+            }
+            
+            -- Add vehicle to player garage
+            MySQL.insert('INSERT INTO player_vehicles (license, citizenid, vehicle, hash, mods, plate, garage, fuel, engine, body) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', {
+                player.PlayerData.license,
+                player.PlayerData.citizenid,
+                purchaseData.vehicle,
+                GetHashKey(purchaseData.vehicle),
+                json.encode(vehicleData.mods),
+                plate,
+                'pillboxgarage',
+                100,
+                1000,
+                1000
+            })
+            
+            -- Record sale
+            MySQL.insert('INSERT INTO vehicle_sales (citizenid, vehicle, plate, price, dealership, sale_date) VALUES (?, ?, ?, ?, ?, NOW())', {
+                player.PlayerData.citizenid,
+                purchaseData.vehicle,
+                plate,
+                vehicleConfig.price,
+                purchaseData.dealership
+            })
+            
+            -- Update inventory
+            UpdateDealershipInventory(purchaseData.dealership, purchaseData.vehicle, -1)
+            
+            TriggerClientEvent('QBCore:Notify', src, 'Vehicle purchased successfully! Plate: ' .. plate, 'success')
+            TriggerClientEvent('qb-vehicleshop:client:vehicleDelivered', src, vehicleData)
+        else
+            TriggerClientEvent('QBCore:Notify', src, 'Payment failed', 'error')
+        end
+    end
+end)
+```
+
+### Test Drive System
+
+```lua
+-- Test drive implementation
+local testDriveVehicles = {}
+
+RegisterNetEvent('qb-vehicleshop:client:startTestDrive', function(vehicleModel, dealership)
+    local dealershipConfig = Config.Dealerships[dealership]
+    local spawnCoords = dealershipConfig.zones.testdrive
+    
+    -- Spawn test drive vehicle
+    QBCore.Functions.SpawnVehicle(vehicleModel, function(vehicle)
+        SetEntityHeading(vehicle, spawnCoords.w)
+        SetVehicleNumberPlateText(vehicle, "TEST")
+        SetVehicleFuelLevel(vehicle, 100.0)
+        
+        -- Set vehicle properties
+        SetVehicleModKit(vehicle, 0)
+        SetVehicleColours(vehicle, 0, 0)
+        
+        -- Give keys to player
+        TriggerEvent("vehiclekeys:client:SetOwner", GetVehicleNumberPlateText(vehicle))
+        
+        -- Store test drive data
+        testDriveVehicles[GetVehicleNumberPlateText(vehicle)] = {
+            vehicle = vehicle,
+            startTime = GetGameTimer(),
+            dealership = dealership,
+            model = vehicleModel
+        }
+        
+        QBCore.Functions.Notify("Test drive started! Return within " .. (Config.TestDriveTime / 60) .. " minutes", "info")
+        
+        -- Start test drive timer
+        CreateThread(function()
+            Wait(Config.TestDriveTime * 1000)
+            
+            local plate = GetVehicleNumberPlateText(vehicle)
+            if testDriveVehicles[plate] then
+                QBCore.Functions.Notify("Test drive time expired! Please return the vehicle", "warning")
+                
+                -- Create return blip
+                local returnBlip = AddBlipForCoord(dealershipConfig.coords.x, dealershipConfig.coords.y, dealershipConfig.coords.z)
+                SetBlipSprite(returnBlip, 326)
+                SetBlipColour(returnBlip, 1)
+                SetBlipRoute(returnBlip, true)
+                BeginTextCommandSetBlipName("STRING")
+                AddTextComponentString("Return Test Drive Vehicle")
+                EndTextCommandSetBlipName(returnBlip)
+                
+                -- Auto-return after additional time
+                Wait(300000) -- 5 minutes grace period
+                if DoesEntityExist(vehicle) then
+                    DeleteEntity(vehicle)
+                    testDriveVehicles[plate] = nil
+                    RemoveBlip(returnBlip)
+                    QBCore.Functions.Notify("Test drive vehicle automatically returned", "info")
+                end
+            end
+        end)
+        
+    end, spawnCoords, true)
+end)
+
+-- Return test drive vehicle
+RegisterNetEvent('qb-vehicleshop:client:returnTestDrive', function()
+    local ped = PlayerPedId()
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    
+    if vehicle and vehicle ~= 0 then
+        local plate = GetVehicleNumberPlateText(vehicle)
+        local testDriveData = testDriveVehicles[plate]
+        
+        if testDriveData then
+            -- Remove vehicle
+            DeleteEntity(vehicle)
+            testDriveVehicles[plate] = nil
+            
+            QBCore.Functions.Notify("Test drive completed! Would you like to purchase this vehicle?", "success")
+            
+            -- Open purchase menu
+            Wait(1000)
+            TriggerEvent('qb-vehicleshop:client:purchaseVehicle', testDriveData.model, testDriveData.dealership)
+        else
+            QBCore.Functions.Notify("This is not a test drive vehicle", "error")
+        end
+    else
+        QBCore.Functions.Notify("You must be in a vehicle to return it", "error")
+    end
+end)
+```
+
+### Financing System
+
+```lua
+-- Vehicle financing implementation
+RegisterNetEvent('qb-vehicleshop:client:viewFinancing', function(data)
+    local vehicleConfig = GetVehicleConfig(data.vehicle)
+    local financingMenu = {
+        {
+            header = "Financing Options for " .. vehicleConfig.label,
+            txt = "Total Price: $" .. vehicleConfig.price,
+            isMenuHeader = true
+        }
+    }
+    
+    -- Add financing plans
+    for months, planData in pairs(Config.FinancingPlans) do
+        local monthlyPayment = CalculateMonthlyPayment(vehicleConfig.price, planData.interest_rate, months)
+        local totalCost = monthlyPayment * months
+        
+        table.insert(financingMenu, {
+            header = months .. " Month Plan",
+            txt = "Monthly: $" .. monthlyPayment .. " | Total: $" .. totalCost .. " | APR: " .. (planData.interest_rate * 100) .. "%",
+            params = {
+                event = "qb-vehicleshop:client:selectFinancing",
+                args = {
+                    vehicle = data.vehicle,
+                    dealership = data.dealership,
+                    months = months,
+                    monthly_payment = monthlyPayment,
+                    total_cost = totalCost
+                }
+            }
+        })
+    end
+    
+    exports['qb-menu']:openMenu(financingMenu)
+end)
+
+function CalculateMonthlyPayment(principal, annualRate, months)
+    local monthlyRate = annualRate / 12
+    local payment = principal * (monthlyRate * math.pow(1 + monthlyRate, months)) / (math.pow(1 + monthlyRate, months) - 1)
+    return math.ceil(payment)
+end
+
+-- Process financing application
+RegisterNetEvent('qb-vehicleshop:client:selectFinancing', function(data)
+    -- Credit check simulation
+    QBCore.Functions.Progressbar("credit_check", "Processing credit application...", 10000, false, true, {
+        disableMovement = true,
+        disableCarMovement = true,
+        disableMouse = false,
+        disableCombat = true,
+    }, {
+        animDict = "amb@world_human_clipboard@male@base",
+        anim = "base",
+    }, {}, {}, function()
+        -- Credit check complete
+        TriggerServerEvent('qb-vehicleshop:server:processFinancing', data)
+    end)
+end)
+
+-- Server-side financing processing
+RegisterNetEvent('qb-vehicleshop:server:processFinancing', function(financingData)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    
+    if not player then return end
+    
+    -- Credit score simulation (simplified)
+    local creditScore = CalculateCreditScore(player)
+    
+    if creditScore >= 600 then -- Minimum credit score
+        -- Approve financing
+        local downPayment = math.floor(GetVehiclePrice(financingData.vehicle) * 0.1) -- 10% down
+        
+        if player.Functions.RemoveMoney('bank', downPayment, 'vehicle-downpayment') then
+            -- Create financing record
+            local nextPaymentDate = os.date("%Y-%m-%d", os.time() + (30 * 24 * 60 * 60)) -- 30 days
+            
+            MySQL.insert('INSERT INTO vehicle_financing (citizenid, vehicle_plate, total_amount, monthly_payment, payments_remaining, next_payment_date) VALUES (?, ?, ?, ?, ?, ?)', {
+                player.PlayerData.citizenid,
+                GenerateRandomPlate(),
+                financingData.total_cost - downPayment,
+                financingData.monthly_payment,
+                financingData.months,
+                nextPaymentDate
+            })
+            
+            TriggerClientEvent('QBCore:Notify', src, 'Financing approved! Down payment: $' .. downPayment, 'success')
+            TriggerClientEvent('qb-vehicleshop:client:financingApproved', src, financingData)
+        else
+            TriggerClientEvent('QBCore:Notify', src, 'Insufficient funds for down payment', 'error')
+        end
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'Financing application denied - insufficient credit', 'error')
+    end
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Vehicle Spawning Problems
+```lua
+-- Check spawn coordinates
+function ValidateSpawnLocation(coords)
+    local groundZ = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z, false)
+    if math.abs(coords.z - groundZ) > 5.0 then
+        print("Invalid spawn height at:", coords)
+        return false
+    end
+    return true
+end
+```
+
+#### Inventory Sync Issues
+- Verify database updates for stock changes
+- Check for concurrent purchase handling
+- Ensure proper transaction rollback on failures
+
+#### Financing Payment Problems
+```lua
+-- Debug financing system
+RegisterCommand('checkfinancing', function()
+    QBCore.Functions.TriggerCallback('qb-vehicleshop:server:getFinancing', function(financing)
+        if financing then
+            print("Active financing plans:", #financing)
+            for i = 1, #financing do
+                print("Plan", i, "- Remaining:", financing[i].payments_remaining)
+            end
+        else
+            print("No active financing found")
+        end
+    end)
+end)
+```
+
+### Debug Commands
+
+```lua
+-- Give vehicle to player
+/givevehicle [player_id] [vehicle_model]
+
+-- Update dealership stock
+/updatestock [dealership] [vehicle] [amount]
+
+-- Check vehicle value
+/vehiclevalue [vehicle_model]
+
+-- Process financing payment
+/payfinancing [player_id] [amount]
+```
+
+<Callout type="info">
+  Regular monitoring of dealership economics and player purchasing patterns helps maintain server balance.
+</Callout>

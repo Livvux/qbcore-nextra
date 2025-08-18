@@ -1,0 +1,547 @@
+# QBCore Scripting Guide
+
+Learn how to create custom scripts and resources for the QBCore framework. This comprehensive guide covers everything from basic script structure to advanced development techniques.
+
+## Table of Contents
+
+- [Getting Started](#getting-started)
+- [Basic Script Structure](#basic-script-structure)
+- [QBCore API Integration](#qbcore-api-integration)
+- [Creating Your First Script](#creating-your-first-script)
+- [Advanced Concepts](#advanced-concepts)
+- [Best Practices](#best-practices)
+- [Deployment and Testing](#deployment-and-testing)
+
+## Getting Started
+
+### Prerequisites
+
+Before you start scripting for QBCore, ensure you have:
+
+- **QBCore Framework**: Latest version installed
+- **Development Environment**: VS Code or similar editor
+- **Basic Lua Knowledge**: Understanding of Lua programming language
+- **FiveM Server**: Development server for testing
+- **Database Access**: For data persistence
+
+### Development Environment Setup
+
+1. **Install VS Code Extensions**:
+   - Lua Language Server
+   - FiveM Development Tools
+   - GitLens (for version control)
+
+2. **Create Development Workspace**:
+   ```bash
+   mkdir qbcore-scripts
+   cd qbcore-scripts
+   ```
+
+3. **Set up Version Control**:
+   ```bash
+   git init
+   git add .gitignore
+   ```
+
+## Basic Script Structure
+
+### Standard QBCore Resource Structure
+
+```
+resource-name/
+├── fxmanifest.lua        # Resource manifest
+├── config.lua           # Configuration file
+├── server/
+│   ├── main.lua         # Server-side logic
+│   └── callbacks.lua    # Server callbacks
+├── client/
+│   ├── main.lua         # Client-side logic
+│   └── events.lua       # Client events
+├── shared/
+│   └── config.lua       # Shared configuration
+└── html/                # NUI files (if needed)
+    ├── index.html
+    ├── style.css
+    └── script.js
+```
+
+### Essential Files
+
+#### fxmanifest.lua
+
+```lua
+fx_version 'cerulean'
+game 'gta5'
+
+description 'QBCore Custom Script'
+version '1.0.0'
+author 'YourName'
+
+shared_scripts {
+    'shared/config.lua',
+    'config.lua'
+}
+
+client_scripts {
+    'client/main.lua',
+    'client/events.lua'
+}
+
+server_scripts {
+    '@oxmysql/lib/MySQL.lua', -- If using database
+    'server/main.lua',
+    'server/callbacks.lua'
+}
+
+-- NUI (if using HTML interface)
+ui_page 'html/index.html'
+files {
+    'html/index.html',
+    'html/style.css',
+    'html/script.js'
+}
+
+dependencies {
+    'qb-core'
+}
+
+lua54 'yes'
+```
+
+## QBCore API Integration
+
+### Getting QBCore Object
+
+Always get the QBCore object at the beginning of your scripts:
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+```
+
+### Player Data Access
+
+#### Client-Side Player Data
+
+```lua
+-- Get local player data
+local PlayerData = QBCore.Functions.GetPlayerData()
+
+-- Listen for player data updates
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    PlayerData = QBCore.Functions.GetPlayerData()
+    -- Initialize your script here
+end)
+
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    PlayerData = {}
+    -- Clean up when player logs out
+end)
+
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
+    PlayerData = val
+    -- Handle player data updates
+end)
+```
+
+#### Server-Side Player Data
+
+```lua
+-- Get player by source
+local Player = QBCore.Functions.GetPlayer(source)
+if not Player then return end
+
+-- Get player by citizen ID
+local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
+
+-- Get player by phone number
+local Player = QBCore.Functions.GetPlayerByPhone(phone)
+```
+
+## Creating Your First Script
+
+Let's create a simple "Daily Bonus" script:
+
+### Step 1: Create the Resource Structure
+
+```bash
+mkdir qb-dailybonus
+cd qb-dailybonus
+```
+
+### Step 2: Create fxmanifest.lua
+
+```lua
+fx_version 'cerulean'
+game 'gta5'
+
+description 'QBCore Daily Bonus System'
+version '1.0.0'
+author 'YourName'
+
+shared_script 'config.lua'
+client_script 'client/main.lua'
+server_script 'server/main.lua'
+
+dependencies {
+    'qb-core',
+    'oxmysql'
+}
+
+lua54 'yes'
+```
+
+### Step 3: Create Configuration
+
+```lua
+-- config.lua
+Config = {}
+
+Config.DailyBonus = {
+    money = 1000,           -- Cash reward
+    bank = 500,             -- Bank reward  
+    items = {               -- Item rewards
+        {name = 'bread', amount = 5},
+        {name = 'water', amount = 3}
+    }
+}
+
+Config.ResetTime = 24 * 60 * 60 * 1000  -- 24 hours in milliseconds
+```
+
+### Step 4: Server-Side Logic
+
+```lua
+-- server/main.lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Database table creation
+MySQL.ready(function()
+    MySQL.query([[
+        CREATE TABLE IF NOT EXISTS player_dailybonus (
+            citizenid VARCHAR(50) PRIMARY KEY,
+            last_claim TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ]])
+end)
+
+-- Server callback for checking eligibility
+QBCore.Functions.CreateCallback('qb-dailybonus:server:canClaim', function(source, cb)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return cb(false) end
+    
+    local citizenId = Player.PlayerData.citizenid
+    
+    MySQL.single('SELECT last_claim FROM player_dailybonus WHERE citizenid = ?', {
+        citizenId
+    }, function(result)
+        if not result then
+            -- First time claim
+            cb(true)
+        else
+            local lastClaim = result.last_claim
+            local currentTime = os.time() * 1000
+            local lastClaimTime = tonumber(lastClaim)
+            
+            if (currentTime - lastClaimTime) >= Config.ResetTime then
+                cb(true)
+            else
+                cb(false)
+            end
+        end
+    end)
+end)
+
+-- Claim daily bonus
+RegisterNetEvent('qb-dailybonus:server:claimBonus', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return end
+    
+    local citizenId = Player.PlayerData.citizenid
+    
+    -- Give rewards
+    Player.Functions.AddMoney('cash', Config.DailyBonus.money)
+    Player.Functions.AddMoney('bank', Config.DailyBonus.bank)
+    
+    -- Give items
+    for _, item in pairs(Config.DailyBonus.items) do
+        Player.Functions.AddItem(item.name, item.amount)
+    end
+    
+    -- Update database
+    MySQL.insert('INSERT INTO player_dailybonus (citizenid, last_claim) VALUES (?, ?) ON DUPLICATE KEY UPDATE last_claim = ?', {
+        citizenId, os.time() * 1000, os.time() * 1000
+    })
+    
+    TriggerClientEvent('QBCore:Notify', src, 'Daily bonus claimed successfully!', 'success')
+end)
+```
+
+### Step 5: Client-Side Logic
+
+```lua
+-- client/main.lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Command to claim daily bonus
+RegisterCommand('dailybonus', function()
+    QBCore.Functions.TriggerCallback('qb-dailybonus:server:canClaim', function(canClaim)
+        if canClaim then
+            TriggerServerEvent('qb-dailybonus:server:claimBonus')
+        else
+            QBCore.Functions.Notify('You already claimed your daily bonus!', 'error')
+        end
+    end)
+end)
+
+-- Add command suggestion
+TriggerEvent('chat:addSuggestion', '/dailybonus', 'Claim your daily bonus')
+```
+
+## Advanced Concepts
+
+### Database Integration
+
+#### Using oxmysql
+
+```lua
+-- Insert data
+MySQL.insert('INSERT INTO table_name (column1, column2) VALUES (?, ?)', {
+    value1, value2
+}, function(insertId)
+    print('Inserted with ID: ' .. insertId)
+end)
+
+-- Select single row
+MySQL.single('SELECT * FROM table_name WHERE id = ?', {id}, function(result)
+    if result then
+        print('Found: ' .. result.name)
+    end
+end)
+
+-- Select multiple rows
+MySQL.query('SELECT * FROM table_name WHERE active = ?', {true}, function(results)
+    for i = 1, #results do
+        print('Row: ' .. results[i].name)
+    end
+end)
+
+-- Update data
+MySQL.update('UPDATE table_name SET column1 = ? WHERE id = ?', {
+    newValue, id
+}, function(affectedRows)
+    print('Updated ' .. affectedRows .. ' rows')
+end)
+```
+
+### Event Handling
+
+#### Custom Events
+
+```lua
+-- Server to Client
+TriggerClientEvent('custom:event', source, data)
+
+-- Client to Server  
+TriggerServerEvent('custom:event', data)
+
+-- Register event handler
+RegisterNetEvent('custom:event', function(data)
+    -- Handle the event
+    print('Received data: ' .. json.encode(data))
+end)
+```
+
+#### QBCore Specific Events
+
+```lua
+-- Player loaded
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    -- Player finished loading
+end)
+
+-- Job change
+RegisterNetEvent('QBCore:Client:OnJobUpdate', function(JobInfo)
+    -- Player job changed
+end)
+
+-- Gang change
+RegisterNetEvent('QBCore:Client:OnGangUpdate', function(GangInfo)
+    -- Player gang changed
+end)
+```
+
+### Creating Callbacks
+
+```lua
+-- Server callback
+QBCore.Functions.CreateCallback('script:getData', function(source, cb, ...)
+    local args = {...}
+    local Player = QBCore.Functions.GetPlayer(source)
+    
+    -- Process data
+    cb(responseData)
+end)
+
+-- Client trigger callback
+QBCore.Functions.TriggerCallback('script:getData', function(data)
+    -- Handle response
+    print(json.encode(data))
+end, arg1, arg2)
+```
+
+### NUI Integration
+
+#### HTML Interface
+
+```html
+<!-- html/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Custom Interface</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="container">
+        <h1>Custom Script Interface</h1>
+        <button id="closeBtn">Close</button>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
+```
+
+#### JavaScript Communication
+
+```javascript
+// html/script.js
+window.addEventListener('message', function(event) {
+    const data = event.data;
+    
+    switch(data.action) {
+        case 'open':
+            $('#container').show();
+            break;
+        case 'close':
+            $('#container').hide();
+            break;
+    }
+});
+
+$('#closeBtn').click(function() {
+    $.post('https://resource-name/close', {});
+});
+```
+
+#### Lua NUI Integration
+
+```lua
+-- Client-side NUI control
+RegisterCommand('openui', function()
+    SetNuiFocus(true, true)
+    SendNUIMessage({
+        action = 'open'
+    })
+end)
+
+RegisterNUICallback('close', function(data, cb)
+    SetNuiFocus(false, false)
+    SendNUIMessage({
+        action = 'close'
+    })
+    cb('ok')
+end)
+```
+
+## Best Practices
+
+### Code Organization
+
+1. **Separate Concerns**: Keep client and server logic separate
+2. **Use Config Files**: Make your scripts configurable
+3. **Error Handling**: Always check for nil values and edge cases
+4. **Consistent Naming**: Use clear, descriptive variable names
+
+### Performance Optimization
+
+```lua
+-- Cache frequently used values
+local PlayerData = QBCore.Functions.GetPlayerData()
+
+-- Use proper thread management
+CreateThread(function()
+    while true do
+        if PlayerData then
+            -- Do work
+        end
+        Wait(1000) -- Don't run every frame
+    end
+end)
+
+-- Clean up resources
+AddEventHandler('onResourceStop', function(resource)
+    if resource == GetCurrentResourceName() then
+        -- Cleanup code here
+    end
+end)
+```
+
+### Security Considerations
+
+```lua
+-- Server-side validation
+RegisterNetEvent('script:doSomething', function(data)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    -- Always validate player exists
+    if not Player then return end
+    
+    -- Validate input data
+    if not data or type(data) ~= 'table' then
+        return
+    end
+    
+    -- Additional security checks
+    if not Player.Functions.GetItemByName('required_item') then
+        TriggerClientEvent('QBCore:Notify', src, 'You need the required item', 'error')
+        return
+    end
+    
+    -- Process request
+end)
+```
+
+## Deployment and Testing
+
+### Local Testing
+
+1. **Add to server.cfg**:
+   ```cfg
+   start qb-dailybonus
+   ```
+
+2. **Monitor for errors**:
+   ```bash
+   tail -f server_log.txt
+   ```
+
+3. **Test all functions**:
+   - Join server as different players
+   - Test edge cases
+   - Verify database operations
+
+### Production Deployment
+
+1. **Code Review**: Review all code for security issues
+2. **Database Backup**: Backup database before deployment
+3. **Staged Rollout**: Test on staging environment first
+4. **Monitoring**: Monitor server performance after deployment
+
+---
+
+**Congratulations!** You now have the foundation to create powerful QBCore scripts. Remember to always test thoroughly and follow best practices for security and performance.
+
+For more advanced topics, check out our [API documentation](/docs/api) or join our [community discussions](/support).

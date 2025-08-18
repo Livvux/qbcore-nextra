@@ -1,0 +1,792 @@
+# QB-MechanicJob - Vehicle Repair & Tuning System
+
+import { Callout } from 'nextra/components'
+
+The **qb-mechanicjob** resource provides a comprehensive vehicle repair and tuning system for QBCore servers, featuring mechanic shops, vehicle customization, repair services, and towing operations.
+
+## Overview
+
+QB-MechanicJob creates a realistic automotive service experience with vehicle repairs, custom tuning, paint jobs, performance modifications, and complete mechanic shop management. Players can operate as mechanics or customers seeking vehicle services.
+
+### Key Features
+
+- **Mechanic Shops**: Multiple workshop locations with full service capabilities
+- **Vehicle Repairs**: Engine, body, and component repair systems
+- **Custom Tuning**: Performance modifications and upgrades
+- **Paint & Liveries**: Vehicle customization and visual modifications
+- **Towing Service**: Flatbed and tow truck operations
+- **Parts Inventory**: Vehicle parts and supplies management
+- **Service Billing**: Customer invoicing and payment system
+- **Shop Management**: Business operations and employee management
+- **Vehicle Diagnostics**: Damage assessment and repair estimates
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for mechanic menus)
+- qb-input (for service forms)
+- qb-inventory (for vehicle parts)
+- qb-vehiclekeys (for key management)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-mechanicjob.git
+```
+
+2. **Database Setup**
+```sql
+-- Mechanic shop tables
+CREATE TABLE IF NOT EXISTS `mechanic_orders` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `mechanic` varchar(50) DEFAULT NULL,
+  `vehicle_plate` varchar(50) DEFAULT NULL,
+  `service_type` varchar(100) DEFAULT NULL,
+  `parts_used` longtext DEFAULT NULL,
+  `total_cost` int(11) DEFAULT 0,
+  `status` varchar(50) DEFAULT 'pending',
+  `created_at` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `mechanic_parts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shop` varchar(50) DEFAULT NULL,
+  `part_name` varchar(100) DEFAULT NULL,
+  `quantity` int(11) DEFAULT 0,
+  `cost` int(11) DEFAULT 0,
+  `updated_at` timestamp DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `vehicle_modifications` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `plate` varchar(50) DEFAULT NULL,
+  `modifications` longtext DEFAULT NULL,
+  `performance_mods` longtext DEFAULT NULL,
+  `last_modified` timestamp DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `plate` (`plate`)
+);
+
+CREATE TABLE IF NOT EXISTS `mechanic_invoices` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `shop` varchar(50) DEFAULT NULL,
+  `services` longtext DEFAULT NULL,
+  `amount` int(11) DEFAULT 0,
+  `paid` tinyint(1) DEFAULT 0,
+  `date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Vehicle Parts
+['engine_part'] = {
+    ['name'] = 'engine_part',
+    ['label'] = 'Engine Part',
+    ['weight'] = 1000,
+    ['type'] = 'item',
+    ['image'] = 'engine_part.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Engine component for vehicle repairs'
+},
+['transmission_part'] = {
+    ['name'] = 'transmission_part',
+    ['label'] = 'Transmission Part',
+    ['weight'] = 800,
+    ['type'] = 'item',
+    ['image'] = 'transmission_part.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Transmission component'
+},
+['brake_pads'] = {
+    ['name'] = 'brake_pads',
+    ['label'] = 'Brake Pads',
+    ['weight'] = 300,
+    ['type'] = 'item',
+    ['image'] = 'brake_pads.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Brake pads for vehicle repair'
+},
+['tire'] = {
+    ['name'] = 'tire',
+    ['label'] = 'Vehicle Tire',
+    ['weight'] = 2000,
+    ['type'] = 'item',
+    ['image'] = 'tire.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Replacement vehicle tire'
+},
+['turbo_kit'] = {
+    ['name'] = 'turbo_kit',
+    ['label'] = 'Turbo Kit',
+    ['weight'] = 5000,
+    ['type'] = 'item',
+    ['image'] = 'turbo_kit.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Performance turbo kit upgrade'
+}
+```
+
+4. **Add Job Configuration to qb-core/shared/jobs.lua**
+```lua
+['mechanic'] = {
+    label = 'Mechanic',
+    defaultDuty = true,
+    offDutyPay = false,
+    grades = {
+        ['0'] = {
+            name = 'Apprentice',
+            payment = 50
+        },
+        ['1'] = {
+            name = 'Mechanic',
+            payment = 75
+        },
+        ['2'] = {
+            name = 'Advanced Mechanic',
+            payment = 100
+        },
+        ['3'] = {
+            name = 'Shop Supervisor',
+            payment = 125,
+            isboss = true
+        },
+        ['4'] = {
+            name = 'Shop Manager',
+            payment = 150,
+            isboss = true
+        }
+    }
+}
+```
+
+5. **Add to server.cfg**
+```cfg
+ensure qb-mechanicjob
+```
+
+<Callout type="info">
+  Ensure qb-mechanicjob loads after qb-core, qb-target, and qb-inventory in your server.cfg
+</Callout>
+
+## Configuration
+
+### Basic Configuration
+
+The main configuration file is located at `config.lua`:
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.RepairCost = {
+    body = 1000,
+    engine = 1500,
+    transmission = 1200,
+    brakes = 800,
+    suspension = 900
+}
+
+-- Mechanic Shop Locations
+Config.Locations = {
+    ["bennys"] = {
+        label = "Benny's Original Motor Works",
+        coords = vector3(-212.55, -1324.2, 30.89),
+        blip = {
+            sprite = 72,
+            color = 17,
+            scale = 0.8
+        },
+        zones = {
+            duty = vector3(-212.55, -1324.2, 30.89),
+            stash = vector3(-222.47, -1329.73, 30.89),
+            vehicle = vector4(-229.47, -1315.39, 30.89, 270.0),
+            lift1 = vector4(-212.0, -1308.0, 31.3, 270.0),
+            lift2 = vector4(-212.0, -1318.0, 31.3, 270.0)
+        }
+    },
+    ["hayes"] = {
+        label = "Hayes Autos",
+        coords = vector3(-1419.24, -446.58, 35.91),
+        blip = {
+            sprite = 72,
+            color = 17,
+            scale = 0.8
+        },
+        zones = {
+            duty = vector3(-1419.24, -446.58, 35.91),
+            stash = vector3(-1413.35, -448.26, 35.91),
+            vehicle = vector4(-1428.46, -455.12, 35.91, 120.0),
+            lift1 = vector4(-1419.0, -450.0, 36.0, 120.0)
+        }
+    }
+}
+
+-- Tow Truck Spawn Points
+Config.TowSpawns = {
+    [1] = vector4(-229.47, -1315.39, 30.89, 270.0),
+    [2] = vector4(-228.47, -1320.39, 30.89, 270.0)
+}
+
+-- Vehicle Modification Costs
+Config.ModificationCosts = {
+    engine = {
+        [0] = 0,
+        [1] = 5000,
+        [2] = 10000,
+        [3] = 15000,
+        [4] = 25000
+    },
+    brakes = {
+        [0] = 0,
+        [1] = 2500,
+        [2] = 5000,
+        [3] = 7500
+    },
+    transmission = {
+        [0] = 0,
+        [1] = 4000,
+        [2] = 8000,
+        [3] = 12000
+    },
+    suspension = {
+        [0] = 0,
+        [1] = 3000,
+        [2] = 6000,
+        [3] = 9000,
+        [4] = 12000
+    },
+    turbo = 15000,
+    armor = {
+        [0] = 0,
+        [1] = 5000,
+        [2] = 10000,
+        [3] = 15000,
+        [4] = 20000,
+        [5] = 25000
+    }
+}
+```
+
+### Vehicle Damage System
+
+```lua
+-- Damage Thresholds
+Config.DamageSystem = {
+    engine = {
+        threshold = 650.0,
+        repairCost = 1500,
+        parts = {"engine_part"}
+    },
+    body = {
+        threshold = 800.0,
+        repairCost = 1000,
+        parts = {"body_panel"}
+    },
+    transmission = {
+        threshold = 700.0,
+        repairCost = 1200,
+        parts = {"transmission_part"}
+    },
+    brakes = {
+        threshold = 750.0,
+        repairCost = 800,
+        parts = {"brake_pads"}
+    },
+    tires = {
+        threshold = 900.0,
+        repairCost = 400,
+        parts = {"tire"}
+    }
+}
+
+-- Repair Requirements
+Config.RepairRequirements = {
+    mechanic_level = {
+        basic = 0,      -- Apprentice can do basic repairs
+        advanced = 2,   -- Advanced Mechanic for complex repairs
+        custom = 3      -- Supervisor+ for custom modifications
+    },
+    tools_required = {
+        basic = {"wrench", "screwdriver"},
+        advanced = {"diagnostic_tool", "hydraulic_jack"},
+        custom = {"tuning_laptop", "dyno_access"}
+    }
+}
+```
+
+### Parts and Pricing
+
+```lua
+-- Vehicle Parts Configuration
+Config.Parts = {
+    ["engine_part"] = {
+        label = "Engine Component",
+        cost = 500,
+        category = "engine",
+        required_skill = 1
+    },
+    ["transmission_part"] = {
+        label = "Transmission Component",
+        cost = 400,
+        category = "transmission",
+        required_skill = 1
+    },
+    ["brake_pads"] = {
+        label = "Brake Pads",
+        cost = 200,
+        category = "brakes",
+        required_skill = 0
+    },
+    ["tire"] = {
+        label = "Performance Tire",
+        cost = 300,
+        category = "tires",
+        required_skill = 0
+    },
+    ["turbo_kit"] = {
+        label = "Turbo Kit",
+        cost = 2500,
+        category = "performance",
+        required_skill = 3
+    }
+}
+
+-- Service Pricing
+Config.ServicePrices = {
+    oil_change = 150,
+    tire_repair = 100,
+    brake_service = 300,
+    engine_tune = 500,
+    full_service = 800,
+    custom_paint = 1200,
+    performance_tune = 2000
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### RepairVehicle
+Repair a vehicle with specified components.
+
+```lua
+-- Repair specific component
+exports['qb-mechanicjob']:RepairVehicle(vehicle, "engine")
+
+-- Repair multiple components
+exports['qb-mechanicjob']:RepairVehicle(vehicle, {"engine", "body", "brakes"})
+
+-- Full repair
+exports['qb-mechanicjob']:RepairVehicle(vehicle, "all")
+
+-- Parameters:
+-- vehicle: Vehicle entity
+-- components: String or table of components to repair
+```
+
+#### GetVehicleDamage
+Get detailed damage information for a vehicle.
+
+```lua
+local damageInfo = exports['qb-mechanicjob']:GetVehicleDamage(vehicle)
+
+-- Returns:
+-- {
+--   engine = number (0-1000),
+--   body = number (0-1000),
+--   transmission = number (0-1000),
+--   brakes = number (0-1000),
+--   tires = table of tire conditions
+-- }
+```
+
+#### ModifyVehicle
+Apply performance modifications to a vehicle.
+
+```lua
+-- Apply single modification
+exports['qb-mechanicjob']:ModifyVehicle(vehicle, "engine", 2)
+
+-- Apply multiple modifications
+exports['qb-mechanicjob']:ModifyVehicle(vehicle, {
+    engine = 2,
+    brakes = 1,
+    suspension = 1,
+    turbo = true
+})
+
+-- Parameters:
+-- vehicle: Vehicle entity
+-- modifications: Modification type and level
+```
+
+### Server Exports
+
+#### CreateServiceOrder
+Create a new service order for a customer.
+
+```lua
+local orderId = exports['qb-mechanicjob']:CreateServiceOrder(data)
+
+-- Parameters:
+-- data: {
+--   citizenid = string,
+--   mechanic = string,
+--   vehicle_plate = string,
+--   services = table,
+--   total_cost = number
+-- }
+```
+
+#### ProcessPayment
+Process payment for mechanic services.
+
+```lua
+local success = exports['qb-mechanicjob']:ProcessPayment(source, amount, description)
+
+-- Parameters:
+-- source: Player server ID
+-- amount: Payment amount
+-- description: Service description
+```
+
+#### UpdatePartInventory
+Update shop part inventory.
+
+```lua
+exports['qb-mechanicjob']:UpdatePartInventory(shop, partName, quantity)
+
+-- Parameters:
+-- shop: Shop identifier
+-- partName: Part name
+-- quantity: Quantity change (+/-)
+```
+
+#### GetShopInventory
+Get current shop inventory.
+
+```lua
+local inventory = exports['qb-mechanicjob']:GetShopInventory(shop)
+
+-- Returns table of parts and quantities
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Vehicle repair started
+RegisterNetEvent('qb-mechanicjob:client:repairStarted', function(repairType)
+    -- Handle repair start
+end)
+
+-- Vehicle modification applied
+RegisterNetEvent('qb-mechanicjob:client:modificationApplied', function(modType, level)
+    -- Handle modification
+end)
+
+-- Service order created
+RegisterNetEvent('qb-mechanicjob:client:orderCreated', function(orderId)
+    -- Handle new order
+end)
+
+-- Payment processed
+RegisterNetEvent('qb-mechanicjob:client:paymentProcessed', function(amount)
+    -- Handle payment completion
+end)
+```
+
+#### Server Events
+
+```lua
+-- Mechanic on/off duty
+RegisterNetEvent('qb-mechanicjob:server:dutyToggle', function(onDuty)
+    -- Handle duty status change
+end)
+
+-- Vehicle towed
+RegisterNetEvent('qb-mechanicjob:server:vehicleTowed', function(plate, location)
+    -- Handle vehicle towing
+end)
+
+-- Parts ordered
+RegisterNetEvent('qb-mechanicjob:server:orderParts', function(parts, shop)
+    -- Handle parts ordering
+end)
+
+-- Service completed
+RegisterNetEvent('qb-mechanicjob:server:serviceCompleted', function(orderId, services)
+    -- Handle service completion
+end)
+```
+
+## Usage Examples
+
+### Vehicle Repair System
+
+```lua
+-- Client-side repair process
+RegisterNetEvent('qb-mechanicjob:client:startRepair', function(repairType)
+    local player = QBCore.Functions.GetPlayerData()
+    if player.job.name == "mechanic" and player.job.onduty then
+        local vehicle = QBCore.Functions.GetClosestVehicle()
+        local requiredParts = Config.DamageSystem[repairType].parts
+        
+        -- Check if mechanic has required parts
+        for i = 1, #requiredParts do
+            local hasPart = QBCore.Functions.HasItem(requiredParts[i])
+            if not hasPart then
+                QBCore.Functions.Notify("Missing required part: " .. requiredParts[i], "error")
+                return
+            end
+        end
+        
+        -- Start repair animation and progress
+        QBCore.Functions.Progressbar("vehicle_repair", "Repairing " .. repairType .. "...", 10000, false, true, {
+            disableMovement = true,
+            disableCarMovement = true,
+            disableMouse = false,
+            disableCombat = true,
+        }, {
+            animDict = "mini@repair",
+            anim = "fixing_a_ped",
+        }, {
+            model = "prop_tool_box_04",
+            bone = 57005,
+            coords = vector3(0.4, 0.0, 0.0),
+            rotation = vector3(0.0, 0.0, 0.0),
+        }, {}, function()
+            -- Repair completed
+            TriggerServerEvent('qb-mechanicjob:server:repairVehicle', VehToNet(vehicle), repairType)
+        end)
+    end
+end)
+
+-- Server-side repair handler
+RegisterNetEvent('qb-mechanicjob:server:repairVehicle', function(netId, repairType)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    local vehicle = NetworkGetEntityFromNetworkId(netId)
+    
+    if player.PlayerData.job.name == "mechanic" then
+        local repairCost = Config.RepairCost[repairType] or 500
+        local requiredParts = Config.DamageSystem[repairType].parts
+        
+        -- Remove required parts from inventory
+        for i = 1, #requiredParts do
+            player.Functions.RemoveItem(requiredParts[i], 1)
+        end
+        
+        -- Apply repair to vehicle
+        if repairType == "engine" then
+            SetVehicleEngineHealth(vehicle, 1000.0)
+        elseif repairType == "body" then
+            SetVehicleBodyHealth(vehicle, 1000.0)
+        elseif repairType == "brakes" then
+            SetVehicleBrake(vehicle, false)
+        end
+        
+        TriggerClientEvent('QBCore:Notify', src, repairType .. ' repaired successfully!', 'success')
+    end
+end)
+```
+
+### Vehicle Modification System
+
+```lua
+-- Performance tuning interface
+RegisterNetEvent('qb-mechanicjob:client:openTuningMenu', function()
+    local vehicle = QBCore.Functions.GetClosestVehicle()
+    if not vehicle then return end
+    
+    local tuningMenu = {
+        {
+            header = "Vehicle Tuning",
+            isMenuHeader = true
+        },
+        {
+            header = "Engine Upgrade",
+            txt = "Improve engine performance",
+            params = {
+                event = "qb-mechanicjob:client:upgradeEngine",
+                args = {vehicle = vehicle}
+            }
+        },
+        {
+            header = "Brake System",
+            txt = "Upgrade brake system",
+            params = {
+                event = "qb-mechanicjob:client:upgradeBrakes",
+                args = {vehicle = vehicle}
+            }
+        },
+        {
+            header = "Suspension",
+            txt = "Modify suspension",
+            params = {
+                event = "qb-mechanicjob:client:upgradeSuspension",
+                args = {vehicle = vehicle}
+            }
+        },
+        {
+            header = "Turbo Kit",
+            txt = "Install turbo kit - $" .. Config.ModificationCosts.turbo,
+            params = {
+                event = "qb-mechanicjob:client:installTurbo",
+                args = {vehicle = vehicle}
+            }
+        }
+    }
+    
+    exports['qb-menu']:openMenu(tuningMenu)
+end)
+
+-- Engine upgrade implementation
+RegisterNetEvent('qb-mechanicjob:client:upgradeEngine', function(data)
+    local vehicle = data.vehicle
+    local currentLevel = GetVehicleMod(vehicle, 11) -- Engine mod
+    local nextLevel = currentLevel + 1
+    
+    if nextLevel <= 4 then
+        local cost = Config.ModificationCosts.engine[nextLevel]
+        
+        QBCore.Functions.TriggerCallback('qb-mechanicjob:server:canAfford', function(canAfford)
+            if canAfford then
+                SetVehicleMod(vehicle, 11, nextLevel, false)
+                TriggerServerEvent('qb-mechanicjob:server:payForMod', cost, 'Engine Upgrade Level ' .. nextLevel)
+            else
+                QBCore.Functions.Notify("Insufficient funds for upgrade", "error")
+            end
+        end, cost)
+    else
+        QBCore.Functions.Notify("Engine already at maximum level", "error")
+    end
+end)
+```
+
+### Towing Service
+
+```lua
+-- Tow truck operations
+RegisterNetEvent('qb-mechanicjob:client:towVehicle', function()
+    local player = QBCore.Functions.GetPlayerData()
+    if player.job.name == "mechanic" and player.job.onduty then
+        local towTruck = GetVehiclePedIsIn(PlayerPedId(), false)
+        local towModel = GetEntityModel(towTruck)
+        
+        -- Check if player is in a tow truck
+        if towModel == GetHashKey("flatbed") or towModel == GetHashKey("towtruck") then
+            local targetVehicle = QBCore.Functions.GetClosestVehicle()
+            if targetVehicle then
+                QBCore.Functions.Progressbar("towing_vehicle", "Attaching vehicle to tow truck...", 8000, false, true, {
+                    disableMovement = true,
+                    disableCarMovement = true,
+                    disableMouse = false,
+                    disableCombat = true,
+                }, {
+                    animDict = "mini@repair",
+                    anim = "fixing_a_ped",
+                }, {}, {}, function()
+                    AttachEntityToEntity(targetVehicle, towTruck, 0, 0.0, -2.5, 1.0, 0.0, 0.0, 0.0, false, false, false, false, 2, true)
+                    QBCore.Functions.Notify("Vehicle attached to tow truck", "success")
+                end)
+            else
+                QBCore.Functions.Notify("No vehicle nearby to tow", "error")
+            end
+        else
+            QBCore.Functions.Notify("You need to be in a tow truck", "error")
+        end
+    end
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Vehicle Repairs Not Working
+```lua
+-- Check vehicle entity validity
+if not DoesEntityExist(vehicle) then
+    print("Vehicle entity does not exist")
+    return
+end
+
+-- Verify repair permissions
+local player = QBCore.Functions.GetPlayerData()
+if player.job.name ~= "mechanic" or not player.job.onduty then
+    print("Player not authorized for repairs")
+    return
+end
+```
+
+#### Modification Costs Not Updating
+- Verify modification cost configuration in `config.lua`
+- Check if vehicle model supports specific modifications
+- Ensure proper database table structure for tracking modifications
+
+#### Parts Inventory Issues
+```lua
+-- Debug parts inventory
+RegisterCommand('checkparts', function()
+    local inventory = exports['qb-mechanicjob']:GetShopInventory('bennys')
+    for part, quantity in pairs(inventory) do
+        print(part .. ": " .. quantity)
+    end
+end)
+```
+
+### Debug Commands
+
+```lua
+-- Repair vehicle instantly (admin only)
+/fixveh
+
+-- Add mechanic parts to inventory
+/givepart [part_name] [quantity]
+
+-- Check vehicle modification levels
+/checkmods
+
+-- Toggle mechanic duty
+/mechduty
+```
+
+### Performance Optimization
+
+1. **Damage Calculations**: Optimize vehicle damage checking frequency
+2. **Part Inventory**: Cache inventory data to reduce database queries
+3. **Vehicle Spawning**: Implement proper vehicle cleanup and pooling
+
+<Callout type="warning">
+  Always test vehicle modifications and repairs thoroughly to ensure they work correctly with your server's vehicle system.
+</Callout>

@@ -1,0 +1,162 @@
+# ⚡ Performance Optimization
+
+Comprehensive guide to optimizing QBCore server performance for smooth gameplay experiences with large player counts.
+
+import { Callout } from 'nextra/components'
+
+## Performance Overview
+
+QBCore server performance depends on multiple factors including server hardware, resource optimization, database efficiency, and network configuration. This guide covers all aspects of performance tuning.
+
+### Key Performance Metrics
+
+- **Server FPS** - Target: 20+ FPS consistently
+- **Resource Usage** - Target: &lt;80% CPU, &lt;8GB RAM
+- **Database Response** - Target: &lt;100ms average query time
+- **Network Latency** - Target: &lt;100ms average ping
+- **Player Slots** - Optimize for your target player count
+
+## Quick Performance Checklist
+
+### Immediate Optimizations
+
+- ✅ **Resource Audit** - Remove unused or duplicate resources
+- ✅ **Database Indexing** - Index frequently queried columns
+- ✅ **Loop Optimization** - Minimize tight loops and excessive threading
+- ✅ **Event Optimization** - Reduce unnecessary event triggers
+- ✅ **Memory Management** - Fix memory leaks and optimize garbage collection
+
+### Advanced Optimizations
+
+- ✅ **Server Configuration** - Tune FiveM and OS settings
+- ✅ **Hardware Optimization** - Optimize CPU, RAM, and storage
+- ✅ **Network Tuning** - Configure networking for optimal throughput
+- ✅ **Monitoring Setup** - Implement performance tracking
+- ✅ **Caching Strategies** - Implement intelligent caching
+
+## Common Performance Bottlenecks
+
+### Resource-Related Issues
+
+1. **Excessive Threading** - Too many CreateThread loops
+2. **Inefficient Loops** - Tight loops without proper Wait() calls
+3. **Memory Leaks** - Objects not properly cleaned up
+4. **Event Spam** - Excessive client-server communication
+5. **Unoptimized Queries** - Slow database operations
+
+### Server-Level Issues
+
+1. **Hardware Limitations** - Insufficient CPU/RAM/Storage
+2. **Network Configuration** - Poor network settings
+3. **OS Configuration** - Suboptimal operating system tuning
+4. **Resource Conflicts** - Conflicting or duplicate functionality
+5. **Database Performance** - Slow queries and poor indexing
+
+## Performance Monitoring
+
+### Built-in FiveM Tools
+
+```bash
+# Server console commands
+resmon          # Resource monitor
+status          # Server status
+citizens        # Player count and details
+```
+
+### Custom Monitoring Scripts
+
+```lua
+-- Performance monitoring resource
+CreateThread(function()
+    while true do
+        Wait(5000) -- Check every 5 seconds
+        
+        local memUsage = collectgarbage("count")
+        local playerCount = #GetPlayers()
+        
+        if memUsage > 102400 then -- 100MB threshold
+            print("^1[WARNING]^7 High memory usage: " .. math.floor(memUsage/1024) .. "MB")
+        end
+        
+        if playerCount > 100 then
+            print("^3[INFO]^7 High player count: " .. playerCount .. " players")
+        end
+    end
+end)
+```
+
+## Hardware Recommendations
+
+### Minimum Requirements
+
+- **CPU**: 4 cores, 3.0GHz+ (Intel i5/AMD Ryzen 5)
+- **RAM**: 8GB (16GB recommended)
+- **Storage**: SSD with 100GB+ free space
+- **Network**: 100Mbps+ dedicated bandwidth
+
+### Recommended Specifications
+
+- **CPU**: 8+ cores, 3.5GHz+ (Intel i7/AMD Ryzen 7)
+- **RAM**: 16-32GB DDR4
+- **Storage**: NVMe SSD with 500GB+ free space
+- **Network**: 1Gbps+ dedicated connection
+
+### Enterprise Specifications
+
+- **CPU**: 16+ cores, 4.0GHz+ (Intel i9/AMD Ryzen 9)
+- **RAM**: 32-64GB DDR4/DDR5
+- **Storage**: High-performance NVMe RAID array
+- **Network**: Multi-gigabit dedicated connection
+- **Database**: Dedicated database server
+
+## Performance Optimization Sections
+
+### Server Optimization
+Learn how to configure FiveM server settings, operating system tuning, and hardware optimization for maximum performance.
+
+### Resource Optimization  
+Master techniques for writing efficient Lua code, optimizing loops, managing memory, and reducing resource overhead.
+
+### Database Tuning
+Optimize MySQL/MariaDB configuration, query performance, indexing strategies, and connection management.
+
+### Network Optimization
+Configure networking settings, reduce bandwidth usage, optimize client-server communication patterns.
+
+### Performance Monitoring
+Set up comprehensive monitoring systems to track performance metrics and identify bottlenecks before they impact players.
+
+### Troubleshooting
+Learn systematic approaches to diagnosing and resolving performance issues in production environments.
+
+<Callout type="info">
+  Performance optimization is an ongoing process. Regular monitoring and tuning are essential for maintaining optimal server performance.
+</Callout>
+
+## Best Practices Summary
+
+### Code Quality
+- Write efficient Lua code with proper error handling
+- Use appropriate data structures and algorithms
+- Minimize global variable usage
+- Implement proper cleanup procedures
+
+### Resource Management
+- Audit resources regularly for conflicts and inefficiencies
+- Implement resource load balancing
+- Use lazy loading where appropriate
+- Monitor resource usage patterns
+
+### Database Efficiency
+- Design efficient database schemas
+- Implement proper indexing strategies
+- Use connection pooling
+- Monitor query performance
+
+### System Administration
+- Keep server software updated
+- Monitor system resources continuously
+- Implement automated alerts for issues
+- Plan for capacity scaling
+
+The following sections provide detailed implementation guides for each optimization area.

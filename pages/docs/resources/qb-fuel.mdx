@@ -1,0 +1,375 @@
+# QB-Fuel - Vehicle Fuel System
+
+import { Callout } from 'nextra/components'
+
+The **qb-fuel** resource provides a comprehensive fuel management system for all vehicles in your QBCore server. This system includes realistic fuel consumption, gas stations, fuel items, and administrative tools.
+
+## Overview
+
+QB-Fuel replaces the default GTA V infinite fuel system with a realistic fuel consumption mechanic that affects all vehicle types. Players must monitor their fuel levels and visit gas stations or use fuel items to refuel their vehicles.
+
+### Key Features
+
+- **Realistic Fuel Consumption**: Vehicles consume fuel based on driving behavior
+- **Multiple Fuel Types**: Support for different fuel types (petrol, diesel, electric)
+- **Gas Station Network**: Strategically placed fuel stations across the map
+- **Jerry Can System**: Portable fuel containers for emergencies
+- **Administrative Tools**: Commands for managing fuel levels
+- **Configurable Settings**: Extensive customization options
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for fuel station menus)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-fuel.git
+```
+
+2. **Add to server.cfg**
+```cfg
+ensure qb-fuel
+```
+
+3. **Restart Server**
+```bash
+restart qb-fuel
+```
+
+<Callout type="info">
+  Make sure qb-fuel loads after qb-core and qb-target in your server.cfg
+</Callout>
+
+## Configuration
+
+### Basic Configuration
+
+The main configuration file is located at `config.lua`:
+
+```lua
+Config = {}
+
+-- Fuel consumption settings
+Config.FuelDecor = "_FUEL_LEVEL"
+Config.ShowNearestGasStationOnly = true
+Config.ShowAllGasStations = false
+
+-- Fuel consumption rates (per second)
+Config.FuelUsage = {
+    [0] = 1.4,  -- Compacts
+    [1] = 1.4,  -- Sedans
+    [2] = 1.4,  -- SUVs
+    [3] = 1.4,  -- Coupes
+    [4] = 1.4,  -- Muscle
+    [5] = 1.4,  -- Sports Classics
+    [6] = 1.4,  -- Sports
+    [7] = 1.4,  -- Super
+    [8] = 1.4,  -- Motorcycles
+    [9] = 1.4,  -- Off-road
+    [10] = 1.4, -- Industrial
+    [11] = 1.4, -- Utility
+    [12] = 1.4, -- Vans
+    [13] = 0.0, -- Cycles (no fuel needed)
+    [14] = 1.4, -- Boats
+    [15] = 1.4, -- Helicopters
+    [16] = 1.4, -- Planes
+    [17] = 1.4, -- Service
+    [18] = 1.4, -- Emergency
+    [19] = 1.4, -- Military
+    [20] = 1.4, -- Commercial
+    [21] = 1.4, -- Trains (usually not used)
+}
+
+-- Electric vehicle classes (no fuel consumption)
+Config.ElectricVehicleClasses = {
+    [13] = true, -- Cycles
+}
+
+-- Jerry can settings
+Config.JerryCanCap = 20.0
+Config.RefuelCap = 50.0
+```
+
+### Gas Station Locations
+
+Gas stations are defined in the configuration with coordinates and interaction zones:
+
+```lua
+Config.GasStations = {
+    [1] = {
+        coords = vector3(49.4187, 2778.793, 58.043),
+        radius = 5.0,
+        showBlip = true
+    },
+    [2] = {
+        coords = vector3(263.894, 2606.463, 44.983),
+        radius = 5.0,
+        showBlip = true
+    },
+    -- Add more stations as needed
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### GetFuel
+Gets the current fuel level of a vehicle.
+
+```lua
+-- Get fuel level of current vehicle
+local fuel = exports['qb-fuel']:GetFuel(GetVehiclePedIsIn(PlayerPedId(), false))
+print("Current fuel level: " .. fuel .. "%")
+
+-- Get fuel level of specific vehicle
+local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+local fuelLevel = exports['qb-fuel']:GetFuel(vehicle)
+```
+
+#### SetFuel
+Sets the fuel level of a vehicle.
+
+```lua
+-- Set fuel to 75%
+local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+exports['qb-fuel']:SetFuel(vehicle, 75.0)
+```
+
+### Server Exports
+
+#### GetFuel
+Server-side function to get vehicle fuel level.
+
+```lua
+-- Get fuel level from server
+local fuelLevel = exports['qb-fuel']:GetFuel(vehicle)
+```
+
+#### SetFuel
+Server-side function to set vehicle fuel level.
+
+```lua
+-- Set fuel level from server
+exports['qb-fuel']:SetFuel(vehicle, 100.0)
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Triggered when vehicle runs out of fuel
+RegisterNetEvent('qb-fuel:client:vehicleOutOfFuel', function(vehicle)
+    -- Handle out of fuel event
+end)
+
+-- Triggered when fuel level changes
+RegisterNetEvent('qb-fuel:client:fuelChanged', function(vehicle, newLevel)
+    -- Handle fuel level change
+end)
+```
+
+#### Server Events
+
+```lua
+-- Purchase fuel event
+RegisterNetEvent('qb-fuel:server:buyFuel', function(amount, jerrycan)
+    -- Handle fuel purchase
+end)
+```
+
+## Usage Examples
+
+### Basic Fuel Management
+
+```lua
+-- Check if vehicle needs fuel
+local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+local fuel = exports['qb-fuel']:GetFuel(vehicle)
+
+if fuel < 20 then
+    QBCore.Functions.Notify('Low fuel! Visit a gas station.', 'error')
+end
+```
+
+### Jerry Can Usage
+
+```lua
+-- Using a jerry can item
+QBCore.Functions.CreateUseableItem('jerrycan', function(source, item)
+    local Player = QBCore.Functions.GetPlayer(source)
+    local ped = GetPlayerPed(source)
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    
+    if vehicle ~= 0 then
+        local currentFuel = exports['qb-fuel']:GetFuel(vehicle)
+        local newFuel = math.min(100, currentFuel + 20)
+        exports['qb-fuel']:SetFuel(vehicle, newFuel)
+        Player.Functions.RemoveItem('jerrycan', 1)
+    end
+end)
+```
+
+### Custom Fuel Consumption
+
+```lua
+-- Modify fuel consumption based on driving behavior
+CreateThread(function()
+    while true do
+        Wait(1000)
+        
+        local ped = PlayerPedId()
+        local vehicle = GetVehiclePedIsIn(ped, false)
+        
+        if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == ped then
+            local speed = GetEntitySpeed(vehicle) * 3.6 -- Convert to km/h
+            local rpm = GetVehicleCurrentRpm(vehicle)
+            
+            -- Increase consumption for high speed/RPM
+            if speed > 100 or rpm > 0.8 then
+                local currentFuel = exports['qb-fuel']:GetFuel(vehicle)
+                exports['qb-fuel']:SetFuel(vehicle, currentFuel - 0.1)
+            end
+        end
+    end
+end)
+```
+
+## Administrative Commands
+
+### Player Commands
+
+- `/fuel [amount]` - Set your vehicle's fuel level (admin only)
+- `/jerrycan` - Give yourself a jerry can (admin only)
+
+### Console Commands
+
+```bash
+# Set fuel for specific vehicle
+setfuel [player_id] [amount]
+
+# Give jerry can to player
+givefuel [player_id]
+```
+
+## Integration with Other Resources
+
+### qb-inventory Integration
+
+Jerry cans can be added to the qb-inventory system:
+
+```lua
+-- In qb-inventory/shared/items.lua
+['jerrycan'] = {
+    ['name'] = 'jerrycan',
+    ['label'] = 'Jerry Can',
+    ['weight'] = 2000,
+    ['type'] = 'item',
+    ['image'] = 'jerrycan.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'A portable fuel container'
+},
+```
+
+### qb-vehicleshop Integration
+
+Set initial fuel levels for purchased vehicles:
+
+```lua
+-- When spawning a new vehicle
+local vehicle = CreateVehicle(model, coords, heading, true, false)
+exports['qb-fuel']:SetFuel(vehicle, 100.0) -- Start with full tank
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Fuel Not Decreasing
+**Problem**: Vehicle fuel doesn't decrease during driving.
+
+**Solution**:
+```lua
+-- Check if fuel decor is properly set
+local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+local hasDecor = DecorExistOn(vehicle, "_FUEL_LEVEL")
+print("Has fuel decor: " .. tostring(hasDecor))
+```
+
+#### Gas Stations Not Working
+**Problem**: Cannot interact with gas station pumps.
+
+**Solutions**:
+1. Verify qb-target is running
+2. Check gas station coordinates in config
+3. Ensure proper resource load order
+
+#### Jerry Can Not Working
+**Problem**: Jerry can item doesn't refuel vehicle.
+
+**Solution**:
+```lua
+-- Verify item registration in qb-core
+QBCore.Functions.CreateUseableItem('jerrycan', function(source, item)
+    -- Jerry can logic here
+end)
+```
+
+### Debug Commands
+
+Enable debug mode for troubleshooting:
+
+```lua
+-- In config.lua
+Config.Debug = true
+
+-- Debug fuel consumption
+RegisterCommand('debugfuel', function()
+    local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+    local fuel = exports['qb-fuel']:GetFuel(vehicle)
+    local vehClass = GetVehicleClass(vehicle)
+    
+    print("Vehicle: " .. GetDisplayNameFromVehicleModel(GetEntityModel(vehicle)))
+    print("Fuel Level: " .. fuel .. "%")
+    print("Vehicle Class: " .. vehClass)
+    print("Consumption Rate: " .. Config.FuelUsage[vehClass])
+end, false)
+```
+
+### Performance Optimization
+
+```lua
+-- Optimize fuel consumption checks
+Config.FuelTickRate = 2000 -- Check every 2 seconds instead of 1
+
+-- Disable fuel for specific vehicle models
+Config.ExcludedModels = {
+    [`bmx`] = true,
+    [`cruiser`] = true,
+}
+```
+
+## Related Resources
+
+- **[qb-core](/docs/resources/qb-core)** - Core framework functions
+- **[qb-inventory](/docs/resources/qb-inventory)** - Item management system
+- **qb-target** - Interaction system for gas stations
+- **qb-menu** - Menu system for fuel options
+
+## Support
+
+For issues and feature requests:
+- **GitHub**: [qb-fuel Repository](https://github.com/qbcore-framework/qb-fuel)
+- **Discord**: [QBCore Community](https://discord.gg/qbcore)
+- **Documentation**: [QBCore Docs](https://docs.qbcore.org)

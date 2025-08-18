@@ -1,0 +1,222 @@
+---
+title: "QBCore Windows Installation Tutorial 2025 - Complete Setup Guide"
+description: "Step-by-step tutorial to install QBCore framework on Windows. Complete guide with database setup, server configuration, and troubleshooting for FiveM roleplay servers in 2025."
+keywords: "qbcore installation, fivem server setup, qbcore windows, roleplay server, qbcore framework 2025"
+---
+
+# QBCore Windows Installation Tutorial 2025 - Complete Setup Guide
+
+**⏱️ Estimated Time: 30-45 minutes | 🎯 Difficulty: Beginner**
+
+Complete step-by-step guide for installing QBCore framework on Windows systems. This tutorial will help you set up a fully functional FiveM roleplay server with QBCore in 2025.
+
+## Prerequisites
+
+Before installing QBCore framework, ensure you have the following requirements:
+
+- **Windows 10 or 11** (64-bit)
+- **FiveM Server** (latest version)  
+- **MySQL 8.0+** or **MariaDB 10.3+**
+- **Git** for version control
+- **Visual Studio Code** (recommended)
+
+### System Requirements Comparison
+
+| Component | Minimum | Recommended | Professional |
+|-----------|---------|-------------|--------------|
+| **Windows Version** | Windows 10 64-bit | Windows 11 | Windows Server 2019+ |
+| **RAM** | 8GB | 16GB | 32GB+ |
+| **Storage** | 20GB HDD | 50GB SSD | 100GB+ NVMe SSD |
+| **CPU** | Intel i5 / AMD Ryzen 5 | Intel i7 / AMD Ryzen 7 | Intel i9 / AMD Ryzen 9 |
+| **Network** | 10Mbps | 100Mbps | 1Gbps+ |
+| **Players Supported** | 16-32 | 32-64 | 64-128+ |
+
+## Database Configuration
+
+### Installing MySQL/MariaDB
+
+1. Download MySQL from [mysql.com](https://dev.mysql.com/downloads/mysql/)
+2. Run the installer and follow the setup wizard
+3. Create a root password and remember it
+4. Start the MySQL service
+
+### Creating Database
+
+1. Open MySQL Workbench or command line
+2. Create a new database:
+```sql
+CREATE DATABASE qbcore;
+CREATE USER 'qbcore'@'localhost' IDENTIFIED BY 'your_password';
+GRANT ALL PRIVILEGES ON qbcore.* TO 'qbcore'@'localhost';
+FLUSH PRIVILEGES;
+```
+
+## FiveM Server Setup
+
+### Download FiveM Server
+
+1. Go to [FiveM Server Downloads](https://runtime.fivem.net/artifacts/fivem/build_server_windows/master/)
+2. Download the latest recommended build
+3. Extract to your desired server folder (e.g., `C:\FXServer`)
+
+### Server Configuration
+
+Create `server.cfg` in your server folder:
+
+```cfg
+# Server Information
+sv_hostname "QBCore Server - Powered by QBCore Framework"
+sv_projectName "QBCore Server"
+sv_projectDesc "A QBCore FiveM Server"
+
+# Server Settings
+sv_maxclients 32
+sv_endpointprivacy true
+
+# Database Configuration
+set mysql_connection_string "mysql://qbcore:your_password@localhost/qbcore?charset=utf8mb4"
+
+# QBCore Settings
+setr voice_use3dAudio true
+setr voice_useSendingRangeOnly true
+
+# Game Settings
+sets tags "roleplay, qbcore, economy"
+sets banner_detail "https://your-banner-url.com/banner.png"
+sets banner_connecting "https://your-banner-url.com/connecting.png"
+
+# Resources
+ensure mapmanager
+ensure chat
+ensure spawnmanager
+ensure sessionmanager
+ensure basic-gamemode
+ensure hardcap
+ensure rconlog
+
+# QBCore Framework
+ensure qb-core
+ensure qb-multicharacter
+ensure qb-spawn
+ensure qb-hud
+ensure qb-inventory
+ensure qb-menu
+
+# Additional Resources
+# Add other resources here
+
+# Admin Commands
+add_ace group.admin command allow
+add_ace group.admin command.quit deny
+add_principal identifier.steam:YOUR_STEAM_ID group.admin
+```
+
+## Installing QBCore
+
+### Download QBCore Framework
+
+1. Open command prompt in your server's `resources` folder
+2. Clone the QBCore repository:
+```bash
+git clone https://github.com/qbcore-framework/qb-core.git [qb]
+cd [qb]
+git clone https://github.com/qbcore-framework/qb-multicharacter.git
+git clone https://github.com/qbcore-framework/qb-spawn.git
+git clone https://github.com/qbcore-framework/qb-hud.git
+git clone https://github.com/qbcore-framework/qb-inventory.git
+git clone https://github.com/qbcore-framework/qb-menu.git
+```
+
+### Import Database Tables
+
+1. Navigate to `qb-core/shared/`
+2. Import `items.sql` to your database
+3. Import any additional SQL files from other resources
+
+### Configure QBCore
+
+Edit `qb-core/config.lua`:
+
+```lua
+QBConfig = {}
+
+QBConfig.MaxPlayers = GetConvarInt('sv_maxclients', 48)
+QBConfig.DefaultSpawn = vector4(-1035.71, -2731.87, 12.86, 0.0)
+QBConfig.UpdateInterval = 5
+QBConfig.StatusInterval = 5000
+
+-- Add your configuration here
+```
+
+## Starting the Server
+
+1. Open command prompt in your server folder
+2. Run the server:
+```bash
+FXServer.exe +exec server.cfg
+```
+
+3. The server should start and begin loading resources
+4. Check the console for any errors
+
+## Troubleshooting
+
+### Common Issues
+
+**Database Connection Failed**
+- Verify MySQL/MariaDB is running
+- Check connection string in `server.cfg`
+- Ensure database user has proper permissions
+
+**Resources Not Loading**
+- Check resource names in `server.cfg`
+- Verify resource folders exist
+- Check for syntax errors in resource files
+
+**Players Can't Connect**
+- Check firewall settings (port 30120)
+- Verify server IP configuration
+- Check FiveM license key
+
+### Getting Help
+
+- [GitHub Discussions](https://github.com/qbcore-framework/qb-core/discussions)
+- [GitHub Issues](https://github.com/qbcore-framework/qb-core/issues)
+- [Documentation](/docs)
+
+## Frequently Asked Questions
+
+### How long does QBCore installation take on Windows?
+The complete QBCore installation process typically takes 30-45 minutes for beginners, including database setup and initial configuration.
+
+### What are the minimum system requirements for QBCore?
+- Windows 10/11 (64-bit)
+- 8GB RAM minimum (16GB recommended)
+- 10GB free storage space
+- Stable internet connection
+
+### Can I install QBCore on Windows 10?
+Yes, QBCore works perfectly on Windows 10 and Windows 11. Ensure you're running the 64-bit version of Windows.
+
+### What database should I use with QBCore?
+We recommend MySQL 8.0+ or MariaDB 10.3+ for optimal performance with QBCore framework.
+
+### Why is my QBCore server not starting?
+Common issues include:
+- Incorrect database connection string
+- Missing FiveM license key
+- Firewall blocking port 30120
+- Incorrect resource names in server.cfg
+
+### How do I update QBCore after installation?
+Use `git pull` in your qb-core resource folder to get the latest updates, then restart your server.
+
+## Next Steps
+
+After successful QBCore installation:
+
+1. [Set up admin permissions](/docs/installation/permissions)
+2. [Configure jobs and economy](/tutorials/economy) 
+3. [Add additional QBCore resources](/docs/resources)
+4. [Optimize server performance](/tutorials/optimization)
+5. [Linux Installation Guide](/docs/installation/linux) - For VPS hosting

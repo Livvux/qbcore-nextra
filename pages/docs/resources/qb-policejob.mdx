@@ -1,0 +1,700 @@
+# QB-PoliceJob - Police Department System
+
+import { Callout } from 'nextra/components'
+
+The **qb-policejob** resource provides a comprehensive police department system for QBCore servers, featuring MDT integration, evidence management, vehicle impounding, arrest mechanics, and complete law enforcement operations.
+
+## Overview
+
+QB-PoliceJob creates a realistic police experience with advanced systems for investigations, arrests, evidence collection, and department management. Officers can access mobile data terminals, manage evidence, process arrests, and coordinate law enforcement activities.
+
+### Key Features
+
+- **Mobile Data Terminal (MDT)**: Complete police database and dispatch system
+- **Evidence System**: Crime scene investigation and evidence management
+- **Vehicle Impound**: Vehicle seizure and storage system
+- **Arrest Mechanics**: Handcuffs, booking, and jail processing
+- **Police Vehicles**: Emergency vehicles with equipment
+- **Weapon Management**: Police armory and weapon access
+- **Radar System**: Speed detection and traffic enforcement
+- **Department Ranks**: Hierarchical police structure
+- **Emergency Alerts**: Automatic dispatch system
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for police menus)
+- qb-input (for police forms)
+- qb-inventory (for police equipment)
+- qb-garage (for police vehicles)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-policejob.git
+```
+
+2. **Database Setup**
+```sql
+-- Police department tables
+CREATE TABLE IF NOT EXISTS `police_reports` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `officer` varchar(50) DEFAULT NULL,
+  `incident_type` varchar(100) DEFAULT NULL,
+  `description` longtext DEFAULT NULL,
+  `evidence` longtext DEFAULT NULL,
+  `date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `police_evidence` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` varchar(50) DEFAULT NULL,
+  `identifier` varchar(50) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `data` longtext DEFAULT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `created_at` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `police_impound` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `vehicle` varchar(50) DEFAULT NULL,
+  `plate` varchar(50) DEFAULT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  `fine` int(11) DEFAULT 0,
+  `officer` varchar(50) DEFAULT NULL,
+  `date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `police_alerts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` varchar(50) DEFAULT NULL,
+  `coords` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `code` varchar(10) DEFAULT NULL,
+  `units_responding` int(11) DEFAULT 0,
+  `created_at` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `player_warnings` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `officer` varchar(50) DEFAULT NULL,
+  `warning` text DEFAULT NULL,
+  `date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Police Equipment
+['handcuffs'] = {
+    ['name'] = 'handcuffs',
+    ['label'] = 'Handcuffs',
+    ['weight'] = 500,
+    ['type'] = 'item',
+    ['image'] = 'handcuffs.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Police handcuffs for arrests'
+},
+['police_stormram'] = {
+    ['name'] = 'police_stormram',
+    ['label'] = 'Storm Ram',
+    ['weight'] = 5000,
+    ['type'] = 'item',
+    ['image'] = 'police_stormram.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Breaching tool for forced entry'
+},
+['breathalyzer'] = {
+    ['name'] = 'breathalyzer',
+    ['label'] = 'Breathalyzer',
+    ['weight'] = 200,
+    ['type'] = 'item',
+    ['image'] = 'breathalyzer.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Device to test blood alcohol content'
+},
+['evidence_bag'] = {
+    ['name'] = 'evidence_bag',
+    ['label'] = 'Evidence Bag',
+    ['weight'] = 50,
+    ['type'] = 'item',
+    ['image'] = 'evidence_bag.png',
+    ['unique'] = true,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Sealed evidence bag'
+}
+```
+
+4. **Add Job Configuration to qb-core/shared/jobs.lua**
+```lua
+['police'] = {
+    label = 'Law Enforcement',
+    defaultDuty = true,
+    offDutyPay = false,
+    grades = {
+        ['0'] = {
+            name = 'Recruit',
+            payment = 50
+        },
+        ['1'] = {
+            name = 'Officer',
+            payment = 75
+        },
+        ['2'] = {
+            name = 'Detective',
+            payment = 100
+        },
+        ['3'] = {
+            name = 'Sergeant',
+            payment = 125,
+            isboss = true
+        },
+        ['4'] = {
+            name = 'Lieutenant',
+            payment = 150,
+            isboss = true
+        },
+        ['5'] = {
+            name = 'Captain',
+            payment = 175,
+            isboss = true
+        },
+        ['6'] = {
+            name = 'Chief',
+            payment = 200,
+            isboss = true
+        }
+    }
+}
+```
+
+5. **Add to server.cfg**
+```cfg
+ensure qb-policejob
+```
+
+<Callout type="info">
+  Ensure qb-policejob loads after qb-core, qb-target, and qb-menu in your server.cfg
+</Callout>
+
+## Configuration
+
+### Basic Configuration
+
+The main configuration file is located at `config.lua`:
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.DutyTime = true
+Config.EnableESX = false
+Config.MaxSpikes = 5
+Config.HandCuffItem = "handcuffs"
+
+-- Police Station Locations
+Config.Locations = {
+    ["duty"] = {
+        vector3(441.7989, -982.0529, 30.6896),
+        vector3(-449.811, 6014.0146, 31.716)
+    },
+    ["vehicle"] = {
+        vector4(454.6, -1017.4, 28.4, 90.654),
+        vector4(441.0, -1024.2, 28.3, 268.025),
+        vector4(426.68, -1026.67, 28.26, 269.71)
+    },
+    ["stash"] = {
+        vector3(453.21, -982.28, 30.68),
+        vector3(-436.14, 5998.52, 31.71)
+    },
+    ["impound"] = {
+        vector4(436.68, -1016.62, 27.75, 180.0),
+        vector4(-449.35, 6019.8, 31.34, 135.0)
+    },
+    ["helicopter"] = {
+        vector4(449.168, -981.325, 43.6918, 87.234),
+        vector4(-475.43, 5988.353, 31.716, 31.34)
+    },
+    ["armory"] = {
+        vector3(462.23, -981.12, 30.68),
+        vector3(-439.593, 5998.525, 31.716)
+    },
+    ["trash"] = {
+        vector3(453.95, -972.17, 30.68),
+        vector3(-431.928, 5998.525, 31.509)
+    },
+    ["fingerprint"] = {
+        vector3(460.4, -989.55, 30.68),
+        vector3(-442.195, 6003.641, 31.716)
+    },
+    ["evidence"] = {
+        vector3(475.52, -990.18, 26.27),
+        vector3(-442.195, 6003.641, 31.716)
+    }
+}
+
+-- Vehicle Spawn Points
+Config.VehicleSpawns = {
+    [1] = vector4(454.6, -1017.4, 28.4, 90.654),
+    [2] = vector4(441.0, -1024.2, 28.3, 268.025),
+    [3] = vector4(426.68, -1026.67, 28.26, 269.71),
+    [4] = vector4(405.94, -1024.05, 28.25, 8.32)
+}
+
+-- Police Vehicles
+Config.Vehicles = {
+    ['police'] = {
+        label = 'Police Cruiser',
+        category = 'police',
+        spawncost = 0,
+        livery = {
+            [0] = 'Police',
+            [1] = 'Sheriff',
+            [2] = 'State Police'
+        }
+    },
+    ['police2'] = {
+        label = 'Police Buffalo',
+        category = 'police',
+        spawncost = 0
+    },
+    ['police3'] = {
+        label = 'Police Interceptor',
+        category = 'police',
+        spawncost = 100
+    },
+    ['policeb'] = {
+        label = 'Police Bike',
+        category = 'police',
+        spawncost = 0
+    },
+    ['polmav'] = {
+        label = 'Police Maverick',
+        category = 'helicopter',
+        spawncost = 500
+    }
+}
+```
+
+### Evidence System Configuration
+
+```lua
+-- Evidence Types
+Config.EvidenceTypes = {
+    ["dna"] = {
+        label = "DNA Sample",
+        timeout = 10800000, -- 3 hours
+        required_job = "police"
+    },
+    ["fingerprint"] = {
+        label = "Fingerprint",
+        timeout = 7200000, -- 2 hours
+        required_job = "police"
+    },
+    ["bullet"] = {
+        label = "Bullet Casing",
+        timeout = 14400000, -- 4 hours
+        required_job = "police"
+    },
+    ["blood"] = {
+        label = "Blood Sample",
+        timeout = 10800000, -- 3 hours
+        required_job = "police"
+    }
+}
+
+-- Crime Scene Settings
+Config.CrimeScene = {
+    evidenceTimeout = 20 * 60 * 1000, -- 20 minutes
+    maxEvidence = 10,
+    searchRadius = 2.5
+}
+```
+
+### Arrest System Configuration
+
+```lua
+-- Arrest Settings
+Config.Arrests = {
+    jailTime = 300, -- 5 minutes default
+    maxJailTime = 3600, -- 1 hour maximum
+    minJailTime = 60, -- 1 minute minimum
+    jailLocation = vector3(1642.5, 2570.75, 45.56),
+    releaseLocation = vector3(1836.98, 2584.95, 46.02)
+}
+
+-- Fine System
+Config.Fines = {
+    speeding = 250,
+    reckless_driving = 500,
+    drunk_driving = 1000,
+    assault = 750,
+    robbery = 2500,
+    drug_possession = 1500
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### CuffPlayer
+Handcuff or uncuff a player.
+
+```lua
+-- Cuff a player
+exports['qb-policejob']:CuffPlayer(targetPlayerId, true)
+
+-- Uncuff a player
+exports['qb-policejob']:CuffPlayer(targetPlayerId, false)
+
+-- Parameters:
+-- targetId: Target player server ID
+-- cuffed: Boolean (true = cuff, false = uncuff)
+```
+
+#### EscortPlayer
+Escort a handcuffed player.
+
+```lua
+-- Start escorting
+exports['qb-policejob']:EscortPlayer(targetPlayerId, true)
+
+-- Stop escorting
+exports['qb-policejob']:EscortPlayer(targetPlayerId, false)
+
+-- Parameters:
+-- targetId: Target player server ID
+-- escort: Boolean (true = start, false = stop)
+```
+
+#### CollectEvidence
+Collect evidence at a location.
+
+```lua
+exports['qb-policejob']:CollectEvidence(evidenceType, coords)
+
+-- Parameters:
+-- evidenceType: Type of evidence ('dna', 'fingerprint', 'bullet', 'blood')
+-- coords: Vector3 coordinates of evidence
+```
+
+### Server Exports
+
+#### JailPlayer
+Send a player to jail.
+
+```lua
+exports['qb-policejob']:JailPlayer(source, time, reason)
+
+-- Parameters:
+-- source: Player server ID
+-- time: Jail time in seconds
+-- reason: Reason for jailing
+```
+
+#### FinePlayer
+Issue a fine to a player.
+
+```lua
+exports['qb-policejob']:FinePlayer(source, amount, reason)
+
+-- Parameters:
+-- source: Player server ID
+-- amount: Fine amount
+-- reason: Reason for fine
+```
+
+#### CreateReport
+Create a police report.
+
+```lua
+local reportId = exports['qb-policejob']:CreateReport(data)
+
+-- Parameters:
+-- data: {
+--   citizenid = string,
+--   officer = string,
+--   incident_type = string,
+--   description = string,
+--   evidence = table (optional)
+-- }
+```
+
+#### ImpoundVehicle
+Impound a vehicle.
+
+```lua
+exports['qb-policejob']:ImpoundVehicle(plate, reason, fine, officer)
+
+-- Parameters:
+-- plate: Vehicle plate number
+-- reason: Reason for impound
+-- fine: Fine amount
+-- officer: Officer name/ID
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Player cuffed/uncuffed
+RegisterNetEvent('qb-policejob:client:cuffed', function(cuffed)
+    -- Handle cuff state change
+end)
+
+-- Player escorted
+RegisterNetEvent('qb-policejob:client:escorted', function(escorted)
+    -- Handle escort state change
+end)
+
+-- Police alert received
+RegisterNetEvent('qb-policejob:client:policeAlert', function(alertData)
+    -- Handle police alert
+end)
+
+-- Vehicle impounded
+RegisterNetEvent('qb-policejob:client:vehicleImpounded', function(plate)
+    -- Handle vehicle impound
+end)
+```
+
+#### Server Events
+
+```lua
+-- Officer on/off duty
+RegisterNetEvent('qb-policejob:server:dutyToggle', function(onDuty)
+    -- Handle duty status change
+end)
+
+-- Arrest processed
+RegisterNetEvent('qb-policejob:server:arrestPlayer', function(targetId, time, reason)
+    -- Handle arrest processing
+end)
+
+-- Evidence collected
+RegisterNetEvent('qb-policejob:server:evidenceCollected', function(evidence)
+    -- Handle evidence collection
+end)
+
+-- Fine issued
+RegisterNetEvent('qb-policejob:server:finePlayer', function(targetId, amount, reason)
+    -- Handle fine processing
+end)
+```
+
+## Usage Examples
+
+### Basic Arrest System
+
+```lua
+-- Client-side arrest command
+RegisterCommand('arrest', function(source, args)
+    if QBCore.Functions.GetPlayerData().job.name == "police" and QBCore.Functions.GetPlayerData().job.onduty then
+        local player, distance = QBCore.Functions.GetClosestPlayer()
+        if player ~= -1 and distance < 2.0 then
+            local targetId = GetPlayerServerId(player)
+            local time = tonumber(args[1]) or 300
+            local reason = table.concat(args, " ", 2) or "No reason provided"
+            
+            TriggerServerEvent('qb-policejob:server:arrestPlayer', targetId, time, reason)
+        else
+            QBCore.Functions.Notify("No player nearby", "error")
+        end
+    end
+end)
+
+-- Server-side arrest handler
+RegisterNetEvent('qb-policejob:server:arrestPlayer', function(targetId, time, reason)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    local target = QBCore.Functions.GetPlayer(targetId)
+    
+    if player.PlayerData.job.name == "police" and target then
+        exports['qb-policejob']:JailPlayer(targetId, time, reason)
+        TriggerClientEvent('QBCore:Notify', src, 'Player arrested for ' .. time .. ' seconds', 'success')
+        TriggerClientEvent('QBCore:Notify', targetId, 'You have been arrested for: ' .. reason, 'error')
+    end
+end)
+```
+
+### Evidence Collection System
+
+```lua
+-- Evidence collection near dead bodies
+RegisterNetEvent('qb-policejob:client:collectDNA', function()
+    local player = QBCore.Functions.GetPlayerData()
+    if player.job.name == "police" and player.job.onduty then
+        local ped = PlayerPedId()
+        local coords = GetEntityCoords(ped)
+        
+        QBCore.Functions.Progressbar("collecting_dna", "Collecting DNA evidence...", 10000, false, true, {
+            disableMovement = true,
+            disableCarMovement = true,
+            disableMouse = false,
+            disableCombat = true,
+        }, {
+            animDict = "amb@medic@standing@kneel@base",
+            anim = "base",
+        }, {}, {}, function()
+            TriggerServerEvent('qb-policejob:server:collectEvidence', 'dna', coords)
+        end)
+    end
+end)
+
+-- Server-side evidence processing
+RegisterNetEvent('qb-policejob:server:collectEvidence', function(evidenceType, coords)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    
+    if player.PlayerData.job.name == "police" then
+        local evidenceId = math.random(10000, 99999)
+        local evidenceData = {
+            id = evidenceId,
+            type = evidenceType,
+            coords = coords,
+            officer = player.PlayerData.charinfo.firstname .. " " .. player.PlayerData.charinfo.lastname,
+            time = os.date("%Y-%m-%d %H:%M:%S")
+        }
+        
+        -- Store in database
+        MySQL.insert('INSERT INTO police_evidence (type, identifier, description, data, created_by) VALUES (?, ?, ?, ?, ?)', {
+            evidenceType,
+            evidenceId,
+            'Evidence collected at scene',
+            json.encode(evidenceData),
+            player.PlayerData.citizenid
+        })
+        
+        -- Give evidence bag item
+        player.Functions.AddItem('evidence_bag', 1, false, evidenceData)
+        TriggerClientEvent('QBCore:Notify', src, 'Evidence collected: ' .. evidenceType, 'success')
+    end
+end)
+```
+
+### MDT Integration
+
+```lua
+-- MDT search function
+function SearchMDT(query, searchType)
+    local results = {}
+    
+    if searchType == "person" then
+        -- Search for person by name or citizenid
+        local players = MySQL.query.await('SELECT * FROM players WHERE JSON_EXTRACT(charinfo, "$.firstname") LIKE ? OR JSON_EXTRACT(charinfo, "$.lastname") LIKE ? OR citizenid = ?', {
+            '%' .. query .. '%',
+            '%' .. query .. '%',
+            query
+        })
+        
+        for i = 1, #players do
+            local charinfo = json.decode(players[i].charinfo)
+            table.insert(results, {
+                name = charinfo.firstname .. " " .. charinfo.lastname,
+                citizenid = players[i].citizenid,
+                phone = charinfo.phone,
+                dob = charinfo.birthdate
+            })
+        end
+    elseif searchType == "vehicle" then
+        -- Search for vehicle by plate
+        local vehicles = MySQL.query.await('SELECT * FROM player_vehicles WHERE plate LIKE ?', {
+            '%' .. query .. '%'
+        })
+        
+        for i = 1, #vehicles do
+            table.insert(results, {
+                plate = vehicles[i].plate,
+                vehicle = vehicles[i].vehicle,
+                owner = vehicles[i].citizenid
+            })
+        end
+    end
+    
+    return results
+end
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Handcuffs Not Working
+```lua
+-- Check if player has handcuff item
+local handcuffs = QBCore.Functions.HasItem('handcuffs')
+if not handcuffs then
+    QBCore.Functions.Notify("You don't have handcuffs", "error")
+    return
+end
+```
+
+#### Vehicle Spawn Issues
+- Verify spawn point coordinates are correct
+- Check if vehicle models exist in the server
+- Ensure proper permissions for vehicle spawning
+
+#### Evidence System Not Working
+```lua
+-- Debug evidence collection
+RegisterNetEvent('qb-policejob:debug:evidence', function()
+    local evidence = MySQL.query.await('SELECT * FROM police_evidence ORDER BY created_at DESC LIMIT 10')
+    for i = 1, #evidence do
+        print("Evidence ID: " .. evidence[i].id .. ", Type: " .. evidence[i].type)
+    end
+end)
+```
+
+### Debug Commands
+
+```lua
+-- Check player police status
+/checkpolice [player_id]
+
+-- Force jail player (admin only)
+/forcejail [player_id] [time] [reason]
+
+-- Clear all evidence (admin only)
+/clearevidence
+
+-- Toggle police radar
+/radar
+```
+
+### Performance Optimization
+
+1. **Evidence Cleanup**: Regularly clean expired evidence from database
+2. **Alert System**: Limit alert frequency to prevent spam
+3. **Vehicle Management**: Despawn unused police vehicles automatically
+
+<Callout type="warning">
+  Test all arrest and evidence systems thoroughly in a development environment before deploying to production.
+</Callout>

@@ -1,0 +1,437 @@
+---
+title: "QBCore Linux Installation Tutorial 2025 - Ubuntu VPS Setup Guide"
+description: "Complete guide to install QBCore framework on Linux servers. Step-by-step Ubuntu VPS setup with MariaDB, FiveM server configuration, and performance optimization for 2025."
+keywords: "qbcore linux installation, ubuntu vps setup, fivem linux server, qbcore framework ubuntu, linux roleplay server 2025"
+---
+
+# QBCore Linux Installation Tutorial 2025 - Ubuntu VPS Setup Guide
+
+**⏱️ Estimated Time: 45-60 minutes | 🎯 Difficulty: Intermediate | 🏆 Recommended for Production**
+
+This comprehensive guide will walk you through installing QBCore Framework on a Linux server (Ubuntu). Linux is the preferred method for production FiveM roleplay servers due to better performance, stability, and cost-effectiveness with VPS hosting.
+
+## Prerequisites
+
+- Ubuntu 20.04 LTS or newer (recommended)
+- Root or sudo access
+- At least 4GB RAM (8GB+ recommended)
+- 20GB+ free disk space
+- Basic knowledge of terminal commands
+
+## System Requirements
+
+### VPS Hosting Comparison for QBCore
+
+| Provider | CPU | RAM | Storage | Bandwidth | Price/Month | Best For |
+|----------|-----|-----|---------|-----------|-------------|----------|
+| **DigitalOcean** | 2 cores | 4GB | 80GB SSD | 4TB | $24 | Beginners |
+| **Linode** | 2 cores | 4GB | 80GB SSD | 4TB | $24 | Balanced |
+| **Vultr** | 2 cores | 4GB | 80GB SSD | 3TB | $24 | Performance |
+| **AWS EC2** | 2 cores | 4GB | 80GB SSD | Variable | $30+ | Enterprise |
+| **Hetzner** | 2 cores | 4GB | 40GB SSD | 20TB | $12 | Budget |
+
+### Server Performance by Specifications
+
+| Component | Minimum | Recommended | Professional |
+|-----------|---------|-------------|--------------|
+| **CPU** | 2 cores | 4+ cores | 8+ cores |
+| **RAM** | 4GB | 8GB+ | 16GB+ |
+| **Storage** | 20GB HDD | 50GB+ SSD | 100GB+ NVMe SSD |
+| **Network** | 100Mbps | 1Gbps | 10Gbps |
+| **OS** | Ubuntu 18.04+ | Ubuntu 22.04 LTS | Ubuntu 22.04 LTS |
+| **Players Supported** | 16-32 | 32-64 | 64-128+ |
+| **Monthly Cost** | $12-20 | $24-50 | $50-100+ |
+
+## Step 1: System Update
+
+First, update your system packages:
+
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+## Step 2: Install Dependencies
+
+### Essential packages:
+```bash
+sudo apt install -y curl wget git unzip software-properties-common
+```
+
+### Install Node.js (via NodeSource):
+```bash
+# Add NodeSource repository
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+
+# Install Node.js
+sudo apt install -y nodejs
+
+# Verify installation
+node --version
+npm --version
+```
+
+## Step 3: Database Installation
+
+### Install MariaDB:
+```bash
+# Install MariaDB server
+sudo apt install -y mariadb-server mariadb-client
+
+# Start and enable MariaDB
+sudo systemctl start mariadb
+sudo systemctl enable mariadb
+
+# Secure MariaDB installation
+sudo mysql_secure_installation
+```
+
+### Configure MariaDB:
+```bash
+# Login to MariaDB
+sudo mysql -u root -p
+
+# Create database and user
+CREATE DATABASE qbcore;
+CREATE USER 'qbcore'@'localhost' IDENTIFIED BY 'your_password_here';
+GRANT ALL PRIVILEGES ON qbcore.* TO 'qbcore'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+## Step 4: Download FiveM Server
+
+### Create server directory:
+```bash
+sudo mkdir -p /opt/fivem
+sudo chown $USER:$USER /opt/fivem
+cd /opt/fivem
+```
+
+### Download FiveM artifacts:
+```bash
+# Download latest recommended Linux build
+wget https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/fx.tar.xz
+
+# Extract the files
+tar -xf fx.tar.xz
+
+# Make run.sh executable
+chmod +x run.sh
+```
+
+## Step 5: Install txAdmin
+
+txAdmin is included with FiveM artifacts. Create a startup script:
+
+```bash
+# Create startup script
+nano start.sh
+```
+
+Add the following content:
+```bash
+#!/bin/bash
+cd /opt/fivem
+./run.sh +exec server.cfg
+```
+
+Make it executable:
+```bash
+chmod +x start.sh
+```
+
+## Step 6: Initial Server Setup
+
+### Start the server for first-time setup:
+```bash
+./start.sh
+```
+
+### Access txAdmin:
+1. Open your browser and go to `http://your-server-ip:40120`
+2. Follow the setup wizard
+3. Link your FiveM account
+4. Create an admin password
+
+### Choose QBCore Template:
+1. In step 3 of the setup, select "Popular Template"
+2. Choose "QBCore Framework"
+3. Set your server data path (recommended: `/opt/fivem/server-data`)
+4. Enter your FiveM license key from [Keymaster](https://keymaster.fivem.net/)
+5. Run the recipe deployer
+
+## Step 7: Configure Firewall
+
+### Allow necessary ports:
+```bash
+# Install UFW if not installed
+sudo apt install -y ufw
+
+# Allow SSH (important!)
+sudo ufw allow ssh
+
+# Allow FiveM server port
+sudo ufw allow 30120
+
+# Allow txAdmin port
+sudo ufw allow 40120
+
+# Enable firewall
+sudo ufw enable
+```
+
+## Step 8: Create System Service (Optional)
+
+For automatic startup and better process management:
+
+```bash
+# Create service file
+sudo nano /etc/systemd/system/fivem.service
+```
+
+Add the following content:
+```ini
+[Unit]
+Description=FiveM Server
+After=network.target
+
+[Service]
+Type=simple
+User=fivem
+WorkingDirectory=/opt/fivem
+ExecStart=/opt/fivem/run.sh +exec server.cfg
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Create dedicated user:
+```bash
+# Create fivem user
+sudo useradd -r -s /bin/false fivem
+
+# Change ownership
+sudo chown -R fivem:fivem /opt/fivem
+
+# Reload systemd and start service
+sudo systemctl daemon-reload
+sudo systemctl enable fivem
+sudo systemctl start fivem
+```
+
+## Step 9: Configure Server Settings
+
+### Edit server.cfg:
+```bash
+nano /opt/fivem/server-data/server.cfg
+```
+
+Key settings to configure:
+```bash
+# Server name
+sv_hostname "Your QBCore Server"
+
+# Player slots
+sv_maxclients 64
+
+# License key
+sv_licenseKey "your_license_key_here"
+
+# Database connection
+set mysql_connection_string "mysql://qbcore:your_password@localhost/qbcore?charset=utf8mb4"
+
+# Steam Web API key (optional but recommended)
+set steam_webApiKey "your_steam_api_key"
+```
+
+## Step 10: Performance Optimization
+
+### System optimization:
+```bash
+# Increase file limits
+echo "* soft nofile 65536" | sudo tee -a /etc/security/limits.conf
+echo "* hard nofile 65536" | sudo tee -a /etc/security/limits.conf
+
+# Optimize network settings
+echo "net.core.rmem_max = 26214400" | sudo tee -a /etc/sysctl.conf
+echo "net.core.rmem_default = 26214400" | sudo tee -a /etc/sysctl.conf
+echo "net.core.wmem_max = 26214400" | sudo tee -a /etc/sysctl.conf
+echo "net.core.wmem_default = 26214400" | sudo tee -a /etc/sysctl.conf
+
+# Apply changes
+sudo sysctl -p
+```
+
+### MariaDB optimization:
+```bash
+# Edit MariaDB configuration
+sudo nano /etc/mysql/mariadb.conf.d/50-server.cnf
+```
+
+Add under `[mysqld]` section:
+```ini
+innodb_buffer_pool_size = 1G
+innodb_log_file_size = 256M
+max_connections = 200
+query_cache_size = 64M
+query_cache_type = 1
+```
+
+Restart MariaDB:
+```bash
+sudo systemctl restart mariadb
+```
+
+## Monitoring and Maintenance
+
+### Check server status:
+```bash
+# Check if FiveM is running
+sudo systemctl status fivem
+
+# View logs
+sudo journalctl -u fivem -f
+
+# Check resource usage
+top
+htop  # if installed
+```
+
+### Backup script example:
+```bash
+#!/bin/bash
+# backup.sh
+BACKUP_DIR="/backups/fivem"
+DATE=$(date +%Y%m%d_%H%M%S)
+
+# Create backup directory
+mkdir -p $BACKUP_DIR
+
+# Backup server data
+tar -czf $BACKUP_DIR/server-data_$DATE.tar.gz /opt/fivem/server-data
+
+# Backup database
+mysqldump -u qbcore -p qbcore > $BACKUP_DIR/database_$DATE.sql
+
+# Keep only last 7 days of backups
+find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
+find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
+```
+
+## Troubleshooting
+
+### Common Issues:
+
+**Server won't start:**
+```bash
+# Check if ports are in use
+sudo netstat -tlnp | grep :30120
+
+# Check server logs
+sudo journalctl -u fivem --no-pager
+
+# Verify file permissions
+ls -la /opt/fivem/
+```
+
+**Database connection issues:**
+```bash
+# Test database connection
+mysql -u qbcore -p qbcore
+
+# Check MariaDB status
+sudo systemctl status mariadb
+
+# Verify user permissions
+mysql -u root -p -e "SHOW GRANTS FOR 'qbcore'@'localhost';"
+```
+
+**Performance issues:**
+```bash
+# Monitor resource usage
+top
+iotop  # for disk I/O
+
+# Check memory usage
+free -h
+
+# Monitor network
+ss -tuln
+```
+
+### Log Locations:
+- FiveM logs: `journalctl -u fivem`
+- MariaDB logs: `/var/log/mysql/error.log`
+- System logs: `/var/log/syslog`
+
+## Security Considerations
+
+1. **Firewall Configuration:**
+   - Only open necessary ports
+   - Use fail2ban for SSH protection
+   - Consider changing default SSH port
+
+2. **Regular Updates:**
+   ```bash
+   # Update system packages
+   sudo apt update && sudo apt upgrade
+   
+   # Update FiveM artifacts regularly
+   # Check https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/
+   ```
+
+3. **Access Control:**
+   - Use strong passwords
+   - Implement SSH key authentication
+   - Limit sudo access
+   - Regular security audits
+
+## Frequently Asked Questions
+
+### Is Linux better than Windows for QBCore hosting?
+Yes, Linux (especially Ubuntu) is preferred for production QBCore servers due to better performance, lower resource usage, and cost-effective VPS hosting options.
+
+### What VPS providers work best with QBCore?
+Popular choices include DigitalOcean, Linode, Vultr, and AWS EC2. Look for at least 4GB RAM and SSD storage for optimal QBCore performance.
+
+### How much does it cost to host a QBCore server on Linux?
+VPS hosting typically costs $20-50/month for a 4-8GB server that can handle 32-64 players with QBCore framework.
+
+### Can I migrate from Windows to Linux QBCore?
+Yes, you can migrate your database and server files. The QBCore framework itself is cross-platform compatible.
+
+### What's the difference between Ubuntu and CentOS for QBCore?
+Ubuntu is recommended for beginners due to better community support and easier package management. Both work well with QBCore.
+
+### How do I backup my Linux QBCore server?
+Use the backup script provided in this guide, or set up automated backups with tools like cron jobs and mysqldump.
+
+### Why choose txAdmin over manual installation?
+txAdmin provides a web interface for server management, making it easier to manage your QBCore server remotely and handle updates.
+
+## Next Steps
+
+Once your Linux QBCore server is running:
+
+1. [Configure Admin Permissions](/docs/installation/permissions) - Set up admin access and roles
+2. [Advanced Database Configuration](/docs/installation/database) - Optimize MariaDB for QBCore
+3. [Development Environment Setup](/docs/development/vscode-setup) - Configure local development
+4. [Performance Optimization Guide](/docs/development/performance) - Maximize server performance
+5. [Windows Installation Guide](/docs/installation/windows) - Alternative setup method
+6. [Quick Start Guide](/quickstart) - Fast 10-minute setup option
+
+## Getting Help
+
+If you encounter issues with your Linux QBCore installation:
+
+1. Check the [Troubleshooting Guide](/docs/installation/troubleshooting)
+2. Browse the complete [QBCore Documentation](/docs)
+3. Search [GitHub Issues](https://github.com/qbcore-framework/qb-core/issues) for solutions
+4. Join [GitHub Discussions](https://github.com/qbcore-framework/qb-core/discussions) for community support
+5. Review [QBCore Resources](/docs/resources) for additional scripts and modules
+
+---
+
+**Note:** This guide assumes a fresh Ubuntu installation. Commands may need adaptation for other Linux distributions like CentOS, Debian, or Fedora. For production servers, always keep your system updated and follow security best practices.

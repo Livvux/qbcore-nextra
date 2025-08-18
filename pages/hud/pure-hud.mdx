@@ -1,0 +1,538 @@
+# Pure HUD for QBCore
+
+Pure HUD offers a modern and intuitive interface with smooth server integration, designed for QBCore servers that prioritize clean aesthetics and seamless user experience.
+
+## Features
+
+### ✨ Modern Design Philosophy
+- **Minimalist Interface**: Clean, uncluttered design that doesn't distract from gameplay
+- **Smooth Animations**: Buttery-smooth transitions and micro-interactions
+- **Responsive Layout**: Adapts beautifully to all screen sizes and resolutions
+- **Intuitive UX**: User-friendly interface that feels natural to navigate
+
+### 🎯 Core Features
+- **Player Vitals**: Health, armor, hunger, thirst, and stress with smooth bars
+- **Vehicle Display**: Elegant speedometer, fuel gauge, and engine diagnostics
+- **Status Indicators**: Clean icons for voice, seatbelt, and other statuses
+- **Money Display**: Sleek cash and bank balance visualization
+- **Notification System**: Modern toast notifications with priority queuing
+- **Customizable Themes**: Multiple color schemes and layout options
+
+## Installation
+
+### System Requirements
+- QBCore Framework (v1.0+)
+- Modern browser engine (Chrome 80+, Firefox 75+)
+- FiveM server with resource management permissions
+
+### Installation Steps
+
+1. **Download Pure HUD**
+   ```bash
+   cd resources/[qb]
+   git clone https://github.com/example/pure-hud.git
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   cd pure-hud
+   npm install         # If using npm build process
+   ```
+
+3. **Server Configuration**
+   ```cfg
+   # Add to server.cfg after qb-core
+   start pure-hud
+   
+   # Optional: Disable default QBCore HUD
+   setr qb-hud:use_default false
+   ```
+
+4. **Permissions Setup**
+   ```bash
+   # Ensure proper file permissions
+   chmod -R 755 resources/[qb]/pure-hud/
+   ```
+
+## Configuration
+
+### Main Configuration
+
+```lua
+Config = {}
+
+-- Framework Settings
+Config.Framework = 'qb-core'
+Config.Debug = false
+Config.UpdateInterval = 150         -- Update frequency in milliseconds
+
+-- UI Settings
+Config.UI = {
+    -- Theme selection
+    theme = 'default',              -- 'default', 'dark', 'neon', 'minimal'
+    
+    -- Animation settings
+    animations = {
+        enabled = true,
+        duration = 250,             -- Animation duration in ms
+        easing = 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
+    },
+    
+    -- Layout options
+    layout = {
+        position = 'bottom-left',   -- HUD position
+        spacing = 10,               -- Element spacing
+        scale = 1.0,                -- Overall scale (0.5 - 2.0)
+        borderRadius = 8            -- Corner radius in pixels
+    }
+}
+
+-- Element Configuration
+Config.Elements = {
+    health = {
+        enabled = true,
+        position = {x = 50, y = -200},
+        showPercentage = false,
+        showIcon = true,
+        color = '#e74c3c'
+    },
+    
+    armor = {
+        enabled = true,
+        position = {x = 50, y = -170},
+        showPercentage = false,
+        showIcon = true,
+        color = '#3498db'
+    },
+    
+    hunger = {
+        enabled = true,
+        position = {x = 50, y = -140},
+        showPercentage = false,
+        showIcon = true,
+        color = '#f39c12'
+    },
+    
+    thirst = {
+        enabled = true,
+        position = {x = 50, y = -110},
+        showPercentage = false,
+        showIcon = true,
+        color = '#1abc9c'
+    },
+    
+    stress = {
+        enabled = true,
+        position = {x = 50, y = -80},
+        showPercentage = false,
+        showIcon = true,
+        color = '#9b59b6'
+    }
+}
+```
+
+### Vehicle Configuration
+
+```lua
+Config.Vehicle = {
+    enabled = true,
+    hideOnFoot = true,
+    position = {x = -300, y = -150},
+    
+    speedometer = {
+        enabled = true,
+        unit = 'kmh',               -- 'kmh', 'mph'
+        showDigital = true,
+        showAnalog = false,
+        maxSpeed = 200,             -- Max speed for analog gauge
+        
+        -- Visual settings
+        size = 120,
+        strokeWidth = 8,
+        backgroundColor = 'rgba(0,0,0,0.2)',
+        foregroundColor = '#3498db'
+    },
+    
+    fuel = {
+        enabled = true,
+        showPercentage = true,
+        lowFuelWarning = 20,        -- Warning threshold
+        criticalFuelWarning = 5,    -- Critical threshold
+        
+        colors = {
+            normal = '#2ecc71',
+            warning = '#f39c12',
+            critical = '#e74c3c'
+        }
+    },
+    
+    engine = {
+        enabled = true,
+        showPercentage = false,
+        showIcon = true,
+        damageThreshold = 80        -- Show warning below this health
+    },
+    
+    seatbelt = {
+        enabled = true,
+        showIcon = true,
+        blinkWhenOff = true,
+        warningSpeed = 50           -- Speed threshold for warning
+    }
+}
+```
+
+### Notification System
+
+```lua
+Config.Notifications = {
+    enabled = true,
+    position = 'top-right',         -- Position on screen
+    maxVisible = 6,                 -- Maximum notifications shown
+    defaultDuration = 5000,         -- Default duration in ms
+    stackingOffset = 5,             -- Pixel offset when stacking
+    
+    -- Notification types with styling
+    types = {
+        success = {
+            icon = 'check-circle',
+            color = '#2ecc71',
+            sound = 'notification_success',
+            priority = 'normal'
+        },
+        
+        error = {
+            icon = 'exclamation-triangle',
+            color = '#e74c3c',
+            sound = 'notification_error',
+            priority = 'high'
+        },
+        
+        warning = {
+            icon = 'exclamation-circle',
+            color = '#f39c12',
+            sound = 'notification_warning',
+            priority = 'normal'
+        },
+        
+        info = {
+            icon = 'info-circle',
+            color = '#3498db',
+            sound = false,
+            priority = 'low'
+        }
+    }
+}
+```
+
+## Themes & Customization
+
+### Built-in Themes
+
+#### Default Theme
+```css
+/* Light, clean theme */
+:root {
+    --primary-bg: rgba(255, 255, 255, 0.95);
+    --secondary-bg: rgba(248, 249, 250, 0.9);
+    --text-primary: #2c3e50;
+    --text-secondary: #7f8c8d;
+    --accent-color: #3498db;
+}
+```
+
+#### Dark Theme
+```css
+/* Modern dark theme */
+:root {
+    --primary-bg: rgba(44, 62, 80, 0.95);
+    --secondary-bg: rgba(52, 73, 94, 0.9);
+    --text-primary: #ecf0f1;
+    --text-secondary: #bdc3c7;
+    --accent-color: #e74c3c;
+}
+```
+
+#### Neon Theme
+```css
+/* Cyberpunk-inspired neon theme */
+:root {
+    --primary-bg: rgba(0, 0, 0, 0.9);
+    --secondary-bg: rgba(20, 20, 20, 0.95);
+    --text-primary: #00ff00;
+    --text-secondary: #00cccc;
+    --accent-color: #ff00ff;
+    --glow: 0 0 10px currentColor;
+}
+```
+
+### Creating Custom Themes
+
+1. **Create Theme File**
+   ```css
+   /* html/themes/mytheme.css */
+   .pure-hud.theme-mytheme {
+       --health-color: #your-color;
+       --armor-color: #your-color;
+       --hunger-color: #your-color;
+       --thirst-color: #your-color;
+       --stress-color: #your-color;
+       
+       /* Background styles */
+       --bar-bg: rgba(0, 0, 0, 0.4);
+       --bar-border: 1px solid rgba(255, 255, 255, 0.1);
+       --bar-radius: 12px;
+   }
+   ```
+
+2. **Register in Config**
+   ```lua
+   Config.AvailableThemes = {
+       'default',
+       'dark', 
+       'neon',
+       'minimal',
+       'mytheme'  -- Your custom theme
+   }
+   ```
+
+### Advanced Customization
+
+#### Custom Animations
+
+```lua
+Config.CustomAnimations = {
+    healthLow = {
+        enabled = true,
+        threshold = 25,             -- Animate when health below 25%
+        animation = 'pulse',
+        duration = 1000,
+        intensity = 0.8
+    },
+    
+    stressHigh = {
+        enabled = true,
+        threshold = 75,             -- Animate when stress above 75%
+        animation = 'shake',
+        duration = 500,
+        intensity = 0.3
+    },
+    
+    moneyChange = {
+        enabled = true,
+        showChange = true,          -- Show +/- money changes
+        duration = 2000,
+        fadeOut = true
+    }
+}
+```
+
+#### Responsive Breakpoints
+
+```lua
+Config.Responsive = {
+    enabled = true,
+    
+    breakpoints = {
+        mobile = 768,
+        tablet = 1024,
+        desktop = 1920,
+        ultrawide = 2560
+    },
+    
+    adjustments = {
+        mobile = {
+            scale = 0.75,
+            hideElements = {'stress', 'engine'},
+            compactMode = true
+        },
+        
+        tablet = {
+            scale = 0.9,
+            compactMode = false
+        },
+        
+        ultrawide = {
+            scale = 1.1,
+            extraSpacing = 5
+        }
+    }
+}
+```
+
+## Commands & Controls
+
+### User Commands
+
+```lua
+/purehud                -- Toggle Pure HUD on/off
+/purehud theme [name]   -- Change theme
+/purehud scale [0.5-2]  -- Adjust HUD scale
+/purehud reset          -- Reset to defaults
+/purehud move           -- Enter position adjustment mode
+
+-- Individual elements
+/purehud toggle health  -- Toggle specific elements
+/purehud toggle armor
+/purehud toggle hunger
+/purehud toggle thirst
+```
+
+### Position Adjustment Mode
+
+When in adjustment mode:
+- **Arrow Keys**: Fine adjustment (1px)
+- **Shift + Arrows**: Coarse adjustment (10px)
+- **Enter**: Save current position
+- **ESC**: Cancel without saving
+- **R**: Reset element to default position
+
+### Admin Commands
+
+```lua
+/purehud admin          -- Open admin panel
+/purehud config [player]-- Configure HUD for specific player  
+/purehud reload         -- Reload configuration
+/purehud debug          -- Toggle debug mode
+
+-- Global settings
+/purehud global theme   -- Set server-wide theme
+/purehud global scale   -- Set server-wide scale
+```
+
+## API Integration
+
+### QBCore Integration
+
+```lua
+-- Automatic QBCore event handling
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    TriggerEvent('pure-hud:client:initialize', PlayerData)
+end)
+
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
+    TriggerEvent('pure-hud:client:updatePlayerData', val)
+end)
+
+-- Status updates
+RegisterNetEvent('hud:client:UpdateNeeds', function(hunger, thirst)
+    TriggerEvent('pure-hud:client:updateHunger', hunger)
+    TriggerEvent('pure-hud:client:updateThirst', thirst)
+end)
+
+RegisterNetEvent('hud:client:UpdateStress', function(stress)
+    TriggerEvent('pure-hud:client:updateStress', stress)
+end)
+```
+
+### Custom Integration
+
+```lua
+-- For custom frameworks or resources
+exports['pure-hud']:UpdateElement('health', newHealth)
+exports['pure-hud']:UpdateElement('armor', newArmor)
+exports['pure-hud']:UpdateElement('hunger', newHunger)
+exports['pure-hud']:UpdateElement('thirst', newThirst)
+exports['pure-hud']:UpdateElement('stress', newStress)
+
+-- Notification system
+exports['pure-hud']:ShowNotification({
+    type = 'success',
+    title = 'Action Complete',
+    message = 'Your request has been processed',
+    duration = 4000
+})
+
+-- Theme management
+exports['pure-hud']:SetTheme('dark')
+exports['pure-hud']:GetCurrentTheme()
+
+-- HUD control
+exports['pure-hud']:ShowHUD()
+exports['pure-hud']:HideHUD()
+exports['pure-hud']:IsHUDVisible()
+```
+
+## Performance Optimization
+
+### Efficient Updates
+
+```lua
+Config.OptimizedUpdates = {
+    enabled = true,
+    
+    -- Update only when values change
+    onChangeOnly = true,
+    
+    -- Batch updates to reduce calls
+    batchUpdates = {
+        enabled = true,
+        interval = 100,             -- Batch every 100ms
+        maxBatchSize = 10
+    },
+    
+    -- Reduce updates when idle
+    idleOptimization = {
+        enabled = true,
+        idleThreshold = 30000,      -- 30 seconds
+        idleUpdateInterval = 1000   -- Update every 1s when idle
+    }
+}
+```
+
+### Memory Management
+
+```lua
+-- Automatic cleanup
+CreateThread(function()
+    while true do
+        if Config.OptimizedUpdates.enabled then
+            -- Clean up unused elements
+            TriggerEvent('pure-hud:client:cleanup')
+            
+            -- Garbage collection
+            collectgarbage('collect')
+        end
+        
+        Wait(60000) -- Every minute
+    end
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### HUD Not Loading
+1. Check resource order in server.cfg
+2. Verify QBCore is running properly
+3. Check console for JavaScript errors
+4. Clear FiveM cache
+
+#### Performance Issues
+1. Increase update intervals
+2. Disable unused elements
+3. Use optimized update settings
+4. Check for resource conflicts
+
+#### Theme Not Applying
+1. Verify theme exists in themes folder
+2. Check CSS syntax errors
+3. Restart resource after adding themes
+4. Clear browser cache with Ctrl+F5
+
+### Debug Commands
+
+```lua
+/purehud debug              -- Toggle debug overlay
+/purehud performance        -- Show performance metrics
+/purehud test               -- Test all elements
+/purehud validate           -- Validate configuration
+```
+
+---
+
+**Experience pure elegance!** Pure HUD combines beautiful design with powerful functionality, creating the perfect interface for modern QBCore servers. 
+
+Explore our other [HUD options](/hud) or get [support](/support) for any questions.

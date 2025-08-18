@@ -1,0 +1,274 @@
+# Core Object
+
+The **Core Object** is the backbone of the QBCore framework, providing essential functionality and utilities for managing your server's gameplay mechanics, player data, and overall resource interactions.
+
+## Overview
+
+The Core Object serves as the central hub for:
+- Player management and data access
+- Server-wide configuration
+- Shared data (items, vehicles, jobs)
+- Utility functions
+- Command registration
+
+## How to Access the Core Object
+
+### Basic Usage
+
+To interact with the Core Object in your scripts, use the following pattern:
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+```
+
+### Selective Importing (Recommended)
+
+As of QBCore version 1.3.0+, you can import only what you need to reduce memory overhead:
+
+```lua
+-- Import only Functions
+local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
+-- Now available: QBCore.Functions
+
+-- Import Functions and Shared data
+local QBCore = exports['qb-core']:GetCoreObject({'Functions', 'Shared'})
+-- Now available: QBCore.Functions, QBCore.Shared
+```
+
+### Direct Function Exports
+
+You can also call individual functions directly without importing the full core:
+
+```lua
+-- Get a player directly
+local player = exports['qb-core']:GetPlayer(source)
+
+-- Check if player has item
+local hasItem = exports['qb-core']:HasItem(source, 'water_bottle')
+```
+
+## Core Features
+
+### Functions
+A collection of utility functions for common server and player operations.
+
+### Players
+A table containing all currently connected players with their data.
+
+### Shared
+Shared data accessible across client and server, including:
+- Items configuration
+- Vehicle data
+- Jobs and gangs
+- Weapon information
+
+### Config
+The main configuration table for QBCore framework settings.
+
+### Commands
+A registry for custom server and client commands.
+
+## Common Usage Examples
+
+### Accessing Player Data
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+RegisterNetEvent('myresource:getPlayerJob', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player then
+        local job = Player.PlayerData.job
+        print("Player's job: " .. job.name .. " (Grade: " .. job.grade.level .. ")")
+        
+        -- Trigger client event with job data
+        TriggerClientEvent('myresource:receiveJob', src, job)
+    end
+end)
+```
+
+### Using Shared Data
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject({'Shared'})
+
+-- Get item information
+local waterBottle = QBCore.Shared.Items['water_bottle']
+if waterBottle then
+    print("Item: " .. waterBottle.label)
+    print("Weight: " .. waterBottle.weight)
+    print("Useable: " .. tostring(waterBottle.useable))
+end
+
+-- Check if vehicle exists
+local vehicle = QBCore.Shared.Vehicles['adder']
+if vehicle then
+    print("Vehicle: " .. vehicle.name)
+    print("Brand: " .. vehicle.brand)
+    print("Model: " .. vehicle.model)
+end
+```
+
+### Registering Commands
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Register a command with permission check
+QBCore.Commands.Add('heal', 'Heal yourself or another player', {
+    {name = 'id', help = 'Player ID (optional)'}
+}, false, function(source, args)
+    local src = source
+    local targetId = tonumber(args[1]) or src
+    local targetPlayer = QBCore.Functions.GetPlayer(targetId)
+    
+    if targetPlayer then
+        TriggerClientEvent('hospital:client:Revive', targetId)
+        TriggerClientEvent('QBCore:Notify', src, 'Player healed successfully', 'success')
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'Player not found', 'error')
+    end
+end, 'admin')
+```
+
+### Player Management
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Get all online players
+local players = QBCore.Functions.GetPlayers()
+for _, playerId in pairs(players) do
+    local Player = QBCore.Functions.GetPlayer(playerId)
+    if Player then
+        print("Online player: " .. Player.PlayerData.name)
+    end
+end
+
+-- Get player by citizen ID
+local citizenId = 'ABC12345'
+local Player = QBCore.Functions.GetPlayerByCitizenId(citizenId)
+if Player then
+    print("Found player: " .. Player.PlayerData.name)
+end
+```
+
+### Money Management
+
+```lua
+-- Add money to player
+Player.Functions.AddMoney('cash', 1000, 'admin-reward')
+
+-- Remove money from player
+if Player.Functions.RemoveMoney('bank', 500, 'purchase-item') then
+    print("Purchase successful")
+else
+    print("Insufficient funds")
+end
+
+-- Get player's money
+local cashAmount = Player.Functions.GetMoney('cash')
+local bankAmount = Player.Functions.GetMoney('bank')
+print("Cash: $" .. cashAmount .. ", Bank: $" .. bankAmount)
+```
+
+## Best Practices
+
+### 1. Cache the Core Object
+Always cache the Core Object in a local variable to avoid repeated calls:
+
+```lua
+-- Good
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Avoid this
+local player = exports['qb-core']:GetCoreObject().Functions.GetPlayer(source)
+```
+
+### 2. Use Selective Importing
+Only import what you need to reduce memory usage:
+
+```lua
+-- If you only need functions
+local QBCore = exports['qb-core']:GetCoreObject({'Functions'})
+
+-- If you need both functions and shared data
+local QBCore = exports['qb-core']:GetCoreObject({'Functions', 'Shared'})
+```
+
+### 3. Error Handling
+Always check if player exists before accessing their data:
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+if not Player then
+    print("Player not found")
+    return
+end
+
+-- Safe to use Player.PlayerData now
+```
+
+### 4. Use Exports for Single Functions
+For single function calls, consider using direct exports:
+
+```lua
+-- Instead of importing full core for one function
+local player = exports['qb-core']:GetPlayer(source)
+```
+
+## Common Patterns
+
+### Resource Initialization
+
+```lua
+-- At the top of your server.lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Wait for core to be ready
+CreateThread(function()
+    while not QBCore do
+        Wait(10)
+        QBCore = exports['qb-core']:GetCoreObject()
+    end
+    
+    -- Your resource initialization code here
+    print("Resource initialized with QBCore")
+end)
+```
+
+### Event-Based Player Actions
+
+```lua
+RegisterNetEvent('myresource:doSomething', function(data)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then return end
+    
+    -- Perform actions with player data
+    local job = Player.PlayerData.job.name
+    local money = Player.Functions.GetMoney('cash')
+    
+    -- Continue with your logic
+end)
+```
+
+## Related Documentation
+
+- [Player Data](/docs/core/player-data) - Detailed player data structure
+- [Shared Data](/docs/core/shared) - Items, vehicles, and jobs configuration
+- [API Functions](/docs/api/server-functions) - Complete function reference
+- [Commands](/docs/api/commands) - Command system documentation
+
+## Version Compatibility
+
+| QBCore Version | Core Object Features |
+|----------------|----------------------|
+| 1.0.x - 1.2.x  | Basic core object access |
+| 1.3.x+         | Selective importing, direct exports |
+| Latest          | All features supported |
+
+Always check your `fxmanifest.lua` for your QBCore version to ensure compatibility with the features you're using.

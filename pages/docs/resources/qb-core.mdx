@@ -1,0 +1,508 @@
+# QB-Core Framework
+
+QB-Core is the foundational framework that powers the entire QBCore ecosystem. It provides essential functions, events, and systems that all other resources depend on.
+
+## 📋 Overview
+
+QB-Core serves as the central hub for:
+- **Player Management** - Player data, character information, and session handling
+- **Server Functions** - Core utilities and helper functions
+- **Event System** - Communication between client and server
+- **Database Operations** - Player data persistence and queries
+- **Shared Configuration** - Jobs, items, vehicles, and other shared data
+- **Command System** - Chat commands and administration tools
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- **FiveM Server** running the latest recommended version
+- **MariaDB/MySQL** database server
+- **Basic knowledge** of Lua scripting
+
+### Installation Steps
+
+1. **Download QB-Core**
+   ```bash
+   git clone https://github.com/qbcore-framework/qb-core.git
+   ```
+
+2. **Place in Resources**
+   ```
+   resources/
+   └── [qb]/
+       └── qb-core/
+   ```
+
+3. **Database Setup**
+   - Import the SQL files from `/qb-core/qbcore.sql`
+   - Configure your database connection
+
+4. **Configuration**
+   ```lua
+   -- shared/config.lua
+   QBShared = QBShared or {}
+   QBShared.ForceJobDefaultDutyAtLogin = true
+   QBShared.UpdateInterval = 5 -- minutes
+   ```
+
+5. **Server Configuration**
+   ```cfg
+   # server.cfg
+   ensure qb-core
+   ```
+
+## 🔧 Core Functions
+
+### Player Management
+
+#### GetPlayer Functions
+```lua
+-- Get player by source
+local Player = QBCore.Functions.GetPlayer(src)
+
+-- Get player by citizen ID
+local Player = QBCore.Functions.GetPlayerByCitizenId(citizenid)
+
+-- Get all online players
+local Players = QBCore.Functions.GetPlayers()
+
+-- Get players by job
+local Players = QBCore.Functions.GetPlayersOnDuty('police')
+```
+
+#### Player Object Methods
+```lua
+-- Player data access
+local playerData = Player.PlayerData
+local citizenId = Player.PlayerData.citizenid
+local jobName = Player.PlayerData.job.name
+
+-- Functions
+Player.Functions.SetJob(job, grade)
+Player.Functions.AddMoney(moneytype, amount, reason)
+Player.Functions.RemoveMoney(moneytype, amount, reason)
+Player.Functions.SetMoney(moneytype, amount, reason)
+Player.Functions.GetMoney(moneytype)
+```
+
+### Money Operations
+
+#### Adding Money
+```lua
+-- Add cash
+Player.Functions.AddMoney('cash', 500, 'salary-payment')
+
+-- Add bank money
+Player.Functions.AddMoney('bank', 1000, 'job-bonus')
+
+-- Add crypto (if enabled)
+Player.Functions.AddMoney('crypto', 10, 'crypto-mining')
+```
+
+#### Removing Money
+```lua
+-- Remove cash
+local success = Player.Functions.RemoveMoney('cash', 100, 'store-purchase')
+if success then
+    -- Purchase successful
+end
+
+-- Check if player has enough money
+if Player.Functions.GetMoney('bank') >= 5000 then
+    Player.Functions.RemoveMoney('bank', 5000, 'car-purchase')
+end
+```
+
+### Item Management
+
+#### Adding Items
+```lua
+-- Add single item
+Player.Functions.AddItem('bread', 1)
+
+-- Add item with metadata
+Player.Functions.AddItem('phone', 1, false, {
+    number = QBCore.Functions.CreatePhoneNumber()
+})
+
+-- Add multiple items
+local items = {
+    {item = 'bread', amount = 5},
+    {item = 'water', amount = 3}
+}
+for _, itemData in pairs(items) do
+    Player.Functions.AddItem(itemData.item, itemData.amount)
+end
+```
+
+#### Removing Items
+```lua
+-- Remove single item
+Player.Functions.RemoveItem('bread', 1)
+
+-- Remove item and get info
+local removedItem = Player.Functions.RemoveItem('phone', 1, slot)
+if removedItem then
+    print('Removed phone from slot: ' .. removedItem.slot)
+end
+```
+
+#### Item Checks
+```lua
+-- Check if player has item
+local hasItem = Player.Functions.GetItemByName('lockpick')
+if hasItem then
+    print('Player has lockpick in slot: ' .. hasItem.slot)
+end
+
+-- Get total amount of item
+local totalBread = Player.Functions.GetItemsByName('bread')
+print('Player has ' .. #totalBread .. ' bread')
+```
+
+## 📡 Events System
+
+### Server Events
+
+#### Player Loading
+```lua
+-- When player loads into server
+AddEventHandler('QBCore:Server:PlayerLoaded', function(Player)
+    local src = Player.PlayerData.source
+    print('Player loaded: ' .. Player.PlayerData.name)
+end)
+```
+
+#### Player Logout
+```lua
+-- When player logs out
+AddEventHandler('QBCore:Server:OnPlayerUnload', function(src)
+    print('Player ' .. src .. ' logged out')
+end)
+```
+
+#### Money Changes
+```lua
+-- When player money changes
+AddEventHandler('QBCore:Server:OnMoneyChange', function(src, moneyType, amount, action, reason)
+    local Player = QBCore.Functions.GetPlayer(src)
+    print(Player.PlayerData.name .. ' ' .. action .. ' $' .. amount .. ' (' .. moneyType .. ') - ' .. reason)
+end)
+```
+
+### Client Events
+
+#### Player Data Updates
+```lua
+-- When player data is updated
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    PlayerData = QBCore.Functions.GetPlayerData()
+    print('Player loaded on client')
+end)
+
+-- When player data changes
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    PlayerData = {}
+    print('Player unloaded on client')
+end)
+```
+
+#### Job Updates
+```lua
+-- When job changes
+RegisterNetEvent('QBCore:Client:OnJobUpdate', function(JobInfo)
+    PlayerData.job = JobInfo
+    print('Job updated to: ' .. JobInfo.name)
+end)
+```
+
+## 💼 Job System
+
+### Job Configuration
+```lua
+-- shared/jobs.lua
+QBShared.Jobs = {
+    police = {
+        label = 'Police Department',
+        defaultDuty = true,
+        offDutyPay = false,
+        grades = {
+            ['0'] = {name = 'Cadet', payment = 50},
+            ['1'] = {name = 'Officer', payment = 75},
+            ['2'] = {name = 'Sergeant', payment = 100},
+            ['3'] = {name = 'Lieutenant', payment = 125},
+            ['4'] = {name = 'Chief', payment = 150, isboss = true}
+        }
+    }
+}
+```
+
+### Setting Player Job
+```lua
+-- Set player job
+Player.Functions.SetJob('police', 1) -- Officer rank
+
+-- Set job with duty status
+Player.Functions.SetJob('police', 1, true) -- On duty
+```
+
+### Job Checks
+```lua
+-- Check if player has specific job
+if Player.PlayerData.job.name == 'police' then
+    print('Player is a police officer')
+end
+
+-- Check job grade
+if Player.PlayerData.job.grade.level >= 2 then
+    print('Player is sergeant or higher')
+end
+
+-- Check if player is boss
+if Player.PlayerData.job.isboss then
+    print('Player is a boss')
+end
+```
+
+## 🗄️ Database Operations
+
+### Player Queries
+```lua
+-- Get offline player data
+QBCore.Functions.GetOfflinePlayerByCitizenId(citizenid, function(result)
+    if result then
+        print('Found offline player: ' .. result.name)
+    end
+end)
+
+-- Save player data
+Player.Functions.Save()
+
+-- Update specific player data
+MySQL.Async.execute('UPDATE players SET money = ? WHERE citizenid = ?', {
+    json.encode(Player.PlayerData.money),
+    Player.PlayerData.citizenid
+})
+```
+
+### Custom Queries
+```lua
+-- Custom database operations
+MySQL.Async.fetchAll('SELECT * FROM players WHERE job = ?', {'police'}, function(result)
+    for i = 1, #result do
+        print('Police officer: ' .. result[i].name)
+    end
+end)
+```
+
+## 🛠️ Utility Functions
+
+### ID Generation
+```lua
+-- Generate citizen ID
+local citizenId = QBCore.Functions.CreateCitizenId()
+
+-- Generate phone number
+local phoneNumber = QBCore.Functions.CreatePhoneNumber()
+
+-- Generate unique ID
+local uniqueId = QBCore.Functions.GenerateUniqueId()
+```
+
+### Data Validation
+```lua
+-- Check if player exists
+local exists = QBCore.Functions.GetPlayerByCitizenId(citizenid)
+if not exists then
+    print('Player does not exist')
+end
+
+-- Validate data
+if QBCore.Shared.Items[itemName] then
+    print('Valid item: ' .. itemName)
+end
+```
+
+### Notifications
+```lua
+-- Client notification (from server)
+QBCore.Functions.Notify(src, 'Message text', 'success', 5000)
+
+-- Types: 'success', 'error', 'primary', 'warning'
+```
+
+## 🎮 Command System
+
+### Creating Commands
+```lua
+-- Basic command
+QBCore.Commands.Add('heal', 'Heal yourself', {}, false, function(source, args)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if Player then
+        TriggerClientEvent('hospital:client:Heal', source)
+    end
+end)
+
+-- Command with arguments
+QBCore.Commands.Add('givemoney', 'Give money to player', {
+    {name = 'id', help = 'Player ID'},
+    {name = 'moneytype', help = 'Type of money (cash/bank)'},
+    {name = 'amount', help = 'Amount of money'}
+}, true, function(source, args)
+    local Player = QBCore.Functions.GetPlayer(tonumber(args[1]))
+    if Player then
+        Player.Functions.AddMoney(args[2], tonumber(args[3]), 'admin-give')
+    end
+end, 'admin')
+
+-- Group restricted command
+QBCore.Commands.Add('ban', 'Ban a player', {
+    {name = 'id', help = 'Player ID'},
+    {name = 'reason', help = 'Ban reason'}
+}, true, function(source, args)
+    -- Ban logic here
+end, {'god', 'admin'})
+```
+
+### Permission Groups
+```lua
+-- server/config.lua
+QBConfig.Server.PermissionList = {
+    ['god'] = {
+        ['license:abc123'] = 'God',
+    },
+    ['admin'] = {
+        ['license:def456'] = 'Admin',
+    }
+}
+```
+
+## 📱 Integration Examples
+
+### With Other Resources
+
+#### Inventory Integration
+```lua
+-- Check if qb-inventory is running
+if GetResourceState('qb-inventory') == 'started' then
+    exports['qb-inventory']:OpenInventory(source, 'stash', 'police_evidence')
+end
+```
+
+#### Menu Integration
+```lua
+-- Using qb-menu
+TriggerClientEvent('qb-menu:client:openMenu', source, {
+    {
+        header = "Police Actions",
+        isMenuHeader = true
+    },
+    {
+        header = "Handcuff",
+        txt = "Handcuff nearest player",
+        params = {
+            event = "police:client:Handcuff"
+        }
+    }
+})
+```
+
+## ⚡ Performance Optimization
+
+### Best Practices
+```lua
+-- Cache frequently used data
+local QBCore = exports['qb-core']:GetCoreObject()
+local PlayerData = QBCore.Functions.GetPlayerData()
+
+-- Use proper event handling
+local function OnPlayerLoaded()
+    PlayerData = QBCore.Functions.GetPlayerData()
+end
+
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', OnPlayerLoaded)
+
+-- Avoid excessive database calls
+local lastSave = 0
+CreateThread(function()
+    while true do
+        Wait(300000) -- 5 minutes
+        if lastSave + 300000 < GetGameTimer() then
+            TriggerServerEvent('QBCore:Server:SavePlayer')
+            lastSave = GetGameTimer()
+        end
+    end
+end)
+```
+
+## 🔍 Debugging
+
+### Debug Functions
+```lua
+-- Enable debug mode
+QBCore.Debug = true
+
+-- Debug print
+QBCore.Functions.Debug('Debug message here')
+
+-- Print table contents
+QBCore.Debug(PlayerData)
+```
+
+### Common Debug Commands
+```lua
+-- Check player data
+/qbr getplayer [id] -- Get player info
+/qbr setjob [id] [job] [grade] -- Set player job
+/qbr givemoney [id] [type] [amount] -- Give money
+```
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+**Issue**: Player data not saving
+```lua
+-- Solution: Check database connection
+MySQL.ready(function()
+    print('Database connected successfully')
+end)
+```
+
+**Issue**: Commands not working
+```lua
+-- Solution: Check permissions
+QBCore.Functions.AddPermission(source, 'admin')
+```
+
+**Issue**: Events not triggering
+```lua
+-- Solution: Ensure proper event registration
+RegisterNetEvent('eventName', function(data)
+    -- Event handler
+end)
+```
+
+### Log Monitoring
+```bash
+# Monitor server logs
+tail -f server.log | grep -i "qb-core"
+
+# Check resource status
+refresh
+start qb-core
+```
+
+## 🔗 Related Resources
+
+- [QB-Menu](qb-menu) - Menu system
+- [QB-Input](qb-input) - Input dialogs
+- [QB-Target](qb-target) - Targeting system
+- [QB-Inventory](qb-inventory) - Inventory management
+
+## 📚 Additional Resources
+
+- [GitHub Repository](https://github.com/qbcore-framework/qb-core)
+- [Discord Community](https://discord.gg/qbcore)
+- [API Documentation](/docs/api)
+- [Development Guide](/docs/development)

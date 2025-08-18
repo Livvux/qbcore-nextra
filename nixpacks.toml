@@ -1,0 +1,12 @@
+[providers]
+node = "18"
+
+[build]
+cmd = "pnpm run build"
+
+[start]
+cmd = "pnpm start"
+
+[variables]
+NODE_ENV = "production"
+NEXT_TELEMETRY_DISABLED = "1"

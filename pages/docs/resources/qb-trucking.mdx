@@ -1,0 +1,561 @@
+# QB-Trucking - Freight Delivery System
+
+import { Callout } from 'nextra/components'
+
+The **qb-trucking** resource provides a comprehensive freight delivery and logistics system for QBCore servers, featuring cargo missions, delivery routes, truck management, and logistics company operations.
+
+## Overview
+
+QB-Trucking creates a realistic freight industry experience with cargo hauling, delivery contracts, route planning, and trucking company management. Players can operate as independent truckers or work for logistics companies.
+
+### Key Features
+
+- **Cargo Missions**: Various freight delivery contracts
+- **Delivery Routes**: Short and long-haul trucking routes
+- **Truck Fleet**: Multiple truck and trailer combinations
+- **Cargo Management**: Different cargo types and handling requirements
+- **Route Planning**: GPS navigation and optimal routing
+- **Fuel Management**: Fuel consumption and refueling stops
+- **Weight Regulations**: Cargo weight limits and inspections
+- **Company Operations**: Trucking business management
+- **Driver Licensing**: CDL requirements and training
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for trucking menus)
+- qb-fuel (for fuel management)
+- qb-vehiclekeys (for truck access)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-trucking.git
+```
+
+2. **Database Setup**
+```sql
+-- Trucking tables
+CREATE TABLE IF NOT EXISTS `trucking_deliveries` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `driver_citizenid` varchar(50) DEFAULT NULL,
+  `cargo_type` varchar(100) DEFAULT NULL,
+  `pickup_location` varchar(255) DEFAULT NULL,
+  `delivery_location` varchar(255) DEFAULT NULL,
+  `distance` float DEFAULT 0,
+  `payment` int(11) DEFAULT 0,
+  `fuel_cost` int(11) DEFAULT 0,
+  `status` varchar(50) DEFAULT 'pending',
+  `completed_at` timestamp NULL DEFAULT NULL,
+  `created_at` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `trucking_licenses` (
+  `citizenid` varchar(50) NOT NULL,
+  `license_type` varchar(50) DEFAULT 'Class A',
+  `issued_date` timestamp DEFAULT current_timestamp(),
+  `expires_date` timestamp DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'active',
+  PRIMARY KEY (`citizenid`)
+);
+
+CREATE TABLE IF NOT EXISTS `trucking_companies` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) DEFAULT NULL,
+  `owner_citizenid` varchar(50) DEFAULT NULL,
+  `employees` longtext DEFAULT NULL,
+  `fleet` longtext DEFAULT NULL,
+  `contracts` longtext DEFAULT NULL,
+  `created_at` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Job Configuration**
+```lua
+['trucker'] = {
+    label = 'Truck Driver',
+    defaultDuty = true,
+    offDutyPay = false,
+    grades = {
+        ['0'] = {
+            name = 'Trainee Driver',
+            payment = 75
+        },
+        ['1'] = {
+            name = 'Local Driver',
+            payment = 100
+        },
+        ['2'] = {
+            name = 'Long Haul Driver',
+            payment = 150
+        },
+        ['3'] = {
+            name = 'Owner Operator',
+            payment = 200,
+            isboss = true
+        }
+    }
+}
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.FuelConsumption = 0.8 -- Liters per km
+Config.BasePayRate = 2.5 -- $ per km
+Config.MaxCargoWeight = 26000 -- kg
+Config.SpeedPenalty = 0.1 -- 10% pay reduction for speeding
+
+-- Trucking Company Locations
+Config.Locations = {
+    ["rsm"] = {
+        label = "RSM Logistics",
+        coords = vector3(1240.35, -3251.93, 7.09),
+        blip = {
+            sprite = 477,
+            color = 17,
+            scale = 0.8
+        },
+        zones = {
+            duty = vector3(1240.35, -3251.93, 7.09),
+            garage = vector4(1249.23, -3242.11, 6.03, 270.0),
+            fuel = vector3(1207.84, -3196.41, 6.03)
+        }
+    },
+    ["lsdocks"] = {
+        label = "LS Docks Freight",
+        coords = vector3(797.44, -2989.72, 6.02),
+        zones = {
+            duty = vector3(797.44, -2989.72, 6.02),
+            garage = vector4(809.44, -2988.72, 6.02, 0.0)
+        }
+    }
+}
+
+-- Cargo Types
+Config.CargoTypes = {
+    ["general"] = {
+        label = "General Freight",
+        weight = 15000,
+        payment_multiplier = 1.0,
+        special_requirements = false
+    },
+    ["hazmat"] = {
+        label = "Hazardous Materials",
+        weight = 10000,
+        payment_multiplier = 2.5,
+        special_requirements = true,
+        required_license = "hazmat"
+    },
+    ["oversized"] = {
+        label = "Oversized Load",
+        weight = 25000,
+        payment_multiplier = 3.0,
+        special_requirements = true,
+        escort_required = true
+    },
+    ["refrigerated"] = {
+        label = "Refrigerated Goods",
+        weight = 18000,
+        payment_multiplier = 1.8,
+        temperature_critical = true
+    }
+}
+```
+
+### Delivery Routes
+
+```lua
+-- Delivery Locations
+Config.DeliveryPoints = {
+    ["lsia"] = {
+        label = "LS International Airport",
+        coords = vector3(-1336.95, -3044.85, 13.94),
+        cargo_types = {"general", "refrigerated"},
+        unload_time = 120 -- seconds
+    },
+    ["paleto_lumber"] = {
+        label = "Paleto Lumber Mill",
+        coords = vector3(-596.59, 5252.93, 70.28),
+        cargo_types = {"general", "oversized"},
+        unload_time = 180
+    },
+    ["sandy_warehouse"] = {
+        label = "Sandy Shores Warehouse",
+        coords = vector3(2533.84, 2594.17, 37.95),
+        cargo_types = {"general", "hazmat"},
+        unload_time = 150
+    },
+    ["grapeseed_farm"] = {
+        label = "Grapeseed Farm Co-op",
+        coords = vector3(2204.78, 5578.64, 53.75),
+        cargo_types = {"refrigerated"},
+        unload_time = 90
+    }
+}
+
+-- Route Configurations
+Config.Routes = {
+    ["local_short"] = {
+        label = "Local Delivery",
+        distance_range = {5, 25}, -- km
+        payment_range = {500, 1500},
+        cargo_types = {"general"}
+    },
+    ["regional"] = {
+        label = "Regional Haul",
+        distance_range = {25, 75},
+        payment_range = {1500, 4000},
+        cargo_types = {"general", "refrigerated"}
+    },
+    ["long_haul"] = {
+        label = "Long Distance",
+        distance_range = {75, 150},
+        payment_range = {4000, 8000},
+        cargo_types = {"general", "hazmat", "oversized"}
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### StartDelivery
+Start a new delivery mission.
+
+```lua
+-- Start random delivery
+exports['qb-trucking']:StartDelivery()
+
+-- Start specific cargo type delivery
+exports['qb-trucking']:StartDelivery("hazmat")
+
+-- Start delivery with specific route
+exports['qb-trucking']:StartDelivery("general", "long_haul")
+```
+
+#### AttachTrailer
+Attach trailer to truck.
+
+```lua
+local success = exports['qb-trucking']:AttachTrailer(truck, trailer)
+
+-- Returns: boolean success status
+```
+
+#### GetCargoInfo
+Get information about current cargo.
+
+```lua
+local cargoInfo = exports['qb-trucking']:GetCargoInfo()
+
+-- Returns:
+-- {
+--   type = string,
+--   weight = number,
+--   destination = string,
+--   special_requirements = boolean
+-- }
+```
+
+### Server Exports
+
+#### CreateDeliveryContract
+Create a new delivery contract.
+
+```lua
+local contractId = exports['qb-trucking']:CreateDeliveryContract(data)
+
+-- Parameters:
+-- data: {
+--   driver_citizenid = string,
+--   cargo_type = string,
+--   pickup_location = string,
+--   delivery_location = string,
+--   distance = number,
+--   payment = number
+-- }
+```
+
+#### ProcessDeliveryPayment
+Process payment for completed delivery.
+
+```lua
+local success = exports['qb-trucking']:ProcessDeliveryPayment(source, contractId, bonuses)
+
+-- Parameters:
+-- source: Player server ID
+-- contractId: Delivery contract ID
+-- bonuses: Additional payment modifiers
+```
+
+#### GetDriverLicense
+Check driver's commercial license status.
+
+```lua
+local license = exports['qb-trucking']:GetDriverLicense(citizenId)
+
+-- Returns license information or nil
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Delivery started
+RegisterNetEvent('qb-trucking:client:deliveryStarted', function(contractData)
+    -- Handle delivery start
+end)
+
+-- Cargo loaded
+RegisterNetEvent('qb-trucking:client:cargoLoaded', function(cargoInfo)
+    -- Handle cargo loading
+end)
+
+-- Delivery completed
+RegisterNetEvent('qb-trucking:client:deliveryCompleted', function(payment, bonuses)
+    -- Handle delivery completion
+end)
+
+-- Trailer attached
+RegisterNetEvent('qb-trucking:client:trailerAttached', function(trailer)
+    -- Handle trailer attachment
+end)
+```
+
+## Usage Examples
+
+### Delivery Mission System
+
+```lua
+-- Start delivery mission
+RegisterNetEvent('qb-trucking:client:startMission', function(missionType)
+    local player = QBCore.Functions.GetPlayerData()
+    if player.job.name == "trucker" and player.job.onduty then
+        
+        -- Check for CDL license
+        QBCore.Functions.TriggerCallback('qb-trucking:server:hasLicense', function(hasLicense)
+            if not hasLicense then
+                QBCore.Functions.Notify("You need a Commercial Driver's License", "error")
+                return
+            end
+            
+            -- Generate delivery contract
+            local contractData = GenerateContract(missionType)
+            
+            -- Set pickup waypoint
+            SetNewWaypoint(contractData.pickup.x, contractData.pickup.y)
+            
+            QBCore.Functions.Notify("Contract accepted! Head to pickup location", "success")
+            
+            -- Store contract data
+            currentContract = contractData
+            
+        end)
+    end
+end)
+
+function GenerateContract(missionType)
+    local routeConfig = Config.Routes[missionType or "local_short"]
+    local pickupPoint = Config.DeliveryPoints[math.random(1, #Config.DeliveryPoints)]
+    local deliveryPoint = Config.DeliveryPoints[math.random(1, #Config.DeliveryPoints)]
+    
+    -- Ensure pickup and delivery are different
+    while deliveryPoint == pickupPoint do
+        deliveryPoint = Config.DeliveryPoints[math.random(1, #Config.DeliveryPoints)]
+    end
+    
+    local distance = #(pickupPoint.coords - deliveryPoint.coords) / 1000 -- Convert to km
+    local payment = math.floor(distance * Config.BasePayRate * math.random(80, 120) / 100)
+    
+    return {
+        id = math.random(10000, 99999),
+        pickup = pickupPoint,
+        delivery = deliveryPoint,
+        distance = distance,
+        payment = payment,
+        cargo_type = routeConfig.cargo_types[math.random(1, #routeConfig.cargo_types)],
+        created_at = os.time()
+    }
+end
+```
+
+### Cargo Loading System
+
+```lua
+-- Load cargo at pickup location
+RegisterNetEvent('qb-trucking:client:loadCargo', function()
+    if not currentContract then
+        QBCore.Functions.Notify("No active delivery contract", "error")
+        return
+    end
+    
+    local ped = PlayerPedId()
+    local vehicle = GetVehiclePedIsIn(ped, false)
+    local trailer = GetVehicleTrailerVehicle(vehicle)
+    
+    if not trailer or trailer == 0 then
+        QBCore.Functions.Notify("You need a trailer to load cargo", "error")
+        return
+    end
+    
+    -- Check if at pickup location
+    local playerCoords = GetEntityCoords(ped)
+    local distance = #(playerCoords - currentContract.pickup.coords)
+    
+    if distance > 10.0 then
+        QBCore.Functions.Notify("You're not at the pickup location", "error")
+        return
+    end
+    
+    QBCore.Functions.Progressbar("loading_cargo", "Loading cargo...", 15000, false, true, {
+        disableMovement = true,
+        disableCarMovement = true,
+        disableMouse = false,
+        disableCombat = true,
+    }, {
+        animDict = "mini@repair",
+        anim = "fixing_a_ped",
+    }, {}, {}, function()
+        -- Cargo loaded successfully
+        TriggerServerEvent('qb-trucking:server:cargoLoaded', currentContract.id)
+        
+        -- Set delivery waypoint
+        SetNewWaypoint(currentContract.delivery.coords.x, currentContract.delivery.coords.y)
+        
+        QBCore.Functions.Notify("Cargo loaded! Deliver to destination", "success")
+        cargoLoaded = true
+        
+        -- Create delivery blip
+        local deliveryBlip = AddBlipForCoord(currentContract.delivery.coords.x, currentContract.delivery.coords.y, currentContract.delivery.coords.z)
+        SetBlipSprite(deliveryBlip, 477)
+        SetBlipColour(deliveryBlip, 2)
+        SetBlipRoute(deliveryBlip, true)
+        BeginTextCommandSetBlipName("STRING")
+        AddTextComponentString("Delivery Location")
+        EndTextCommandSetBlipName(deliveryBlip)
+        currentContract.deliveryBlip = deliveryBlip
+        
+    end, function()
+        QBCore.Functions.Notify("Cargo loading cancelled", "error")
+    end)
+end)
+```
+
+### Fuel Management Integration
+
+```lua
+-- Monitor fuel consumption during delivery
+CreateThread(function()
+    while true do
+        Wait(30000) -- Check every 30 seconds
+        
+        if currentContract and cargoLoaded then
+            local ped = PlayerPedId()
+            local vehicle = GetVehiclePedIsIn(ped, false)
+            
+            if vehicle and GetPedInVehicleSeat(vehicle, 0) == ped then
+                local speed = GetEntitySpeed(vehicle) * 3.6 -- Convert to km/h
+                local fuelLevel = exports['qb-fuel']:GetFuel(vehicle)
+                
+                -- Calculate fuel consumption based on speed and cargo weight
+                local cargoWeight = Config.CargoTypes[currentContract.cargo_type].weight
+                local weightMultiplier = 1 + (cargoWeight / Config.MaxCargoWeight)
+                local speedMultiplier = 1 + (speed / 100) -- Higher speed = more consumption
+                
+                local consumption = Config.FuelConsumption * weightMultiplier * speedMultiplier * (30/3600) -- Per 30 seconds
+                
+                if fuelLevel - consumption <= 5 then
+                    QBCore.Functions.Notify("Low fuel! Find a gas station soon", "warning")
+                end
+                
+                -- Apply fuel consumption
+                exports['qb-fuel']:SetFuel(vehicle, math.max(0, fuelLevel - consumption))
+            end
+        end
+    end
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Trailer Attachment Problems
+```lua
+-- Check trailer compatibility
+function IsTrailerCompatible(truck, trailer)
+    local truckModel = GetEntityModel(truck)
+    local trailerModel = GetEntityModel(trailer)
+    
+    -- Add compatibility checks
+    local compatibleCombos = {
+        [GetHashKey("phantom")] = {GetHashKey("trailers"), GetHashKey("trailers2")},
+        [GetHashKey("hauler")] = {GetHashKey("trailers3"), GetHashKey("trailers4")}
+    }
+    
+    if compatibleCombos[truckModel] then
+        for i = 1, #compatibleCombos[truckModel] do
+            if compatibleCombos[truckModel][i] == trailerModel then
+                return true
+            end
+        end
+    end
+    
+    return false
+end
+```
+
+#### Delivery Payment Issues
+- Verify contract completion status in database
+- Check for proper distance calculations
+- Ensure fuel costs are being deducted correctly
+
+#### License Verification Problems
+```lua
+-- Debug license checking
+RegisterCommand('checklicense', function()
+    QBCore.Functions.TriggerCallback('qb-trucking:server:hasLicense', function(hasLicense, licenseData)
+        if hasLicense then
+            print("License valid:", json.encode(licenseData))
+        else
+            print("No valid license found")
+        end
+    end)
+end)
+```
+
+### Debug Commands
+
+```lua
+-- Complete current delivery (admin only)
+/completedelivery
+
+-- Give CDL license
+/givetrucklicense [player_id]
+
+-- Spawn truck and trailer
+/spawnrig [truck_model] [trailer_model]
+
+-- Check delivery stats
+/truckstats [driver_name]
+```
+
+<Callout type="warning">
+  Test cargo weight calculations and fuel consumption to ensure realistic gameplay balance.
+</Callout>

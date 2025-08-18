@@ -1,0 +1,260 @@
+# How to Clear Cache in FiveM
+
+Learn how to clear FiveM cache to fix common issues like loading problems, outdated resources, and connection errors.
+
+## Overview
+
+FiveM cache stores downloaded resources and game data to improve performance. However, cached files can sometimes become corrupted or outdated, causing various issues. Clearing the cache is often the first troubleshooting step for FiveM problems.
+
+## When to Clear Cache
+
+Clear your FiveM cache when experiencing:
+
+- ✅ **Connection issues** - Can't connect to servers
+- ✅ **Loading problems** - Infinite loading screens
+- ✅ **Resource errors** - Scripts not working properly
+- ✅ **Outdated content** - Old textures or models showing
+- ✅ **Performance issues** - FPS drops or stuttering
+- ✅ **Server update problems** - New content not downloading
+
+## Method 1: Complete Cache Clear (Recommended)
+
+### Step 1: Close FiveM Completely
+
+1. Exit FiveM completely
+2. Open **Task Manager** (Ctrl + Shift + Esc)
+3. Look for any FiveM processes and end them
+4. Also end any **Steam** or **Rockstar Launcher** processes if they're running
+
+### Step 2: Navigate to FiveM Data Folder
+
+**Windows 10/11:**
+```
+%localappdata%/FiveM/FiveM.app/data
+```
+
+**How to access:**
+1. Press **Windows Key + R**
+2. Type: `%localappdata%`
+3. Navigate to: `FiveM` → `FiveM.app` → `data`
+
+### Step 3: Delete Cache Folders
+
+Delete these folders completely:
+- `cache/`
+- `server-cache/`
+- `server-cache-priv/`
+
+### Step 4: Clear Additional Locations
+
+**FiveM Application Data:**
+```
+%localappdata%/FiveM/FiveM.app/logs
+```
+
+**CitizenFX Folder:**
+```
+%appdata%/CitizenFX
+```
+
+### Step 5: Restart and Test
+
+1. Restart your computer (recommended)
+2. Launch FiveM
+3. Connect to your server
+4. Allow resources to download fresh
+
+## Method 2: Selective Cache Clear
+
+If you don't want to clear everything, you can selectively clear specific components:
+
+### Clear Only Server Cache
+
+Navigate to:
+```
+%localappdata%/FiveM/FiveM.app/data/server-cache
+```
+
+Delete folders for specific servers that are causing issues.
+
+### Clear Only Resource Cache
+
+Navigate to:
+```
+%localappdata%/FiveM/FiveM.app/data/cache/files
+```
+
+Delete resource-specific folders.
+
+## Method 3: Using FiveM Built-in Options
+
+### Clear Cache via FiveM Settings
+
+1. Open FiveM
+2. Click **Settings** (gear icon)
+3. Go to **Game** tab
+4. Click **Reset Setting** → **Clear cache**
+5. Restart FiveM
+
+### F8 Console Commands
+
+Press **F8** in FiveM and use these commands:
+
+```
+quit
+```
+Then manually clear cache folders and restart.
+
+## Advanced Troubleshooting
+
+### Clear Steam Download Cache
+
+If using Steam version of GTA V:
+
+1. Open **Steam**
+2. Go to **Steam** → **Settings**
+3. Click **Downloads**
+4. Click **Clear Download Cache**
+5. Restart Steam
+
+### Reset FiveM Completely
+
+For persistent issues, reset FiveM entirely:
+
+1. Uninstall FiveM completely
+2. Delete these folders:
+   - `%localappdata%/FiveM`
+   - `%appdata%/CitizenFX`
+3. Restart computer
+4. Download and install fresh FiveM
+
+## Cache Folders Explained
+
+| Folder | Purpose | Safe to Delete |
+|--------|---------|----------------|
+| `cache/` | General game cache | ✅ Yes |
+| `server-cache/` | Server-specific resources | ✅ Yes |
+| `server-cache-priv/` | Private server data | ✅ Yes |
+| `logs/` | FiveM log files | ✅ Yes |
+| `game-storage/` | Game save data | ⚠️ Caution |
+
+## Prevent Cache Issues
+
+### Regular Maintenance
+
+1. **Clear cache monthly** - Prevents buildup
+2. **Update FiveM regularly** - Latest version fixes issues
+3. **Close FiveM properly** - Don't force quit
+4. **Monitor disk space** - Low space causes cache problems
+
+### Server Owner Tips
+
+For server owners experiencing player cache issues:
+
+```lua
+-- Add to server.cfg
+set sv_disableClientReplacement true
+set sv_forceVersionMatch true
+```
+
+## Troubleshooting Common Issues
+
+### Issue: Cache Won't Delete
+
+**Solution:**
+1. End all FiveM processes in Task Manager
+2. Restart computer
+3. Try deleting cache again
+4. If still locked, use **Unlocker** utility
+
+### Issue: Resources Still Not Loading
+
+**Solution:**
+1. Clear cache completely
+2. Verify GTA V integrity (Steam: Right-click → Properties → Local Files → Verify)
+3. Update graphics drivers
+4. Check server status
+
+### Issue: Infinite Loading Screen
+
+**Solution:**
+1. Clear cache using Method 1
+2. Delete `%userprofile%/Documents/Rockstar Games/GTA V/`
+3. Restart router/internet connection
+4. Try different server
+
+### Issue: FiveM Won't Start After Cache Clear
+
+**Solution:**
+1. Run FiveM as administrator
+2. Disable antivirus temporarily
+3. Reinstall Visual C++ Redistributables
+4. Check Windows updates
+
+## Batch Script for Quick Cache Clear
+
+Create a `.bat` file for quick cache clearing:
+
+```batch
+@echo off
+echo Clearing FiveM Cache...
+
+taskkill /f /im FiveM.exe >nul 2>&1
+taskkill /f /im FiveM_ChromiumProcess.exe >nul 2>&1
+taskkill /f /im FiveM_GTAProcess.exe >nul 2>&1
+
+timeout /t 2 >nul
+
+rd /s /q "%localappdata%\FiveM\FiveM.app\data\cache" >nul 2>&1
+rd /s /q "%localappdata%\FiveM\FiveM.app\data\server-cache" >nul 2>&1
+rd /s /q "%localappdata%\FiveM\FiveM.app\data\server-cache-priv" >nul 2>&1
+
+echo Cache cleared successfully!
+echo You can now restart FiveM.
+pause
+```
+
+## Alternative Cache Locations
+
+Some installations may have cache in different locations:
+
+**Portable FiveM:**
+```
+[FiveM Installation Folder]/data/cache
+```
+
+**Custom Installation:**
+```
+[Custom Path]/FiveM/data/cache
+```
+
+## Best Practices
+
+1. **Close FiveM properly** - Always exit through the menu
+2. **Don't delete while running** - Always close FiveM first
+3. **Backup saves** - Keep important game data backed up
+4. **Regular updates** - Keep FiveM and GTA V updated
+5. **Monitor performance** - Clear cache when issues arise
+
+## Linux/Mac Instructions
+
+### Linux (Wine/Lutris)
+```bash
+rm -rf ~/.local/share/FiveM/FiveM.app/data/cache
+rm -rf ~/.local/share/FiveM/FiveM.app/data/server-cache
+```
+
+### macOS (if supported)
+```bash
+rm -rf ~/Library/Application\ Support/FiveM/cache
+```
+
+## Conclusion
+
+Clearing FiveM cache is a simple but effective solution for most FiveM-related issues. Regular cache maintenance prevents problems and ensures optimal performance. Always start with a complete cache clear for best results.
+
+Remember to be patient after clearing cache - resources need time to download fresh from servers.
+
+---
+
+**Still having issues?** Join our [GitHub discussions](https://github.com/qbcore-framework/qb-core/discussions) or check out more [troubleshooting guides](/tutorials).

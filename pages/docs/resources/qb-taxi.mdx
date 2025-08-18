@@ -1,0 +1,671 @@
+# QB-Taxi - Taxi Service System
+
+import { Callout } from 'nextra/components'
+
+The **qb-taxi** resource provides a comprehensive taxi service system for QBCore servers, featuring ride requests, fare calculation, NPC missions, and complete taxi company operations.
+
+## Overview
+
+QB-Taxi creates a realistic taxi service experience with passenger pickup systems, dynamic fare calculation, NPC delivery missions, and taxi company management. Players can work as taxi drivers while others can request rides around the city.
+
+### Key Features
+
+- **Ride Request System**: Players can call for taxi services
+- **Fare Calculation**: Distance and time-based pricing
+- **NPC Missions**: AI passenger delivery jobs
+- **Taxi Fleet**: Multiple vehicle types and customization
+- **GPS Integration**: Route planning and navigation
+- **Payment Processing**: Automated fare collection
+- **Driver Rankings**: Performance tracking and ratings
+- **Company Management**: Taxi business operations
+- **Emergency Services**: Priority rides and medical transport
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for taxi menus)
+- qb-phone (for ride requests)
+- qb-vehiclekeys (for vehicle access)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-taxi.git
+```
+
+2. **Database Setup**
+```sql
+-- Taxi service tables
+CREATE TABLE IF NOT EXISTS `taxi_rides` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `driver_citizenid` varchar(50) DEFAULT NULL,
+  `passenger_citizenid` varchar(50) DEFAULT NULL,
+  `pickup_location` varchar(255) DEFAULT NULL,
+  `dropoff_location` varchar(255) DEFAULT NULL,
+  `fare` int(11) DEFAULT 0,
+  `distance` float DEFAULT 0,
+  `duration` int(11) DEFAULT 0,
+  `tip` int(11) DEFAULT 0,
+  `rating` int(11) DEFAULT 5,
+  `created_at` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `taxi_drivers` (
+  `citizenid` varchar(50) NOT NULL,
+  `total_rides` int(11) DEFAULT 0,
+  `total_earnings` int(11) DEFAULT 0,
+  `average_rating` float DEFAULT 5.0,
+  `status` varchar(50) DEFAULT 'available',
+  `current_passenger` varchar(50) DEFAULT NULL,
+  `last_active` timestamp DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`citizenid`)
+);
+
+CREATE TABLE IF NOT EXISTS `taxi_requests` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `passenger_citizenid` varchar(50) DEFAULT NULL,
+  `pickup_coords` varchar(255) DEFAULT NULL,
+  `dropoff_coords` varchar(255) DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'pending',
+  `driver_citizenid` varchar(50) DEFAULT NULL,
+  `created_at` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Job Configuration to qb-core/shared/jobs.lua**
+```lua
+['taxi'] = {
+    label = 'Taxi Service',
+    defaultDuty = true,
+    offDutyPay = false,
+    grades = {
+        ['0'] = {
+            name = 'Driver',
+            payment = 50
+        },
+        ['1'] = {
+            name = 'Experienced Driver',
+            payment = 75
+        },
+        ['2'] = {
+            name = 'Senior Driver',
+            payment = 100
+        },
+        ['3'] = {
+            name = 'Dispatch Supervisor',
+            payment = 125,
+            isboss = true
+        },
+        ['4'] = {
+            name = 'Fleet Manager',
+            payment = 150,
+            isboss = true
+        }
+    }
+}
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-taxi
+```
+
+<Callout type="info">
+  Ensure qb-taxi loads after qb-core, qb-target, and qb-phone in your server.cfg
+</Callout>
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.BaseFare = 100        -- Base fare for any ride
+Config.PerMeterRate = 2.5    -- Cost per meter traveled
+Config.PerMinuteRate = 15    -- Cost per minute in taxi
+Config.MaxWaitTime = 300     -- 5 minutes max wait for driver
+
+-- Taxi Company Locations
+Config.Locations = {
+    ["main"] = {
+        label = "Downtown Cab Co.",
+        coords = vector3(909.49, -177.35, 74.13),
+        blip = {
+            sprite = 198,
+            color = 5,
+            scale = 0.8
+        },
+        zones = {
+            duty = vector3(907.24, -177.35, 74.13),
+            garage = vector4(905.41, -191.65, 73.53, 235.5),
+            boss = vector3(909.49, -177.35, 74.13)
+        }
+    },
+    ["airport"] = {
+        label = "Airport Taxi",
+        coords = vector3(-1037.15, -2737.48, 20.17),
+        zones = {
+            duty = vector3(-1037.15, -2737.48, 20.17),
+            garage = vector4(-1043.15, -2741.48, 20.17, 330.0)
+        }
+    }
+}
+
+-- Taxi Vehicle Configuration
+Config.Vehicles = {
+    ['taxi'] = {
+        label = 'Standard Taxi',
+        category = 'taxi',
+        spawncost = 0,
+        livery = {
+            [0] = 'Downtown Cab',
+            [1] = 'Taxi & Limousine',
+            [2] = 'Yellow Cab'
+        }
+    },
+    ['stretch'] = {
+        label = 'Limousine',
+        category = 'luxury',
+        spawncost = 500,
+        multiplier = 2.0 -- 2x fare multiplier
+    },
+    ['pbus2'] = {
+        label = 'Airport Shuttle',
+        category = 'shuttle',
+        spawncost = 200,
+        capacity = 16
+    }
+}
+
+-- NPC Mission Configuration
+Config.NPCMissions = {
+    enabled = true,
+    spawnChance = 0.3, -- 30% chance per check
+    checkInterval = 30000, -- 30 seconds
+    maxActiveNPCs = 3,
+    minPayout = 200,
+    maxPayout = 800,
+    bonusMultiplier = 1.5 -- Bonus for longer distances
+}
+```
+
+### Pickup Locations
+
+```lua
+-- Popular pickup locations for NPC missions
+Config.PickupLocations = {
+    {coords = vector3(-1037.15, -2737.48, 20.17), label = "Los Santos International Airport"},
+    {coords = vector3(240.16, -1378.95, 33.74), label = "Central Medical Center"},
+    {coords = vector3(-724.46, -415.49, 35.03), label = "Rockford Plaza"},
+    {coords = vector3(425.13, -979.55, 30.71), label = "Police Station"},
+    {coords = vector3(-1392.02, -588.61, 30.32), label = "Bahama Mamas"},
+    {coords = vector3(1961.95, 3740.5, 32.34), label = "Sandy Shores Airfield"},
+    {coords = vector3(-255.20, 6341.36, 32.43), label = "Paleto Bay Medical"},
+    {coords = vector3(1836.27, 2584.96, 46.01), label = "Bolingbroke Penitentiary"}
+}
+
+-- Common dropoff destinations
+Config.DropoffLocations = {
+    {coords = vector3(72.2, -1392.85, 29.38), label = "Legion Square"},
+    {coords = vector3(-1820.20, 794.76, 138.08), label = "Vinewood Hills"},
+    {coords = vector3(1207.85, -1447.85, 35.89), label = "Mirror Park"},
+    {coords = vector3(-912.81, -364.65, 114.27), label = "West Vinewood"},
+    {coords = vector3(1981.85, 3031.85, 47.04), label = "Senora Desert"},
+    {coords = vector3(-1174.20, -1571.85, 4.66), label = "Vespucci Beach"},
+    {coords = vector3(1126.50, -982.23, 45.42), label = "Mirror Park Boulevard"}
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### RequestTaxi
+Request a taxi to current location.
+
+```lua
+-- Basic taxi request
+exports['qb-taxi']:RequestTaxi()
+
+-- Request with specific dropoff
+exports['qb-taxi']:RequestTaxi(dropoffCoords)
+
+-- Request luxury taxi
+exports['qb-taxi']:RequestTaxi(dropoffCoords, "luxury")
+
+-- Parameters:
+-- dropoffCoords (optional): Vector3 destination coordinates
+-- vehicleType (optional): "standard", "luxury", "shuttle"
+```
+
+#### CancelTaxiRequest
+Cancel pending taxi request.
+
+```lua
+exports['qb-taxi']:CancelTaxiRequest()
+```
+
+#### StartMeter
+Start the taxi meter for fare calculation.
+
+```lua
+exports['qb-taxi']:StartMeter(passengerId)
+
+-- Parameters:
+-- passengerId: Server ID of passenger
+```
+
+#### StopMeter
+Stop the taxi meter and calculate final fare.
+
+```lua
+local fareInfo = exports['qb-taxi']:StopMeter()
+
+-- Returns:
+-- {
+--   distance = number,
+--   time = number,
+--   baseFare = number,
+--   totalFare = number
+-- }
+```
+
+### Server Exports
+
+#### CreateRideRecord
+Create a ride record in the database.
+
+```lua
+local rideId = exports['qb-taxi']:CreateRideRecord(data)
+
+-- Parameters:
+-- data: {
+--   driver_citizenid = string,
+--   passenger_citizenid = string,
+--   pickup_location = string,
+--   dropoff_location = string,
+--   fare = number,
+--   distance = number,
+--   duration = number
+-- }
+```
+
+#### ProcessPayment
+Process taxi fare payment.
+
+```lua
+local success = exports['qb-taxi']:ProcessPayment(passengerId, driverId, amount, tip)
+
+-- Parameters:
+-- passengerId: Passenger server ID
+-- driverId: Driver server ID
+-- amount: Fare amount
+-- tip: Tip amount (optional)
+```
+
+#### GetDriverStats
+Get driver statistics.
+
+```lua
+local stats = exports['qb-taxi']:GetDriverStats(citizenId)
+
+-- Returns:
+-- {
+--   total_rides = number,
+--   total_earnings = number,
+--   average_rating = number,
+--   status = string
+-- }
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Taxi request accepted
+RegisterNetEvent('qb-taxi:client:requestAccepted', function(driverId, driverInfo)
+    -- Handle ride acceptance
+end)
+
+-- Driver arrived at pickup
+RegisterNetEvent('qb-taxi:client:driverArrived', function()
+    -- Handle driver arrival
+end)
+
+-- Ride started
+RegisterNetEvent('qb-taxi:client:rideStarted', function(destination)
+    -- Handle ride start
+end)
+
+-- Ride completed
+RegisterNetEvent('qb-taxi:client:rideCompleted', function(fareInfo)
+    -- Handle ride completion
+end)
+```
+
+#### Server Events
+
+```lua
+-- New taxi request
+RegisterNetEvent('qb-taxi:server:newRequest', function(requestData)
+    -- Handle new ride request
+end)
+
+-- Accept ride request
+RegisterNetEvent('qb-taxi:server:acceptRequest', function(requestId)
+    -- Handle request acceptance
+end)
+
+-- Ride completion
+RegisterNetEvent('qb-taxi:server:completeRide', function(rideData)
+    -- Handle ride completion
+end)
+
+-- Rate driver
+RegisterNetEvent('qb-taxi:server:rateDriver', function(driverId, rating)
+    -- Handle driver rating
+end)
+```
+
+## Usage Examples
+
+### Taxi Request System
+
+```lua
+-- Client-side taxi calling
+RegisterCommand('taxi', function()
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    
+    -- Check if player is already in a taxi or has pending request
+    QBCore.Functions.TriggerCallback('qb-taxi:server:hasActiveRequest', function(hasRequest)
+        if hasRequest then
+            QBCore.Functions.Notify("You already have an active taxi request", "error")
+            return
+        end
+        
+        -- Create request menu
+        local requestMenu = {
+            {
+                header = "Taxi Service",
+                isMenuHeader = true
+            },
+            {
+                header = "Standard Taxi",
+                txt = "Base fare: $" .. Config.BaseFare,
+                params = {
+                    event = "qb-taxi:client:requestTaxi",
+                    args = {type = "standard"}
+                }
+            },
+            {
+                header = "Luxury Taxi",
+                txt = "Premium service (2x fare)",
+                params = {
+                    event = "qb-taxi:client:requestTaxi", 
+                    args = {type = "luxury"}
+                }
+            },
+            {
+                header = "Airport Shuttle",
+                txt = "Shared ride service",
+                params = {
+                    event = "qb-taxi:client:requestTaxi",
+                    args = {type = "shuttle"}
+                }
+            }
+        }
+        
+        exports['qb-menu']:openMenu(requestMenu)
+    end)
+end)
+
+-- Handle taxi request
+RegisterNetEvent('qb-taxi:client:requestTaxi', function(data)
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    local streetHash, crossingHash = GetStreetNameAtCoord(coords.x, coords.y, coords.z)
+    local streetName = GetStreetNameFromHashKey(streetHash)
+    
+    TriggerServerEvent('qb-taxi:server:createRequest', {
+        pickup_coords = coords,
+        pickup_location = streetName,
+        vehicle_type = data.type
+    })
+    
+    QBCore.Functions.Notify("Taxi request sent! Looking for available drivers...", "success")
+end)
+```
+
+### Driver-Side Operations
+
+```lua
+-- Accept taxi request
+RegisterNetEvent('qb-taxi:client:acceptRequest', function(requestData)
+    local player = QBCore.Functions.GetPlayerData()
+    if player.job.name == "taxi" and player.job.onduty then
+        -- Set GPS waypoint to pickup location
+        SetNewWaypoint(requestData.pickup_coords.x, requestData.pickup_coords.y)
+        
+        QBCore.Functions.Notify("Request accepted! Navigate to pickup location", "success")
+        
+        -- Create pickup blip
+        local pickupBlip = AddBlipForCoord(requestData.pickup_coords.x, requestData.pickup_coords.y, requestData.pickup_coords.z)
+        SetBlipSprite(pickupBlip, 280)
+        SetBlipColour(pickupBlip, 5)
+        SetBlipRoute(pickupBlip, true)
+        SetBlipAsShortRange(pickupBlip, false)
+        BeginTextCommandSetBlipName("STRING")
+        AddTextComponentString("Taxi Pickup")
+        EndTextCommandSetBlipName(pickupBlip)
+        
+        -- Store request data
+        currentRequest = requestData
+        currentRequest.pickupBlip = pickupBlip
+    end
+end)
+
+-- Start ride with passenger
+RegisterNetEvent('qb-taxi:client:startRide', function(passengerId)
+    local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+    
+    if vehicle and GetPedInVehicleSeat(vehicle, 0) == PlayerPedId() then
+        -- Start fare meter
+        exports['qb-taxi']:StartMeter(passengerId)
+        
+        -- Remove pickup blip
+        if currentRequest and currentRequest.pickupBlip then
+            RemoveBlip(currentRequest.pickupBlip)
+        end
+        
+        -- Create destination blip if provided
+        if currentRequest and currentRequest.dropoff_coords then
+            local destBlip = AddBlipForCoord(currentRequest.dropoff_coords.x, currentRequest.dropoff_coords.y, currentRequest.dropoff_coords.z)
+            SetBlipSprite(destBlip, 162)
+            SetBlipColour(destBlip, 2)
+            SetBlipRoute(destBlip, true)
+            BeginTextCommandSetBlipName("STRING")
+            AddTextComponentString("Taxi Destination")
+            EndTextCommandSetBlipName(destBlip)
+            currentRequest.destBlip = destBlip
+        end
+        
+        QBCore.Functions.Notify("Ride started! Meter is running", "success")
+    end
+end)
+```
+
+### NPC Mission System
+
+```lua
+-- Server-side NPC mission spawning
+CreateThread(function()
+    while true do
+        Wait(Config.NPCMissions.checkInterval)
+        
+        if Config.NPCMissions.enabled then
+            -- Get all active taxi drivers
+            local activeTaxis = {}
+            for k, v in pairs(QBCore.Functions.GetQBPlayers()) do
+                if v.PlayerData.job.name == "taxi" and v.PlayerData.job.onduty then
+                    table.insert(activeTaxis, v.PlayerData.source)
+                end
+            end
+            
+            -- Spawn NPC missions for active drivers
+            for i = 1, #activeTaxis do
+                if math.random() < Config.NPCMissions.spawnChance then
+                    local driverId = activeTaxis[i]
+                    CreateNPCMission(driverId)
+                end
+            end
+        end
+    end
+end)
+
+function CreateNPCMission(driverId)
+    local pickup = Config.PickupLocations[math.random(1, #Config.PickupLocations)]
+    local dropoff = Config.DropoffLocations[math.random(1, #Config.DropoffLocations)]
+    local distance = #(pickup.coords - dropoff.coords)
+    local basePayout = math.random(Config.NPCMissions.minPayout, Config.NPCMissions.maxPayout)
+    
+    -- Calculate bonus for longer distances
+    local payout = basePayout
+    if distance > 1000 then
+        payout = math.floor(payout * Config.NPCMissions.bonusMultiplier)
+    end
+    
+    local missionData = {
+        id = math.random(10000, 99999),
+        pickup = pickup,
+        dropoff = dropoff,
+        distance = distance,
+        payout = payout,
+        type = "npc"
+    }
+    
+    TriggerClientEvent('qb-taxi:client:npcMission', driverId, missionData)
+end
+```
+
+### Fare Calculation System
+
+```lua
+-- Calculate fare based on distance and time
+function CalculateFare(distance, timeInSeconds, vehicleType)
+    local baseFare = Config.BaseFare
+    local distanceFare = distance * Config.PerMeterRate
+    local timeFare = (timeInSeconds / 60) * Config.PerMinuteRate
+    
+    local totalFare = baseFare + distanceFare + timeFare
+    
+    -- Apply vehicle type multiplier
+    if vehicleType == "luxury" then
+        totalFare = totalFare * 2.0
+    elseif vehicleType == "shuttle" then
+        totalFare = totalFare * 0.8 -- 20% discount for shared rides
+    end
+    
+    return math.floor(totalFare)
+end
+
+-- Client-side meter system
+local meterActive = false
+local meterStartTime = 0
+local meterStartCoords = nil
+
+RegisterNetEvent('qb-taxi:client:startMeter', function(passengerId)
+    if not meterActive then
+        meterActive = true
+        meterStartTime = GetGameTimer()
+        meterStartCoords = GetEntityCoords(PlayerPedId())
+        
+        QBCore.Functions.Notify("Fare meter started", "success")
+        
+        -- Start meter display thread
+        CreateThread(function()
+            while meterActive do
+                Wait(1000)
+                local currentTime = GetGameTimer()
+                local elapsedSeconds = (currentTime - meterStartTime) / 1000
+                local currentCoords = GetEntityCoords(PlayerPedId())
+                local distance = #(meterStartCoords - currentCoords)
+                local currentFare = CalculateFare(distance, elapsedSeconds, "standard")
+                
+                -- Display current fare on screen
+                SetTextComponentFormat("STRING")
+                AddTextComponentString("~g~Fare: ~w~$" .. currentFare .. " | ~b~Time: ~w~" .. math.floor(elapsedSeconds / 60) .. ":" .. string.format("%02d", elapsedSeconds % 60))
+                DisplayText(0.01, 0.01)
+            end
+        end)
+    end
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Taxi Requests Not Working
+```lua
+-- Check if phone resource is running
+if not GetResourceState('qb-phone') == 'started' then
+    print("qb-phone is required for taxi requests")
+end
+
+-- Verify database tables exist
+QBCore.Functions.ExecuteSql(false, "SHOW TABLES LIKE 'taxi_requests'")
+```
+
+#### Fare Calculation Issues
+- Verify distance calculation using proper coordinate systems
+- Check if meter is properly started and stopped
+- Ensure vehicle type multipliers are configured correctly
+
+#### NPC Missions Not Spawning
+```lua
+-- Debug NPC mission system
+RegisterCommand('debugnpc', function()
+    local player = QBCore.Functions.GetPlayerData()
+    if player.job.name == "taxi" then
+        CreateNPCMission(GetPlayerServerId(PlayerId()))
+    end
+end)
+```
+
+### Debug Commands
+
+```lua
+-- Force taxi request (admin only)
+/forcetaxi [player_id]
+
+-- Complete current ride
+/completeride
+
+-- Check driver stats
+/taxistats [driver_name]
+
+-- Toggle meter manually
+/meter
+```
+
+### Performance Optimization
+
+1. **Request Cleanup**: Remove expired taxi requests from database
+2. **Blip Management**: Clean up unused blips and waypoints
+3. **NPC Spawning**: Limit concurrent NPC missions per driver
+
+<Callout type="warning">
+  Test the fare calculation system thoroughly to ensure accurate pricing and prevent exploitation.
+</Callout>

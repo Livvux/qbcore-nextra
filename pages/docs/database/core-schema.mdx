@@ -1,0 +1,369 @@
+# 🏗️ Core Database Schema
+
+Complete documentation of QBCore's core database tables, their structure, relationships, and usage patterns.
+
+import { Callout } from 'nextra/components'
+
+## Core Player Tables
+
+### players
+
+The central table containing all player character data.
+
+```sql
+CREATE TABLE `players` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) NOT NULL,
+  `cid` int(11) DEFAULT NULL,
+  `license` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `money` text NOT NULL,
+  `charinfo` text DEFAULT NULL,
+  `job` text NOT NULL,
+  `gang` text DEFAULT NULL,
+  `position` text NOT NULL,
+  `metadata` text NOT NULL,
+  `inventory` longtext DEFAULT NULL,
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`citizenid`),
+  KEY `id` (`id`),
+  KEY `last_updated` (`last_updated`),
+  KEY `license` (`license`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+#### Field Descriptions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | int(11) | Auto-incrementing primary key |
+| `citizenid` | varchar(50) | Unique citizen identifier (primary business key) |
+| `cid` | int(11) | Character ID number |
+| `license` | varchar(255) | Player's FiveM license identifier |
+| `name` | varchar(255) | Character's display name |
+| `money` | text | JSON object containing cash, bank, crypto balances |
+| `charinfo` | text | JSON object with character details (firstname, lastname, etc.) |
+| `job` | text | JSON object with job information |
+| `gang` | text | JSON object with gang information |
+| `position` | text | JSON object with last known coordinates |
+| `metadata` | text | JSON object with various character metadata |
+| `inventory` | longtext | JSON array of inventory items |
+| `last_updated` | timestamp | Last modification timestamp |
+
+#### Usage Examples
+
+```lua
+-- Get player by citizenid
+local result = MySQL.query.await('SELECT * FROM players WHERE citizenid = ?', {citizenid})
+
+-- Update player money
+MySQL.update('UPDATE players SET money = ? WHERE citizenid = ?', {
+    json.encode(moneyData),
+    citizenid
+})
+
+-- Get all players with specific job
+local cops = MySQL.query.await('SELECT citizenid, charinfo FROM players WHERE JSON_EXTRACT(job, "$.name") = ?', {'police'})
+```
+
+### playerskins
+
+Character appearance and clothing data.
+
+```sql
+CREATE TABLE `playerskins` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(255) NOT NULL,
+  `model` varchar(255) NOT NULL,
+  `skin` text NOT NULL,
+  `active` tinyint(4) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  KEY `citizenid` (`citizenid`),
+  KEY `active` (`active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+#### Field Descriptions
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `citizenid` | varchar(255) | Links to players.citizenid |
+| `model` | varchar(255) | Character model hash |
+| `skin` | text | JSON object with appearance data |
+| `active` | tinyint(4) | Whether this skin is currently active |
+
+## Vehicle Management
+
+### player_vehicles
+
+Vehicle ownership and modification data.
+
+```sql
+CREATE TABLE `player_vehicles` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `license` varchar(50) DEFAULT NULL,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `vehicle` varchar(50) DEFAULT NULL,
+  `hash` varchar(50) DEFAULT NULL,
+  `mods` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+  `plate` varchar(50) NOT NULL,
+  `fakeplate` varchar(50) DEFAULT NULL,
+  `garage` varchar(50) DEFAULT NULL,
+  `fuel` int(11) DEFAULT 100,
+  `engine` float DEFAULT 1000,
+  `body` float DEFAULT 1000,
+  `state` int(11) DEFAULT 1,
+  `depotprice` int(11) NOT NULL DEFAULT 0,
+  `drivingdistance` int(50) DEFAULT NULL,
+  `status` text DEFAULT NULL,
+  `balance` int(11) NOT NULL DEFAULT 0,
+  `paymentamount` int(11) NOT NULL DEFAULT 0,
+  `paymentsleft` int(11) NOT NULL DEFAULT 0,
+  `financetime` int(11) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `plate` (`plate`),
+  KEY `citizenid` (`citizenid`),
+  KEY `license` (`license`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+#### Key Fields Explained
+
+- **mods**: JSON object containing all vehicle modifications
+- **garage**: Current storage location of the vehicle
+- **state**: Vehicle state (0=out, 1=garaged, 2=impounded)
+- **engine/body**: Vehicle damage states (0-1000)
+- **balance/paymentamount/paymentsleft**: Financing information
+
+### vehicle_categories
+
+Vehicle classification system.
+
+```sql
+CREATE TABLE `vehicle_categories` (
+  `name` varchar(60) NOT NULL,
+  `label` varchar(60) NOT NULL,
+  `dealership` varchar(60) NOT NULL,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## Property Management
+
+### player_houses
+
+Property ownership and configuration.
+
+```sql
+CREATE TABLE `player_houses` (
+  `id` int(255) NOT NULL AUTO_INCREMENT,
+  `house` varchar(50) NOT NULL,
+  `identifier` varchar(50) DEFAULT NULL,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `keyholders` text DEFAULT NULL,
+  `decorations` text DEFAULT NULL,
+  `stash` text DEFAULT NULL,
+  `outfit` text DEFAULT NULL,
+  `logout` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `house` (`house`),
+  KEY `citizenid` (`citizenid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+#### Usage Patterns
+
+```lua
+-- Get player houses
+local houses = MySQL.query.await('SELECT * FROM player_houses WHERE citizenid = ?', {citizenid})
+
+-- Add keyholder
+local keyholders = json.decode(houseData.keyholders) or {}
+keyholders[citizenid] = os.date('%Y-%m-%d %H:%M:%S')
+MySQL.update('UPDATE player_houses SET keyholders = ? WHERE house = ?', {
+    json.encode(keyholders),
+    houseId
+})
+```
+
+## Banking & Economy
+
+### bank_accounts
+
+Banking system accounts.
+
+```sql
+CREATE TABLE `bank_accounts` (
+  `record_id` bigint(255) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(250) DEFAULT NULL,
+  `business` varchar(250) DEFAULT NULL,
+  `businessid` int(11) DEFAULT NULL,
+  `gangid` varchar(250) DEFAULT NULL,
+  `kofi_id` varchar(250) DEFAULT NULL,
+  `account_name` varchar(250) NOT NULL DEFAULT '0',
+  `account_balance` int(11) NOT NULL DEFAULT 0,
+  `account_type` enum('shared','job','gang','savings') NOT NULL DEFAULT 'shared',
+  PRIMARY KEY (`record_id`),
+  UNIQUE KEY `account_name` (`account_name`),
+  KEY `citizenid` (`citizenid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### bank_statements
+
+Transaction history tracking.
+
+```sql
+CREATE TABLE `bank_statements` (
+  `record_id` bigint(255) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(250) DEFAULT NULL,
+  `account` varchar(250) DEFAULT NULL,
+  `business` varchar(250) DEFAULT NULL,
+  `businessid` int(11) DEFAULT NULL,
+  `gangid` varchar(250) DEFAULT NULL,
+  `kofi_id` varchar(250) DEFAULT NULL,
+  `amount` int(11) DEFAULT NULL,
+  `account_balance` int(11) DEFAULT NULL,
+  `reason` varchar(250) DEFAULT NULL,
+  `statement_type` enum('deposit','withdraw') DEFAULT NULL,
+  `date` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`record_id`),
+  KEY `citizenid` (`citizenid`),
+  KEY `account` (`account`),
+  KEY `date` (`date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## Job System
+
+### management_advert
+
+Business advertisement system.
+
+```sql
+CREATE TABLE `management_advert` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `business_name` varchar(255) NOT NULL,
+  `advert` text NOT NULL,
+  `owner` varchar(255) NOT NULL,
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### management_employees
+
+Employee management tracking.
+
+```sql
+CREATE TABLE `management_employees` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `job` varchar(255) NOT NULL,
+  `citizenid` varchar(255) NOT NULL,
+  `grade` int(11) NOT NULL DEFAULT 0,
+  `timestamp` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `job` (`job`),
+  KEY `citizenid` (`citizenid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## Communication Systems
+
+### phone_invoices
+
+Digital invoice system.
+
+```sql
+CREATE TABLE `phone_invoices` (
+  `id` int(10) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `amount` int(11) NOT NULL DEFAULT 0,
+  `society` tinytext DEFAULT NULL,
+  `sender` varchar(50) DEFAULT NULL,
+  `sendercitizenid` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `citizenid` (`citizenid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### phone_messages
+
+Message history storage.
+
+```sql
+CREATE TABLE `phone_messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `number` varchar(50) DEFAULT NULL,
+  `messages` text DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `citizenid` (`citizenid`),
+  KEY `number` (`number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+## Performance Optimization
+
+### Essential Indexes
+
+```sql
+-- Core player indexes
+ALTER TABLE players ADD INDEX idx_license (license);
+ALTER TABLE players ADD INDEX idx_last_updated (last_updated);
+
+-- Vehicle indexes
+ALTER TABLE player_vehicles ADD INDEX idx_state (state);
+ALTER TABLE player_vehicles ADD INDEX idx_garage (garage);
+
+-- Banking indexes  
+ALTER TABLE bank_statements ADD INDEX idx_date_citizen (date, citizenid);
+ALTER TABLE bank_statements ADD INDEX idx_account_type (account, statement_type);
+
+-- Phone system indexes
+ALTER TABLE phone_messages ADD INDEX idx_number_citizen (number, citizenid);
+```
+
+### Query Optimization Tips
+
+1. **Use Specific Columns**: Avoid `SELECT *` in production
+2. **Index Foreign Keys**: Always index join columns
+3. **Limit Results**: Use `LIMIT` for pagination
+4. **JSON Queries**: Use `JSON_EXTRACT` for specific JSON fields
+
+<Callout type="warning">
+  Always backup your database before making schema changes or running optimization queries.
+</Callout>
+
+## Maintenance Procedures
+
+### Regular Maintenance
+
+```sql
+-- Optimize tables monthly
+OPTIMIZE TABLE players, player_vehicles, bank_statements;
+
+-- Update table statistics
+ANALYZE TABLE players, player_vehicles, bank_statements;
+
+-- Check for corruption
+CHECK TABLE players, player_vehicles, bank_statements;
+```
+
+### Data Cleanup
+
+```sql
+-- Remove old inactive players (adjust criteria as needed)
+DELETE FROM players WHERE last_updated < DATE_SUB(NOW(), INTERVAL 90 DAY) 
+AND JSON_EXTRACT(metadata, '$.inlaststand') = 'false';
+
+-- Clean old bank statements (keep 6 months)
+DELETE FROM bank_statements WHERE date < DATE_SUB(NOW(), INTERVAL 6 MONTH);
+
+-- Remove orphaned vehicle records
+DELETE pv FROM player_vehicles pv 
+LEFT JOIN players p ON pv.citizenid = p.citizenid 
+WHERE p.citizenid IS NULL;
+```
+
+This core schema documentation provides the foundation for understanding QBCore's database structure and optimization strategies.

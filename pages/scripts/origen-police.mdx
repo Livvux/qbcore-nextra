@@ -1,0 +1,571 @@
+# Origen Police Script
+
+Advanced law enforcement script for QBCore servers, providing comprehensive police tools, dispatch systems, and realistic law enforcement roleplay features.
+
+## Features
+
+### 👮 Core Police Features
+- **Complete Dispatch System**: Advanced CAD integration with call management
+- **Evidence Management**: Comprehensive evidence collection and storage
+- **Vehicle Impound System**: Professional vehicle impounding and release
+- **Arrest & Booking**: Full arrest procedures with mugshots and processing
+- **Traffic Stop Tools**: License plates, citations, and traffic violations
+- **K9 Unit Support**: Police dog commands and drug detection
+
+### 🚔 Advanced Systems
+- **MDT Integration**: Mobile Data Terminal for officers
+- **Backup System**: Officer down alerts and backup requests
+- **Pursuit Mode**: High-speed chase management tools
+- **Crime Scene Investigation**: Advanced forensic tools
+- **Jail System**: Prisoner management and processing
+- **Court Integration**: Legal system connectivity
+
+### 📱 Communication Tools
+- **Radio System**: Encrypted police communications
+- **Unit Status**: On-duty, off-duty, and availability tracking
+- **GPS Tracking**: Real-time officer location monitoring
+- **Emergency Alerts**: Panic button and officer safety features
+
+## Installation
+
+### Prerequisites
+- QBCore Framework
+- qb-policejob (for basic integration)
+- Database access for evidence and citations
+- Basic understanding of police roleplay systems
+
+### Installation Steps
+
+1. **Download Origen Police**
+   ```bash
+   cd resources/[police]
+   git clone https://github.com/example/origen-police.git
+   ```
+
+2. **Database Setup**
+   ```sql
+   -- Evidence storage table
+   CREATE TABLE IF NOT EXISTS `police_evidence` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `type` varchar(50) NOT NULL,
+     `identifier` varchar(50) NOT NULL,
+     `officer_name` varchar(100) NOT NULL,
+     `officer_badge` varchar(20) NOT NULL,
+     `incident_id` varchar(50) DEFAULT NULL,
+     `description` text DEFAULT NULL,
+     `image` text DEFAULT NULL,
+     `coords` text DEFAULT NULL,
+     `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+     PRIMARY KEY (`id`)
+   );
+
+   -- Citations table
+   CREATE TABLE IF NOT EXISTS `police_citations` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `citizenid` varchar(50) NOT NULL,
+     `officer_name` varchar(100) NOT NULL,
+     `officer_badge` varchar(20) NOT NULL,
+     `violation` varchar(200) NOT NULL,
+     `fine_amount` int(11) NOT NULL DEFAULT 0,
+     `points` int(11) NOT NULL DEFAULT 0,
+     `paid` tinyint(1) NOT NULL DEFAULT 0,
+     `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+     PRIMARY KEY (`id`)
+   );
+
+   -- Incidents table
+   CREATE TABLE IF NOT EXISTS `police_incidents` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `incident_id` varchar(50) NOT NULL UNIQUE,
+     `type` varchar(50) NOT NULL,
+     `priority` enum('LOW','MEDIUM','HIGH','CRITICAL') DEFAULT 'MEDIUM',
+     `location` varchar(200) NOT NULL,
+     `coords` text NOT NULL,
+     `description` text DEFAULT NULL,
+     `responding_officers` text DEFAULT NULL,
+     `status` enum('ACTIVE','RESOLVED','CANCELLED') DEFAULT 'ACTIVE',
+     `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+     `resolved_at` timestamp NULL DEFAULT NULL,
+     PRIMARY KEY (`id`)
+   );
+
+   -- Arrests table
+   CREATE TABLE IF NOT EXISTS `police_arrests` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `citizenid` varchar(50) NOT NULL,
+     `officer_name` varchar(100) NOT NULL,
+     `officer_badge` varchar(20) NOT NULL,
+     `charges` text NOT NULL,
+     `fine_amount` int(11) NOT NULL DEFAULT 0,
+     `jail_time` int(11) NOT NULL DEFAULT 0,
+     `mugshot` text DEFAULT NULL,
+     `processed` tinyint(1) NOT NULL DEFAULT 0,
+     `created_at` timestamp DEFAULT CURRENT_TIMESTAMP,
+     PRIMARY KEY (`id`)
+   );
+   ```
+
+3. **Server Configuration**
+   ```cfg
+   # Add to server.cfg
+   ensure qb-core
+   ensure qb-policejob
+   ensure origen-police
+   ```
+
+## Configuration
+
+### Main Configuration
+
+```lua
+Config = {}
+
+-- Framework Settings
+Config.Framework = 'qb-core'
+Config.PoliceJob = 'police'
+Config.Debug = false
+
+-- Dispatch Settings
+Config.Dispatch = {
+    enabled = true,
+    autoAssign = true,
+    maxUnitsPerCall = 4,
+    responseRadius = 1000.0,
+    
+    -- Call priorities
+    priorities = {
+        [1] = {label = 'LOW', color = '#00ff00', responseTime = 600},
+        [2] = {label = 'MEDIUM', color = '#ffff00', responseTime = 300},
+        [3] = {label = 'HIGH', color = '#ff8000', responseTime = 120},
+        [4] = {label = 'CRITICAL', color = '#ff0000', responseTime = 60}
+    }
+}
+
+-- Evidence System
+Config.Evidence = {
+    enabled = true,
+    maxEvidencePerOfficer = 50,
+    evidenceTypes = {
+        'DNA Sample',
+        'Fingerprints',
+        'Blood Sample',
+        'Photograph',
+        'Weapon',
+        'Drugs',
+        'Document',
+        'Other'
+    },
+    
+    -- Evidence locker locations
+    lockers = {
+        {coords = vector3(461.8, -998.3, 24.9), label = 'Mission Row Evidence'},
+        {coords = vector3(-449.6, 6008.5, 31.7), label = 'Paleto Evidence'},
+        {coords = vector3(1853.2, 3689.1, 34.3), label = 'Sandy Evidence'}
+    }
+}
+
+-- Vehicle Impound
+Config.Impound = {
+    enabled = true,
+    impoundFee = 1000,
+    impoundTime = 3600, -- 1 hour in seconds
+    
+    -- Impound lots
+    lots = {
+        {
+            name = 'City Impound',
+            coords = vector3(409.0, -1623.0, 29.3),
+            heading = 230.0,
+            spawns = {
+                vector4(405.0, -1630.3, 29.3, 230.0),
+                vector4(401.0, -1634.3, 29.3, 230.0),
+                vector4(397.0, -1638.3, 29.3, 230.0)
+            }
+        }
+    }
+}
+
+-- Traffic Citations
+Config.Citations = {
+    enabled = true,
+    violations = {
+        ['speeding'] = {label = 'Speeding', fine = 200, points = 2},
+        ['reckless_driving'] = {label = 'Reckless Driving', fine = 500, points = 4},
+        ['running_red_light'] = {label = 'Running Red Light', fine = 150, points = 2},
+        ['illegal_parking'] = {label = 'Illegal Parking', fine = 75, points = 0},
+        ['no_license'] = {label = 'Driving Without License', fine = 1000, points = 6},
+        ['dui'] = {label = 'Driving Under Influence', fine = 2500, points = 8}
+    }
+}
+```
+
+### Advanced Configuration
+
+```lua
+-- MDT Settings
+Config.MDT = {
+    enabled = true,
+    accessRanks = {0, 1, 2, 3, 4}, -- Allowed police ranks
+    
+    features = {
+        personSearch = true,
+        vehicleSearch = true,
+        weaponSearch = true,
+        incidentReports = true,
+        arrestReports = true,
+        officerRoster = true,
+        bolo = true
+    },
+    
+    -- BOLO (Be On Lookout) system
+    bolo = {
+        maxActive = 50,
+        autoExpire = 86400, -- 24 hours in seconds
+        types = {'PERSON', 'VEHICLE', 'OTHER'}
+    }
+}
+
+-- K9 Unit Configuration
+Config.K9 = {
+    enabled = true,
+    allowedRanks = {2, 3, 4}, -- K9 handler ranks
+    
+    commands = {
+        ['sit'] = {animation = 'sit_enter_1'},
+        ['stay'] = {animation = 'guard_enter_1'},
+        ['heel'] = {animation = 'heel_enter_1'},
+        ['search'] = {animation = 'search_enter_1', detectsTraces = true},
+        ['attack'] = {animation = 'attack_enter_1', requiresTarget = true}
+    },
+    
+    detection = {
+        drugTypes = {'weed', 'cocaine', 'meth', 'heroin'},
+        detectionRange = 5.0,
+        accuracy = 85 -- 85% chance to detect
+    }
+}
+
+-- Jail System
+Config.Jail = {
+    enabled = true,
+    
+    -- Jail locations
+    cells = {
+        {coords = vector3(461.65, -994.49, 24.91), heading = 0.0},
+        {coords = vector3(461.65, -998.02, 24.91), heading = 0.0},
+        {coords = vector3(461.65, -1001.54, 24.91), heading = 0.0}
+    },
+    
+    -- Release point
+    releasePoint = vector3(427.92, -978.93, 30.71),
+    
+    -- Jail activities (reduce time)
+    activities = {
+        {name = 'cleaning', coords = vector3(461.0, -1000.0, 24.91), reduction = 60},
+        {name = 'kitchen', coords = vector3(475.0, -1000.0, 24.91), reduction = 90}
+    }
+}
+```
+
+## Commands and Usage
+
+### Officer Commands
+
+```lua
+-- Basic Police Commands
+/badge                          -- Show police badge
+/handcuff                       -- Handcuff nearest player
+/drag                          -- Drag handcuffed player
+/put [vehicle/jail]            -- Put player in vehicle or jail
+/search                        -- Search nearby player
+/frisk                         -- Quick frisk for weapons
+/breathalyzer                  -- Test player for alcohol
+/gsr                           -- Gunshot residue test
+
+-- Evidence Commands
+/evidence collect [type]       -- Collect evidence at location
+/evidence store               -- Store evidence in locker
+/evidence view [id]           -- View evidence details
+/evidence search [query]      -- Search evidence database
+
+-- Vehicle Commands
+/impound                      -- Impound nearby vehicle
+/unimpound [plate]           -- Release impounded vehicle
+/spike                       -- Deploy spike strips
+/vehsearch                   -- Search vehicle inventory
+/runplate [plate]            -- Check vehicle registration
+
+-- Citation Commands
+/cite [id] [violation]       -- Issue traffic citation
+/warrant [id] [reason]       -- Issue arrest warrant
+/fine [id] [amount] [reason] -- Issue fine
+
+-- Dispatch Commands
+/dispatch [message]          -- Send dispatch message
+/respond [call_id]           -- Respond to dispatch call
+/backup                      -- Request backup
+/code3                       -- Emergency response mode
+/clear                       -- Clear from current call
+```
+
+### Admin Commands
+
+```lua
+-- Police Administration
+/policeadmin                 -- Open police admin menu
+/setrank [id] [rank]        -- Set police rank
+/givebadge [id] [number]    -- Assign badge number
+/policereload               -- Reload police configuration
+
+-- Evidence Management
+/evidence clear [officer]    -- Clear officer evidence
+/evidence export            -- Export evidence database
+/evidence backup            -- Backup evidence data
+
+-- System Management
+/impoundadmin               -- Impound lot management
+/jailadmin                 -- Jail system administration
+/dispatchadmin             -- Dispatch system management
+```
+
+### Citizen Commands
+
+```lua
+-- Available to all players
+/911 [message]              -- Emergency services call
+/311 [message]              -- Non-emergency services call
+/payfine [citation_id]      -- Pay traffic citation
+/lawyer                     -- Request legal representation
+```
+
+## Advanced Features
+
+### MDT (Mobile Data Terminal)
+
+```lua
+-- MDT integration example
+RegisterCommand('mdt', function()
+    local Player = QBCore.Functions.GetPlayerData()
+    
+    if Player.job.name == 'police' then
+        -- Open MDT interface
+        SetNuiFocus(true, true)
+        SendNUIMessage({
+            action = 'openMDT',
+            data = {
+                officer = Player.charinfo.firstname .. ' ' .. Player.charinfo.lastname,
+                badge = Player.job.grade.level,
+                rank = Player.job.grade.name,
+                activeCalls = GetActiveCalls(),
+                recentArrests = GetRecentArrests(),
+                bolos = GetActiveBolos()
+            }
+        })
+    end
+end)
+
+-- MDT person search
+RegisterNUICallback('mdtPersonSearch', function(data, cb)
+    QBCore.Functions.TriggerCallback('police:server:searchPerson', function(result)
+        cb(result)
+    end, data.query)
+end)
+
+-- Server-side person search
+QBCore.Functions.CreateCallback('police:server:searchPerson', function(source, cb, query)
+    -- Search by name, ID, or phone number
+    local results = {}
+    
+    MySQL.query('SELECT * FROM players WHERE JSON_EXTRACT(charinfo, "$.firstname") LIKE ? OR JSON_EXTRACT(charinfo, "$.lastname") LIKE ? OR citizenid = ?', {
+        '%' .. query .. '%',
+        '%' .. query .. '%', 
+        query
+    }, function(players)
+        for _, player in pairs(players) do
+            local charinfo = json.decode(player.charinfo)
+            table.insert(results, {
+                citizenid = player.citizenid,
+                name = charinfo.firstname .. ' ' .. charinfo.lastname,
+                dob = charinfo.birthdate,
+                phone = charinfo.phone,
+                licenses = json.decode(player.metadata).licenses or {},
+                warrants = GetPlayerWarrants(player.citizenid),
+                arrests = GetPlayerArrests(player.citizenid)
+            })
+        end
+        cb(results)
+    end)
+end)
+```
+
+### Evidence Collection System
+
+```lua
+-- Evidence collection
+RegisterNetEvent('police:client:collectEvidence', function(evidenceType)
+    local coords = GetEntityCoords(PlayerPedId())
+    local streetName = GetStreetNameFromHashKey(GetStreetNameAtCoord(coords.x, coords.y, coords.z))
+    
+    -- Animation
+    RequestAnimDict('amb@medic@standing@kneel@enter')
+    while not HasAnimDictLoaded('amb@medic@standing@kneel@enter') do
+        Wait(1)
+    end
+    
+    TaskPlayAnim(PlayerPedId(), 'amb@medic@standing@kneel@enter', 'enter', 8.0, 8.0, -1, 1, 0, false, false, false)
+    
+    -- Progress bar
+    QBCore.Functions.Progressbar('collect_evidence', 'Collecting Evidence...', 5000, false, true, {
+        disableMovement = true,
+        disableCarMovement = true,
+        disableMouse = false,
+        disableCombat = true
+    }, {}, {}, {}, function() -- Success
+        ClearPedTasksImmediately(PlayerPedId())
+        
+        -- Create evidence item
+        local evidenceData = {
+            type = evidenceType,
+            location = streetName,
+            coords = coords,
+            timestamp = os.date('%Y-%m-%d %H:%M:%S'),
+            description = 'Evidence collected at ' .. streetName
+        }
+        
+        TriggerServerEvent('police:server:addEvidence', evidenceData)
+    end, function() -- Failure
+        ClearPedTasksImmediately(PlayerPedId())
+        QBCore.Functions.Notify('Evidence collection cancelled', 'error')
+    end)
+end)
+
+-- Server-side evidence storage
+RegisterNetEvent('police:server:addEvidence', function(evidenceData)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player.PlayerData.job.name == 'police' then
+        local officerName = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
+        local badge = Player.PlayerData.job.grade.level
+        local evidenceId = GenerateEvidenceId()
+        
+        MySQL.insert('INSERT INTO police_evidence (type, identifier, officer_name, officer_badge, description, coords, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())', {
+            evidenceData.type,
+            evidenceId,
+            officerName,
+            badge,
+            evidenceData.description,
+            json.encode(evidenceData.coords)
+        })
+        
+        TriggerClientEvent('QBCore:Notify', src, 'Evidence collected: ID #' .. evidenceId, 'success')
+    end
+end)
+```
+
+### Dispatch Integration
+
+```lua
+-- Automatic dispatch calls
+RegisterNetEvent('police:server:createDispatchCall', function(callData)
+    local callId = GenerateCallId()
+    local call = {
+        id = callId,
+        type = callData.type or 'GENERAL',
+        priority = callData.priority or 2,
+        location = callData.location,
+        coords = callData.coords,
+        description = callData.description,
+        units = {},
+        created = os.time(),
+        status = 'ACTIVE'
+    }
+    
+    -- Store call
+    activeCalls[callId] = call
+    
+    -- Notify all on-duty officers
+    local officers = QBCore.Functions.GetQBPlayers()
+    for _, officer in pairs(officers) do
+        if officer.PlayerData.job.name == 'police' and officer.PlayerData.job.onduty then
+            TriggerClientEvent('police:client:dispatchAlert', officer.PlayerData.source, call)
+        end
+    end
+    
+    -- Auto-assign closest units
+    if Config.Dispatch.autoAssign then
+        local closestOfficers = GetClosestOfficers(callData.coords, Config.Dispatch.responseRadius)
+        for i = 1, math.min(#closestOfficers, Config.Dispatch.maxUnitsPerCall) do
+            AssignOfficerToCall(closestOfficers[i], callId)
+        end
+    end
+end)
+
+-- Client-side dispatch alert
+RegisterNetEvent('police:client:dispatchAlert', function(callData)
+    -- Show dispatch notification
+    QBCore.Functions.Notify('[DISPATCH] ' .. callData.type .. ' - ' .. callData.location, 'police', 10000)
+    
+    -- Add blip to map
+    local blip = AddBlipForCoord(callData.coords.x, callData.coords.y, callData.coords.z)
+    SetBlipSprite(blip, 161)
+    SetBlipScale(blip, 1.2)
+    SetBlipColour(blip, GetPriorityColor(callData.priority))
+    SetBlipAsShortRange(blip, false)
+    BeginTextCommandSetBlipName('STRING')
+    AddTextComponentString(callData.type)
+    EndTextCommandSetBlipName(blip)
+    
+    -- Store blip for cleanup
+    dispatchBlips[callData.id] = blip
+end)
+```
+
+## API Reference
+
+### Client Exports
+
+```lua
+-- Check if player is police
+local isPolice = exports['origen-police']:IsPolice()
+
+-- Get officer data
+local officerData = exports['origen-police']:GetOfficerData()
+
+-- Evidence functions
+exports['origen-police']:CollectEvidence(evidenceType)
+exports['origen-police']:StoreEvidence(evidenceId)
+
+-- Vehicle functions
+exports['origen-police']:ImpoundVehicle(vehicle, reason)
+exports['origen-police']:CheckVehicleRegistration(plate)
+
+-- Arrest functions
+exports['origen-police']:ArrestPlayer(playerId, charges)
+exports['origen-police']:ReleasePlayer(playerId)
+```
+
+### Server Exports
+
+```lua
+-- Dispatch system
+exports['origen-police']:CreateDispatchCall(callData)
+exports['origen-police']:AssignOfficerToCall(officerId, callId)
+exports['origen-police']:CloseDispatchCall(callId)
+
+-- Evidence management
+exports['origen-police']:AddEvidence(evidenceData)
+exports['origen-police']:GetEvidence(evidenceId)
+exports['origen-police']:GetOfficerEvidence(officerId)
+
+-- Citation system
+exports['origen-police']:IssueCitation(playerId, violation, fine, points)
+exports['origen-police']:PayCitation(citationId)
+exports['origen-police']:GetPlayerCitations(playerId)
+```
+
+---
+
+**Professional law enforcement for serious roleplay!** Origen Police provides comprehensive tools for realistic police operations while maintaining server performance and player engagement.
+
+Explore our other [script options](/scripts) or get [support](/support) for setup assistance.

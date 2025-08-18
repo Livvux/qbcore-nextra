@@ -1,0 +1,234 @@
+---
+title: "QBCore Framework for Beginners - Complete Setup Tutorial 2025"
+description: "Learn QBCore framework from scratch! Complete beginner's guide to QBCore concepts, player management, jobs system, and FiveM roleplay server development in 2025."
+keywords: "qbcore framework tutorial, qbcore beginners guide, fivem roleplay framework, qbcore scripting tutorial, learn qbcore 2025"
+---
+
+# QBCore Framework for Beginners - Complete Setup Tutorial 2025
+
+**⏱️ Estimated Time: 20-30 minutes | 🎯 Difficulty: Beginner | 📚 Comprehensive Learning Path**
+
+Welcome to QBCore! This comprehensive beginner's guide will help you understand the QBCore framework fundamentals and teach you everything needed to create and manage a successful FiveM roleplay server in 2025.
+
+## What is QBCore?
+
+QBCore is a modern, feature-rich framework for FiveM roleplay servers. It provides:
+
+- **Player Management**: Advanced character system with persistent data
+- **Job System**: Comprehensive employment framework
+- **Economy**: Banking, cash, and cryptocurrency systems
+- **Inventory**: Item-based inventory with crafting
+- **Phone System**: In-game smartphone with apps
+- **Housing**: Property ownership and management
+- **Vehicle System**: Ownership, keys, and mechanics
+
+### QBCore vs ESX Framework Comparison
+
+| Feature | QBCore | ESX Framework |
+|---------|--------|---------------|
+| **Development Status** | ✅ Actively maintained | ⚠️ Community maintained |
+| **Code Structure** | ✅ Modern, clean codebase | ❌ Legacy code patterns |
+| **Performance** | ✅ Optimized for efficiency | ⚠️ Can be resource-heavy |
+| **Documentation** | ✅ Comprehensive docs | ❌ Limited documentation |
+| **Built-in Features** | ✅ Extensive (jobs, phone, etc.) | ❌ Basic framework only |
+| **Learning Curve** | ✅ Beginner-friendly | ⚠️ Steeper learning curve |
+| **Community Scripts** | ✅ Growing ecosystem | ✅ Large existing library |
+| **Database Structure** | ✅ Optimized schema | ❌ Complex structure |
+| **Customization** | ✅ Easy to modify | ⚠️ Requires more work |
+| **2025 Compatibility** | ✅ Fully supported | ⚠️ Varies by version |
+
+## Framework Structure
+
+QBCore follows a modular design with these core components:
+
+### Core Framework (`qb-core`)
+The main framework that handles:
+- Player data management
+- Database operations
+- Event system
+- Utility functions
+
+### Essential Resources
+- `qb-multicharacter` - Character selection
+- `qb-spawn` - Player spawning system
+- `qb-hud` - User interface
+- `qb-inventory` - Item management
+- `qb-menu` - Interactive menus
+
+### Job Resources
+- `qb-policejob` - Police department
+- `qb-ambulancejob` - Emergency medical services
+- `qb-mechanicjob` - Vehicle repair services
+
+## Your First QBCore Server
+
+### 1. Installation
+Follow our installation guide for your operating system:
+- [Windows Installation](/docs/installation/windows)
+- [Linux Installation](/docs/installation/linux)
+
+### 2. Basic Configuration
+After installation, configure these essential settings:
+
+**Server Information** (`server.cfg`):
+```cfg
+sv_hostname "Your Server Name"
+sv_projectName "Your Project"
+sv_maxclients 32
+```
+
+**Database Connection**:
+```cfg
+set mysql_connection_string "mysql://username:password@localhost/database"
+```
+
+### 3. Admin Setup
+Set yourself as admin:
+```cfg
+add_principal identifier.steam:YOUR_STEAM_ID group.admin
+```
+
+### 4. First Launch
+Start your server and connect to test the basic functionality.
+
+## Understanding QBCore Concepts
+
+### Player Object
+Every player has a persistent object containing:
+- Personal information (name, DOB, etc.)
+- Job and job grade
+- Money (cash, bank, crypto)
+- Inventory items
+- Metadata
+
+### Jobs and Grades
+Jobs define player roles with different grades (ranks):
+```lua
+-- Example job structure
+['police'] = {
+    label = 'Police',
+    defaultDuty = true,
+    grades = {
+        ['0'] = { name = 'Cadet', payment = 50 },
+        ['1'] = { name = 'Officer', payment = 75 },
+        ['2'] = { name = 'Sergeant', payment = 100 }
+    }
+}
+```
+
+### Items and Inventory
+Items are defined in the shared configuration:
+```lua
+-- Example item
+['bread'] = {
+    name = 'bread',
+    label = 'Bread',
+    weight = 200,
+    type = 'item',
+    image = 'bread.png',
+    unique = false,
+    useable = true,
+    shouldClose = true,
+    description = 'Delicious bread'
+}
+```
+
+## Essential Commands
+
+### Admin Commands
+- `/admin` - Open admin menu
+- `/noclip` - Toggle noclip mode
+- `/tp [player]` - Teleport to player
+- `/setjob [player] [job] [grade]` - Set player job
+
+### Player Commands
+- `/job` - Check current job
+- `/cash` - Check cash amount
+- `/bank` - Check bank balance
+- `/inventory` - Open inventory
+
+## Next Steps
+
+Now that you understand the basics:
+
+1. **Learn Script Development**: [Scripting Guide](/tutorials/scripting)
+2. **Set Up Jobs**: [Job Creation Tutorial](/tutorials/jobs)
+3. **Configure Economy**: [Economy Management](/tutorials/economy)
+4. **Add Custom Features**: [Custom Scripts](/scripts)
+5. **Optimize Performance**: [Server Optimization](/tutorials/optimization)
+
+## Common Patterns
+
+### Creating a Basic Script
+```lua
+-- client.lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    -- Player loaded logic
+end)
+
+-- server.lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+QBCore.Functions.CreateCallback('script:getPlayerData', function(source, cb)
+    local Player = QBCore.Functions.GetPlayer(source)
+    cb(Player.PlayerData)
+end)
+```
+
+### Using Framework Functions
+```lua
+-- Get player object
+local Player = QBCore.Functions.GetPlayer(source)
+
+-- Add money
+Player.Functions.AddMoney('bank', 1000)
+
+-- Add item
+Player.Functions.AddItem('bread', 1)
+
+-- Check job
+if Player.PlayerData.job.name == 'police' then
+    -- Police-specific logic
+end
+```
+
+## Frequently Asked Questions
+
+### What makes QBCore different from other FiveM frameworks?
+QBCore offers modern architecture, extensive documentation, active community support, and comprehensive built-in systems for jobs, economy, inventory, and player management.
+
+### Do I need programming experience to use QBCore?
+Basic server setup requires no coding. However, learning Lua programming will help you customize scripts and create unique features for your roleplay server.
+
+### How is QBCore different from ESX framework?
+QBCore uses a more modern codebase, has better performance optimization, includes more built-in features, and offers easier customization compared to ESX framework.
+
+### Can I convert my ESX server to QBCore?
+Yes, but it requires significant work. Many resources need to be adapted. We recommend starting fresh with QBCore for the best experience.
+
+### What hosting do I need for QBCore?
+For testing: Windows PC with 8GB RAM. For production: Linux VPS with 4-8GB RAM, SSD storage, and good network connectivity.
+
+### How many players can QBCore handle?
+QBCore can handle 200+ players with proper optimization. Most servers run 32-128 players comfortably on standard VPS hosting.
+
+### Is QBCore actively maintained?
+Yes! QBCore has an active development team and community. Regular updates include bug fixes, new features, and security improvements.
+
+### Where can I find QBCore scripts and resources?
+Browse our [official resources](/docs/resources), check the GitHub organization, or explore community-created scripts from trusted developers.
+
+## Getting Help
+
+Get support for your QBCore journey:
+
+- **📚 Documentation**: Browse our complete [QBCore docs](/docs)
+- **💬 GitHub Discussions**: [Join our community](https://github.com/qbcore-framework/qb-core/discussions)
+- **🐛 GitHub Issues**: [Report bugs](https://github.com/qbcore-framework/qb-core/issues)
+- **🎓 Tutorials**: Explore more [step-by-step tutorials](/tutorials)
+- **⚡ Quick Start**: Try our [10-minute setup guide](/quickstart)
+- **🐧 Installation**: Detailed guides for [Windows](/docs/installation/windows) and [Linux](/docs/installation/linux)
+
+Welcome to the QBCore community! 🚀

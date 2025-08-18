@@ -1,0 +1,228 @@
+# QB-Racing - Street Racing System
+
+import { Callout } from 'nextra/components'
+
+The **qb-racing** resource provides a comprehensive street racing system for QBCore servers, featuring race creation, checkpoint systems, leaderboards, and betting mechanics.
+
+## Overview
+
+QB-Racing creates an exciting street racing environment with custom race tracks, time trials, competitive racing, and underground racing culture. Players can create races, participate in events, and build racing reputations.
+
+### Key Features
+
+- **Race Creation**: Custom race track builder
+- **Checkpoint System**: Dynamic waypoint racing
+- **Time Trials**: Solo time attack modes
+- **Leaderboards**: Best times and rankings
+- **Betting System**: Wager on race outcomes
+- **Underground Racing**: Illegal street racing events
+- **Vehicle Classes**: Different racing categories
+- **Racing Licenses**: Legal racing permits
+- **Tournament System**: Organized racing events
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for racing menus)
+- qb-vehiclekeys (for vehicle access)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-racing.git
+```
+
+2. **Database Setup**
+```sql
+-- Racing tables
+CREATE TABLE IF NOT EXISTS `racing_tracks` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) DEFAULT NULL,
+  `checkpoints` longtext DEFAULT NULL,
+  `created_by` varchar(50) DEFAULT NULL,
+  `best_time` float DEFAULT NULL,
+  `best_driver` varchar(50) DEFAULT NULL,
+  `races_completed` int(11) DEFAULT 0,
+  `created_at` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `racing_results` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `track_id` int(11) DEFAULT NULL,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `vehicle` varchar(100) DEFAULT NULL,
+  `time` float DEFAULT NULL,
+  `position` int(11) DEFAULT NULL,
+  `participants` int(11) DEFAULT NULL,
+  `race_date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add to server.cfg**
+```cfg
+ensure qb-racing
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.MaxCheckpoints = 50
+Config.MinRaceTime = 30 -- seconds
+Config.MaxParticipants = 16
+
+-- Racing Locations
+Config.RaceStarts = {
+    ["downtown"] = {
+        label = "Downtown Racing",
+        coords = vector3(144.63, -3030.01, 7.04),
+        blip = {
+            sprite = 315,
+            color = 1,
+            scale = 0.8
+        }
+    },
+    ["airport"] = {
+        label = "Airport Circuit",
+        coords = vector3(-1034.32, -2732.28, 20.17)
+    }
+}
+
+-- Vehicle Classes
+Config.VehicleClasses = {
+    ["sports"] = {
+        label = "Sports Cars",
+        vehicles = {"adder", "zentorno", "t20", "osiris"},
+        entry_fee = 5000
+    },
+    ["super"] = {
+        label = "Supercars",
+        vehicles = {"italigtb", "pfister811", "fmj", "reaper"},
+        entry_fee = 10000
+    },
+    ["open"] = {
+        label = "Open Class",
+        vehicles = {}, -- All vehicles allowed
+        entry_fee = 2500
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### CreateRace
+Create a new race track.
+
+```lua
+exports['qb-racing']:CreateRace(raceName, vehicleClass)
+```
+
+#### JoinRace
+Join an existing race.
+
+```lua
+local success = exports['qb-racing']:JoinRace(raceId)
+```
+
+#### StartRace
+Start a race countdown.
+
+```lua
+exports['qb-racing']:StartRace(raceId)
+```
+
+### Server Exports
+
+#### GetRaceLeaderboard
+Get race leaderboard data.
+
+```lua
+local leaderboard = exports['qb-racing']:GetRaceLeaderboard(trackId)
+```
+
+## Usage Examples
+
+### Race Creation System
+
+```lua
+-- Create new race track
+RegisterNetEvent('qb-racing:client:createRace', function()
+    local input = exports['qb-input']:ShowInput({
+        header = "Create New Race",
+        submitText = "Create",
+        inputs = {
+            {
+                text = "Race Name",
+                name = "racename",
+                type = "text",
+                isRequired = true
+            },
+            {
+                text = "Vehicle Class",
+                name = "class",
+                type = "select",
+                options = {
+                    {value = "sports", text = "Sports"},
+                    {value = "super", text = "Super"},
+                    {value = "open", text = "Open"}
+                }
+            }
+        }
+    })
+    
+    if input then
+        -- Start checkpoint creation mode
+        CreateThread(function()
+            local checkpoints = {}
+            local creating = true
+            
+            QBCore.Functions.Notify("Drive to set checkpoints. Press [E] to place, [X] to finish", "info")
+            
+            while creating do
+                Wait(1)
+                
+                if IsControlJustPressed(0, 38) then -- E key
+                    local coords = GetEntityCoords(PlayerPedId())
+                    table.insert(checkpoints, {
+                        x = coords.x,
+                        y = coords.y,
+                        z = coords.z
+                    })
+                    
+                    QBCore.Functions.Notify("Checkpoint " .. #checkpoints .. " placed", "success")
+                    
+                elseif IsControlJustPressed(0, 73) then -- X key
+                    if #checkpoints >= 3 then
+                        TriggerServerEvent('qb-racing:server:saveRace', {
+                            name = input.racename,
+                            class = input.class,
+                            checkpoints = checkpoints
+                        })
+                        creating = false
+                    else
+                        QBCore.Functions.Notify("Need at least 3 checkpoints", "error")
+                    end
+                end
+            end
+        end)
+    end
+end)
+```
+
+<Callout type="info">
+  This is a condensed version showing the key concepts. The full implementation would include detailed race mechanics, timing systems, and comprehensive UI elements.
+</Callout>

@@ -1,0 +1,85 @@
+# 🗄️ Database Documentation
+
+Comprehensive database documentation for QBCore servers, including schema design, optimization techniques, and management best practices.
+
+## Database Overview
+
+QBCore uses **MySQL/MariaDB** as its primary database system, storing all persistent server data including player information, inventories, vehicles, properties, and more.
+
+### Core Database Components
+
+- **Player Data** - Character information, metadata, positions
+- **Inventory Systems** - Items, stashes, trunks, glovebox storage  
+- **Vehicle Management** - Owned vehicles, modifications, damage states
+- **Property Systems** - Houses, apartments, businesses, garages
+- **Job Systems** - Employment data, grades, payments
+- **Economy** - Banking, transactions, business finances
+
+## Database Structure
+
+### Core Framework Tables
+- `players` - Primary player data and character information
+- `playerskins` - Character appearance and clothing data
+- `player_vehicles` - Vehicle ownership and modifications
+- `player_houses` - Property ownership and settings
+
+### Resource-Specific Tables
+- `management_*` - Business and gang management systems
+- `phone_*` - Phone app data and communications
+- `banking_*` - Financial transactions and accounts
+- `racing_*` - Racing event data and leaderboards
+
+## Quick Start
+
+### Essential Queries
+
+```sql
+-- Get player basic info
+SELECT citizenid, charinfo, money, job FROM players WHERE citizenid = ?
+
+-- Get player vehicles
+SELECT * FROM player_vehicles WHERE citizenid = ?
+
+-- Get player inventory
+SELECT * FROM playerskins WHERE citizenid = ?
+```
+
+### Performance Tips
+
+1. **Index Key Columns** - Always index citizenid and frequently queried fields
+2. **Limit Result Sets** - Use LIMIT clauses to prevent large data transfers
+3. **Optimize WHERE Clauses** - Structure conditions for optimal index usage
+4. **Regular Maintenance** - Keep statistics updated and optimize tables
+
+## Schema Documentation
+
+The following sections provide detailed documentation for all QBCore database schemas, including table structures, relationships, and optimization recommendations.
+
+### Available Documentation
+
+- **Core Schema** - Essential QBCore framework tables
+- **Resource Schemas** - Individual resource database structures
+- **Optimization Guide** - Performance tuning and best practices
+- **Backup & Restore** - Data protection strategies
+- **Migrations** - Version upgrade procedures
+- **Monitoring** - Performance tracking and alerting
+
+## Best Practices
+
+### Data Integrity
+- Use appropriate data types for each field
+- Implement proper foreign key constraints where applicable
+- Validate data before insertion
+- Use transactions for multi-table operations
+
+### Performance
+- Index frequently queried columns
+- Avoid SELECT * in production code
+- Use prepared statements to prevent SQL injection
+- Monitor slow query logs regularly
+
+### Security
+- Never expose database credentials in client-side code
+- Use parameterized queries exclusively
+- Implement proper access controls
+- Regular security audits and updates

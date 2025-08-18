@@ -1,0 +1,300 @@
+# How to Become Admin in QBCore
+
+This comprehensive guide will walk you through setting up administrator permissions in your QBCore server. Whether you're setting up a new server or need to grant admin access to trusted players, this tutorial covers everything you need to know.
+
+## Prerequisites
+
+Before you begin, ensure you have:
+- Access to your server files and database
+- QBCore framework installed and running
+- Basic understanding of server administration
+- Database management tool (HeidiSQL, phpMyAdmin, etc.)
+
+## Understanding QBCore Permission System
+
+QBCore uses a permission-based system with different admin levels:
+
+- **god**: Highest level admin (usually server owners)
+- **admin**: Full administrative privileges
+- **mod**: Moderator privileges (limited admin functions)
+
+## Method 1: Database Modification (Recommended)
+
+### Step 1: Access Your Database
+
+1. Open your database management tool
+2. Connect to your QBCore database
+3. Navigate to the `players` table
+
+### Step 2: Locate the Player
+
+Find the player you want to make admin by searching for their:
+- `citizenid` (unique identifier)
+- `license` (FiveM license)
+- `name` (character name)
+
+### Step 3: Update Permission Level
+
+1. Locate the `permission` column in the players table
+2. Change the value to your desired admin level:
+   ```sql
+   UPDATE players SET permission = 'god' WHERE citizenid = 'ABC12345';
+   ```
+
+3. Save the changes
+
+### Step 4: Restart the Server
+
+Restart your QBCore server for changes to take effect.
+
+## Method 2: In-Game Commands (If You're Already Admin)
+
+If you already have admin permissions, you can use in-game commands:
+
+### Basic Admin Commands
+
+```
+/setpermission [player_id] [permission_level]
+/givepermission [player_id] [permission_level]
+/makeadmin [player_id]
+```
+
+### Examples
+
+```
+/setpermission 1 admin
+/setpermission 5 god  
+/makeadmin 12
+```
+
+## Method 3: Configuration File Method
+
+### Step 1: Locate Config File
+
+Find your QBCore configuration file, typically located at:
+```
+resources/[qb]/qb-core/config.lua
+```
+
+### Step 2: Add to Admin List
+
+Look for a section like `Config.Admins` or similar and add the player's license:
+
+```lua
+Config.Admins = {
+    ["license:1234567890abcdef"] = "god",
+    ["license:abcdef1234567890"] = "admin",
+    ["license:567890abcdef1234"] = "mod"
+}
+```
+
+### Step 3: Get Player License
+
+To find a player's license:
+1. Have them join the server
+2. Check server logs or use command: `/license [player_id]`
+3. Look for format: `license:xxxxxxxxxxxxxxxxx`
+
+## Method 4: Using qb-admin Resource
+
+If you have qb-admin installed:
+
+### Step 1: Access Admin Menu
+
+1. Press your admin menu key (usually F6 or as configured)
+2. Navigate to "Player Management"
+3. Find the target player
+
+### Step 2: Assign Permissions
+
+1. Select the player from the list
+2. Choose "Set Permission Level"
+3. Select desired level (god/admin/mod)
+4. Confirm the change
+
+## Verifying Admin Status
+
+### In-Game Verification
+
+Test admin commands to verify permissions:
+
+```
+/admin          # Open admin menu
+/noclip         # Toggle noclip mode
+/tp [player_id] # Teleport to player
+/kick [player_id] [reason]
+/ban [player_id] [reason]
+```
+
+### Database Verification
+
+Check the database to confirm the permission was set:
+
+```sql
+SELECT citizenid, name, permission FROM players WHERE permission IN ('god', 'admin', 'mod');
+```
+
+## Common Admin Commands
+
+Once you have admin permissions, these commands become available:
+
+### Player Management
+```
+/kick [id] [reason]        # Kick a player
+/ban [id] [reason]         # Ban a player  
+/unban [license]           # Unban a player
+/warn [id] [reason]        # Warn a player
+```
+
+### Server Management
+```
+/announce [message]        # Server announcement
+/revive [id]              # Revive a player
+/heal [id]                # Heal a player
+/armor [id] [amount]      # Give armor
+```
+
+### Utility Commands
+```
+/noclip                   # Toggle noclip
+/godmode                  # Toggle god mode
+/invisible                # Toggle invisibility
+/tp [id/coords]          # Teleport
+```
+
+## Creating Additional Admin Levels
+
+You can create custom admin levels by modifying the QBCore framework:
+
+### Step 1: Edit Core Config
+
+In `qb-core/config.lua`, add custom permission levels:
+
+```lua
+Config.PermissionLevels = {
+    ['user'] = 0,
+    ['helper'] = 1,
+    ['mod'] = 2,
+    ['admin'] = 3,
+    ['god'] = 4,
+    ['owner'] = 5  -- Custom level
+}
+```
+
+### Step 2: Update Permission Checks
+
+Modify permission checks in your scripts:
+
+```lua
+local function HasPermission(source, level)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return false end
+    
+    local playerLevel = Config.PermissionLevels[Player.PlayerData.permission] or 0
+    local requiredLevel = Config.PermissionLevels[level] or 0
+    
+    return playerLevel >= requiredLevel
+end
+```
+
+## Security Best Practices
+
+### 1. Limit God-Level Access
+Only give 'god' permissions to server owners and highly trusted administrators.
+
+### 2. Regular Permission Audits
+Regularly review who has admin access:
+
+```sql
+SELECT citizenid, name, permission, last_updated FROM players 
+WHERE permission IN ('god', 'admin', 'mod') 
+ORDER BY permission DESC;
+```
+
+### 3. Use Appropriate Permission Levels
+- **God**: Server owners only
+- **Admin**: Trusted staff for server management
+- **Mod**: Community moderators for basic moderation
+
+### 4. Keep Logs
+Enable admin action logging to track admin command usage:
+
+```lua
+Config.AdminLogs = true
+Config.AdminLogWebhook = "your_discord_webhook_url"
+```
+
+## Troubleshooting
+
+### Permission Not Working
+
+1. **Check Database**: Verify the permission is set correctly in the database
+2. **Restart Server**: Changes may require a server restart
+3. **Check Spelling**: Ensure permission level is spelled correctly (case-sensitive)
+4. **Player Reconnection**: Have the player disconnect and reconnect
+
+### Commands Not Available
+
+1. **Resource Running**: Ensure qb-admin or equivalent admin resource is started
+2. **Permission Level**: Verify the player has sufficient permission level
+3. **Script Conflicts**: Check for conflicting admin resources
+
+### Database Connection Issues
+
+1. **Connection String**: Verify database connection in server.cfg
+2. **Permissions**: Ensure database user has proper permissions
+3. **Table Structure**: Confirm players table has permission column
+
+## Advanced Admin Setup
+
+### Creating Admin Groups
+
+For larger servers, consider creating admin groups:
+
+```lua
+Config.AdminGroups = {
+    ['management'] = {
+        level = 'god',
+        commands = {'all'}
+    },
+    ['staff'] = {
+        level = 'admin', 
+        commands = {'kick', 'warn', 'tp', 'heal'}
+    },
+    ['moderators'] = {
+        level = 'mod',
+        commands = {'warn', 'kick'}
+    }
+}
+```
+
+### Custom Admin Menu
+
+Create a custom admin menu with specific tools for your server:
+
+```lua
+Config.AdminMenuItems = {
+    {
+        title = 'Player Management',
+        items = {
+            {label = 'Kick Player', command = 'kick'},
+            {label = 'Ban Player', command = 'ban'},
+            {label = 'Heal Player', command = 'heal'}
+        }
+    },
+    {
+        title = 'Server Tools',
+        items = {
+            {label = 'Server Announcement', command = 'announce'},
+            {label = 'Weather Control', command = 'weather'},
+            {label = 'Time Control', command = 'time'}
+        }
+    }
+}
+```
+
+---
+
+**Congratulations!** You now know how to properly set up admin permissions in QBCore. Remember to always use admin powers responsibly and keep your server secure by following the best practices outlined in this guide.
+
+For more advanced server management topics, check out our other [tutorials](/tutorials) or visit our [support page](/support) if you need additional help.

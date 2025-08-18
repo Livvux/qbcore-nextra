@@ -1,0 +1,349 @@
+# How to Create Money as Item in QBCore
+
+Learn how to create physical money items that players can drop, trade, and pick up in your QBCore server.
+
+## Overview
+
+In QBCore, you can create physical money items that act like regular inventory items. This allows players to drop cash, trade it with others, and creates more immersive roleplay opportunities.
+
+## Prerequisites
+
+- QBCore Framework installed
+- Access to server files
+- Basic understanding of Lua scripting
+- QB-Inventory system
+
+## Step 1: Configure Money Items
+
+First, you need to add money items to your shared items configuration.
+
+### Edit qb-core/shared/items.lua
+
+Add these money items to your items list:
+
+```lua
+-- Money Items
+['cash'] = {
+    name = 'cash',
+    label = 'Cash',
+    weight = 0,
+    type = 'item',
+    image = 'cash.png',
+    unique = false,
+    useable = false,
+    shouldClose = false,
+    combinable = nil,
+    description = 'Paper money'
+},
+
+['markedbills'] = {
+    name = 'markedbills',
+    label = 'Marked Bills',
+    weight = 1000,
+    type = 'item',
+    image = 'markedbills.png',
+    unique = true,
+    useable = false,
+    shouldClose = false,
+    combinable = nil,
+    description = 'Money with serial numbers'
+},
+
+['dirtymoney'] = {
+    name = 'dirtymoney',
+    label = 'Dirty Money',
+    weight = 1000,
+    type = 'item',
+    image = 'dirtymoney.png',
+    unique = true,
+    useable = false,
+    shouldClose = false,
+    combinable = nil,
+    description = 'Illegally obtained money'
+}
+```
+
+## Step 2: Create Money Conversion Functions
+
+### Server-Side Functions (qb-core/server/functions.lua)
+
+Add functions to convert between cash and money items:
+
+```lua
+-- Convert cash to item
+QBCore.Functions.ConvertCashToItem = function(source, amount)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return false end
+    
+    if Player.PlayerData.money.cash >= amount then
+        Player.Functions.RemoveMoney('cash', amount)
+        Player.Functions.AddItem('cash', amount)
+        return true
+    end
+    return false
+end
+
+-- Convert item to cash
+QBCore.Functions.ConvertItemToCash = function(source, amount)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return false end
+    
+    local cashItem = Player.Functions.GetItemByName('cash')
+    if cashItem and cashItem.amount >= amount then
+        Player.Functions.RemoveItem('cash', amount)
+        Player.Functions.AddMoney('cash', amount)
+        return true
+    end
+    return false
+end
+```
+
+## Step 3: Create Useable Items
+
+### Make Cash Items Useable
+
+Add to qb-core/server/main.lua or create a separate resource:
+
+```lua
+-- Use cash item to convert to money
+QBCore.Functions.CreateUseableItem('cash', function(source, item)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    
+    local amount = item.amount or 1
+    Player.Functions.RemoveItem('cash', amount)
+    Player.Functions.AddMoney('cash', amount)
+    TriggerClientEvent('QBCore:Notify', source, 'You deposited $' .. amount .. ' to your wallet', 'success')
+end)
+
+-- Use dirty money (requires laundering)
+QBCore.Functions.CreateUseableItem('dirtymoney', function(source, item)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    
+    TriggerClientEvent('QBCore:Notify', source, 'This money needs to be laundered first', 'error')
+end)
+```
+
+## Step 4: Create Admin Commands
+
+### Money Management Commands
+
+Add these commands for server administration:
+
+```lua
+-- Give cash item to player
+QBCore.Commands.Add('givecash', 'Give cash item to player (Admin Only)', {{name = 'id', help = 'Player ID'}, {name = 'amount', help = 'Amount of cash'}}, true, function(source, args)
+    local Player = QBCore.Functions.GetPlayer(tonumber(args[1]))
+    local amount = tonumber(args[2])
+    
+    if Player and amount and amount > 0 then
+        Player.Functions.AddItem('cash', amount)
+        TriggerClientEvent('QBCore:Notify', source, 'Gave $' .. amount .. ' cash to ' .. Player.PlayerData.charinfo.firstname, 'success')
+        TriggerClientEvent('QBCore:Notify', Player.PlayerData.source, 'You received $' .. amount .. ' in cash', 'success')
+    end
+end, 'admin')
+
+-- Convert all cash to items
+QBCore.Commands.Add('cashtoitem', 'Convert wallet cash to items', {}, false, function(source, args)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    
+    local cashAmount = Player.PlayerData.money.cash
+    if cashAmount > 0 then
+        if QBCore.Functions.ConvertCashToItem(source, cashAmount) then
+            TriggerClientEvent('QBCore:Notify', source, 'Converted $' .. cashAmount .. ' to cash items', 'success')
+        else
+            TriggerClientEvent('QBCore:Notify', source, 'Failed to convert cash', 'error')
+        end
+    else
+        TriggerClientEvent('QBCore:Notify', source, 'You have no cash to convert', 'error')
+    end
+end)
+```
+
+## Step 5: Inventory Integration
+
+### Configure QB-Inventory
+
+Ensure your inventory system can handle these items properly:
+
+```lua
+-- In qb-inventory/config.lua
+Config.ItemDrops = true  -- Allow dropping items
+Config.PickupKey = 38    -- E key to pickup items
+
+-- Add to weapon drops or item specific configs if needed
+Config.MaxDroppedCash = 100000  -- Maximum cash that can be dropped at once
+```
+
+## Step 6: Add Images
+
+### Create Item Images
+
+1. Create or download appropriate images:
+   - `cash.png` - Regular money icon
+   - `markedbills.png` - Marked bills icon  
+   - `dirtymoney.png` - Dirty money icon
+
+2. Place them in your inventory resource's images folder:
+   ```
+   qb-inventory/html/images/
+   ├── cash.png
+   ├── markedbills.png
+   └── dirtymoney.png
+   ```
+
+## Step 7: Money Laundering System (Optional)
+
+### Create a Simple Laundering Script
+
+```lua
+-- Money laundering location
+local launderingLocation = vector3(1138.0, -3199.0, -39.0) -- Example coords
+
+-- Client-side proximity check
+CreateThread(function()
+    while true do
+        local ped = PlayerPedId()
+        local pos = GetEntityCoords(ped)
+        local distance = #(pos - launderingLocation)
+        
+        if distance < 3.0 then
+            QBCore.Functions.DrawText3D(launderingLocation.x, launderingLocation.y, launderingLocation.z, '[E] Launder Money')
+            
+            if IsControlJustPressed(0, 38) then -- E key
+                TriggerServerEvent('qb-money:server:launderMoney')
+            end
+        end
+        
+        Wait(1000)
+    end
+end)
+
+-- Server-side laundering
+RegisterNetEvent('qb-money:server:launderMoney', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return end
+    
+    local dirtyMoney = Player.Functions.GetItemByName('dirtymoney')
+    if dirtyMoney then
+        local amount = dirtyMoney.amount
+        local launderedAmount = math.floor(amount * 0.75) -- 25% fee
+        
+        Player.Functions.RemoveItem('dirtymoney', amount)
+        Player.Functions.AddItem('cash', launderedAmount)
+        
+        TriggerClientEvent('QBCore:Notify', src, 'Laundered $' .. amount .. ' for $' .. launderedAmount, 'success')
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'You have no dirty money to launder', 'error')
+    end
+end)
+```
+
+## Step 8: Testing
+
+### Test Your Implementation
+
+1. **Give yourself cash items**:
+   ```
+   /givecash [your_id] 1000
+   ```
+
+2. **Test dropping and picking up**:
+   - Open inventory and drag cash to drop
+   - Walk over dropped cash and press E to pick up
+
+3. **Test conversion**:
+   - Use `/cashtoitem` command
+   - Right-click cash items in inventory to use them
+
+4. **Test trading**:
+   - Give cash items to other players
+   - Verify they can use the items
+
+## Advanced Features
+
+### Track Money Serial Numbers
+
+```lua
+-- Add metadata to track money origin
+local function CreateTrackedMoney(source, amount, origin)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    
+    local metadata = {
+        serial = QBCore.Shared.RandomStr(8),
+        origin = origin,
+        timestamp = os.time()
+    }
+    
+    Player.Functions.AddItem('markedbills', amount, false, metadata)
+end
+
+-- Usage example
+CreateTrackedMoney(source, 5000, 'bank_robbery')
+```
+
+### Anti-Duplication Measures
+
+```lua
+-- Prevent money duplication exploits
+local moneyTransactions = {}
+
+RegisterNetEvent('qb-money:server:secureTransfer', function(targetId, amount)
+    local src = source
+    local transactionId = src .. '_' .. os.time()
+    
+    if moneyTransactions[transactionId] then
+        return -- Prevent duplicate transactions
+    end
+    
+    moneyTransactions[transactionId] = true
+    
+    -- Your transfer logic here
+    
+    -- Clean up old transactions
+    SetTimeout(60000, function()
+        moneyTransactions[transactionId] = nil
+    end)
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Items not showing in inventory:**
+- Check if item images exist
+- Verify items are properly added to shared/items.lua
+- Restart qb-core and inventory resources
+
+**Can't drop items:**
+- Ensure `Config.ItemDrops = true` in inventory config
+- Check weight limits in inventory system
+- Verify player has permission to drop items
+
+**Items not useable:**
+- Make sure `QBCore.Functions.CreateUseableItem` is registered
+- Check for script errors in console
+- Verify item names match exactly
+
+### Best Practices
+
+1. **Always validate inputs** - Check amounts and player data
+2. **Use metadata** - Track item origins for security
+3. **Implement limits** - Prevent excessive cash items
+4. **Log transactions** - Keep records for admin purposes
+5. **Test thoroughly** - Verify all functionality before deploying
+
+## Conclusion
+
+Creating money as items in QBCore adds depth to your roleplay server by making cash physical and tradeable. Players can now drop money during robberies, trade cash directly, and engage in more realistic financial interactions.
+
+Remember to regularly backup your server before implementing these changes, and always test on a development server first.
+
+---
+
+**Need more help?** Join our [GitHub discussions](https://github.com/qbcore-framework/qb-core/discussions) or check out more [QBCore tutorials](/tutorials).

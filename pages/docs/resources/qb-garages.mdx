@@ -1,0 +1,1005 @@
+# QB-Garages
+
+QB-Garages provides a comprehensive vehicle storage and management system for QBCore servers, offering players secure parking, vehicle customization, and advanced garage management features.
+
+## 📋 Overview
+
+QB-Garages includes:
+- **Multiple Garage Types** - Public, private, job-specific, and gang garages
+- **Vehicle Storage** - Secure parking with damage persistence
+- **Vehicle Management** - Track vehicle status, location, and condition
+- **Parking System** - Realistic parking mechanics with designated spots
+- **Impound Integration** - Vehicle impounding and retrieval system
+- **Garage Ownership** - Purchase and manage private garage spaces
+- **Vehicle Sharing** - Share vehicle access with other players
+- **Advanced Security** - Anti-theft and access control systems
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- **QB-Core** framework installed
+- **QB-Inventory** for vehicle trunk storage
+- **QB-Banking** for garage purchases and fees
+- **QB-Fuel** (recommended for fuel persistence)
+- **QB-VehicleKeys** for vehicle access control
+
+### Installation Steps
+
+1. **Download Resource**
+   ```bash
+   git clone https://github.com/qbcore-framework/qb-garages.git
+   ```
+
+2. **Place in Resources**
+   ```
+   resources/
+   └── [qb]/
+       └── qb-garages/
+   ```
+
+3. **Database Setup**
+   ```sql
+   -- Import the SQL file
+   SOURCE qb-garages.sql;
+   
+   -- Player vehicles table (if not exists)
+   CREATE TABLE IF NOT EXISTS `player_vehicles` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `license` varchar(50) DEFAULT NULL,
+     `citizenid` varchar(50) DEFAULT NULL,
+     `vehicle` varchar(50) DEFAULT NULL,
+     `hash` varchar(50) DEFAULT NULL,
+     `mods` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+     `plate` varchar(50) NOT NULL,
+     `fakeplate` varchar(50) DEFAULT NULL,
+     `garage` varchar(50) DEFAULT NULL,
+     `fuel` int(11) DEFAULT 100,
+     `engine` float DEFAULT 1000,
+     `body` float DEFAULT 1000,
+     `state` int(11) DEFAULT 1,
+     `depotprice` int(11) NOT NULL DEFAULT 0,
+     `drivingdistance` int(50) DEFAULT NULL,
+     `status` text DEFAULT NULL,
+     PRIMARY KEY (`id`),
+     KEY `plate` (`plate`),
+     KEY `citizenid` (`citizenid`),
+     KEY `license` (`license`)
+   );
+   
+   -- Garage ownership table
+   CREATE TABLE IF NOT EXISTS `garage_ownership` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `citizenid` varchar(50) NOT NULL,
+     `garage_id` varchar(50) NOT NULL,
+     `purchase_date` timestamp DEFAULT CURRENT_TIMESTAMP,
+     `access_list` text DEFAULT NULL,
+     PRIMARY KEY (`id`),
+     KEY `citizenid` (`citizenid`),
+     KEY `garage_id` (`garage_id`)
+   );
+   ```
+
+4. **Server Configuration**
+   ```cfg
+   # server.cfg
+   ensure qb-garages
+   ```
+
+## 🔧 Configuration
+
+### Main Configuration
+```lua
+-- config.lua
+Config = Config or {}
+
+-- Garage settings
+Config.UsingTarget = true -- Use qb-target for interactions
+Config.UseRealisticParking = true -- Vehicles stay where parked
+Config.AutoRespawn = true -- Auto-respawn vehicles on server restart
+Config.SharedGarages = true -- Allow multiple players in same garage
+
+-- Vehicle spawn settings
+Config.SpawnDistance = 4.0 -- Distance from garage to spawn vehicles
+Config.MinimumDistanceSpawn = 3.0 -- Minimum distance between spawned vehicles
+
+-- Garage fees
+Config.DepotPrice = 250 -- Impound retrieval fee
+Config.ParkingMeter = true -- Enable parking meter fees
+Config.ParkingCost = 10 -- Cost per hour for public parking
+
+-- Damage system
+Config.DamageMultiplier = 1.0 -- Damage persistence multiplier
+Config.FixEnginePercent = 25 -- Minimum engine health to drive
+Config.FixBodyPercent = 25 -- Minimum body health threshold
+```
+
+### Garage Locations
+```lua
+-- config.lua - Garage configurations
+Config.Garages = {
+    ["legion"] = {
+        label = "Legion Square Garage",
+        type = "public", -- public, private, job, gang
+        coords = vector3(215.9, -810.1, 30.7),
+        spawnPoint = vector4(229.7, -800.1, 30.6, 157.5),
+        putVehicle = vector3(229.7, -800.1, 30.6),
+        isOpened = true,
+        showBlip = true,
+        blipcoords = vector3(215.9, -810.1, 30.7),
+        blipName = "Public Garage",
+        blipNumber = 357,
+        blipColor = 3,
+        job = nil, -- Job requirement (if job garage)
+        gang = nil, -- Gang requirement (if gang garage)
+        vehicleCategories = {"car", "motorcycle"}, -- Allowed vehicle types
+        maxVehicles = 50, -- Maximum vehicles that can be stored
+        hourlyRate = 5, -- Hourly parking fee (if applicable)
+        parkingSpots = {
+            vector4(215.0, -805.0, 30.6, 157.5),
+            vector4(218.0, -803.0, 30.6, 157.5),
+            vector4(221.0, -801.0, 30.6, 157.5),
+            vector4(224.0, -799.0, 30.6, 157.5)
+        }
+    },
+    
+    ["airport"] = {
+        label = "Los Santos International",
+        type = "public",
+        coords = vector3(-796.6, -2025.1, 8.9),
+        spawnPoint = vector4(-800.0, -2016.0, 8.9, 48.0),
+        putVehicle = vector3(-800.0, -2016.0, 8.9),
+        isOpened = true,
+        showBlip = true,
+        blipcoords = vector3(-796.6, -2025.1, 8.9),
+        blipName = "Airport Garage",
+        blipNumber = 357,
+        blipColor = 3,
+        vehicleCategories = {"car", "motorcycle", "plane", "helicopter"},
+        maxVehicles = 100,
+        parkingSpots = {
+            vector4(-796.0, -2020.0, 8.9, 48.0),
+            vector4(-799.0, -2018.0, 8.9, 48.0),
+            vector4(-802.0, -2016.0, 8.9, 48.0)
+        }
+    },
+    
+    ["police"] = {
+        label = "LSPD Garage",
+        type = "job",
+        coords = vector3(454.6, -1017.4, 28.4),
+        spawnPoint = vector4(438.4, -1018.3, 27.7, 90.0),
+        putVehicle = vector3(438.4, -1018.3, 27.7),
+        isOpened = true,
+        showBlip = false,
+        job = "police",
+        vehicleCategories = {"emergency"},
+        maxVehicles = 20
+    },
+    
+    ["ballas"] = {
+        label = "Ballas Gang Garage",
+        type = "gang",
+        coords = vector3(102.3, -1956.8, 20.7),
+        spawnPoint = vector4(109.8, -1961.4, 20.6, 320.0),
+        putVehicle = vector3(109.8, -1961.4, 20.6),
+        isOpened = true,
+        showBlip = false,
+        gang = "ballas",
+        vehicleCategories = {"car", "motorcycle"},
+        maxVehicles = 15
+    }
+}
+```
+
+### Vehicle Categories
+```lua
+-- Vehicle type definitions
+Config.VehicleCategories = {
+    ["car"] = {
+        label = "Cars",
+        classes = {0, 1, 2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 17, 18, 19, 20}
+    },
+    ["motorcycle"] = {
+        label = "Motorcycles", 
+        classes = {8}
+    },
+    ["emergency"] = {
+        label = "Emergency Vehicles",
+        classes = {18}
+    },
+    ["plane"] = {
+        label = "Planes",
+        classes = {16}
+    },
+    ["helicopter"] = {
+        label = "Helicopters", 
+        classes = {15}
+    },
+    ["boat"] = {
+        label = "Boats",
+        classes = {14}
+    },
+    ["bicycle"] = {
+        label = "Bicycles",
+        classes = {13}
+    }
+}
+```
+
+## 🚗 Vehicle Management
+
+### Storing Vehicles
+```lua
+-- Store vehicle in garage
+RegisterNetEvent('qb-garages:server:updateVehicleState', function(state, plate, garage)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then return end
+    
+    MySQL.update('UPDATE player_vehicles SET state = ?, garage = ? WHERE plate = ? AND citizenid = ?', {
+        state, garage, plate, Player.PlayerData.citizenid
+    }, function(affectedRows)
+        if affectedRows > 0 then
+            TriggerClientEvent('QBCore:Notify', src, 'Vehicle stored successfully', 'success')
+        end
+    end)
+end)
+```
+
+### Vehicle Status System
+```lua
+-- Vehicle state definitions
+Config.VehicleStates = {
+    [0] = "Out", -- Vehicle is currently spawned/being used
+    [1] = "Garaged", -- Vehicle is stored in garage
+    [2] = "Impounded", -- Vehicle has been impounded
+    [3] = "Destroyed", -- Vehicle was destroyed and needs insurance claim
+    [4] = "Stolen" -- Vehicle was reported stolen
+}
+
+-- Get vehicle status with details
+local function GetVehicleStatus(plate)
+    local result = MySQL.Sync.fetchSingle('SELECT * FROM player_vehicles WHERE plate = ?', {plate})
+    
+    if result then
+        return {
+            state = result.state,
+            garage = result.garage,
+            fuel = result.fuel,
+            engine = result.engine,
+            body = result.body,
+            mods = json.decode(result.mods),
+            location = result.garage or "Unknown"
+        }
+    end
+    
+    return nil
+end
+```
+
+## 🔌 API Reference
+
+### Server Events
+
+#### Vehicle Spawning
+```lua
+-- Spawn vehicle from garage
+RegisterNetEvent('qb-garages:server:spawnvehicle', function(plate, garage, coords)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then return end
+    
+    -- Get vehicle data
+    local result = MySQL.Sync.fetchSingle(
+        'SELECT * FROM player_vehicles WHERE plate = ? AND citizenid = ?', 
+        {plate, Player.PlayerData.citizenid}
+    )
+    
+    if result and result.state == 1 then -- Vehicle is garaged
+        -- Check garage capacity
+        if IsGarageFull(garage) then
+            TriggerClientEvent('QBCore:Notify', src, 'Garage is full', 'error')
+            return
+        end
+        
+        -- Update vehicle state to out
+        MySQL.update('UPDATE player_vehicles SET state = 0 WHERE plate = ?', {plate})
+        
+        -- Spawn vehicle
+        TriggerClientEvent('qb-garages:client:doSpawnVehicle', src, {
+            model = result.vehicle,
+            plate = result.plate,
+            mods = json.decode(result.mods),
+            fuel = result.fuel,
+            engine = result.engine,
+            body = result.body,
+            coords = coords
+        })
+    end
+end)
+
+-- Store vehicle in garage
+RegisterNetEvent('qb-garages:server:storeVehicle', function(plate, garage, vehProps)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then return end
+    
+    -- Save vehicle modifications and state
+    MySQL.update([[
+        UPDATE player_vehicles 
+        SET state = 1, garage = ?, mods = ?, fuel = ?, engine = ?, body = ?
+        WHERE plate = ? AND citizenid = ?
+    ]], {
+        garage,
+        json.encode(vehProps.mods),
+        vehProps.fuel,
+        vehProps.engine,
+        vehProps.body,
+        plate,
+        Player.PlayerData.citizenid
+    })
+    
+    TriggerClientEvent('QBCore:Notify', src, 'Vehicle stored in ' .. garage, 'success')
+end)
+```
+
+#### Impound System
+```lua
+-- Impound vehicle
+RegisterNetEvent('qb-garages:server:impoundVehicle', function(plate, reason, fee)
+    local src = source
+    
+    -- Update vehicle state to impounded
+    MySQL.update('UPDATE player_vehicles SET state = 2, depotprice = ? WHERE plate = ?', {
+        fee or Config.DepotPrice, plate
+    })
+    
+    -- Log impound reason
+    MySQL.insert('INSERT INTO vehicle_impounds (plate, reason, fee, impound_date) VALUES (?, ?, ?, ?)', {
+        plate, reason, fee, os.date('%Y-%m-%d %H:%M:%S')
+    })
+    
+    TriggerClientEvent('QBCore:Notify', src, 'Vehicle has been impounded', 'error')
+end)
+
+-- Release vehicle from impound
+RegisterNetEvent('qb-garages:server:payDepot', function(plate)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then return end
+    
+    local result = MySQL.Sync.fetchSingle('SELECT depotprice FROM player_vehicles WHERE plate = ? AND citizenid = ?', {
+        plate, Player.PlayerData.citizenid
+    })
+    
+    if result and result.depotprice > 0 then
+        if Player.Functions.RemoveMoney('bank', result.depotprice) then
+            MySQL.update('UPDATE player_vehicles SET state = 1, depotprice = 0, garage = ? WHERE plate = ?', {
+                'impoundlot', plate
+            })
+            TriggerClientEvent('QBCore:Notify', src, 'Vehicle released from impound', 'success')
+        else
+            TriggerClientEvent('QBCore:Notify', src, 'Insufficient funds', 'error')
+        end
+    end
+end)
+```
+
+### Client Events
+
+#### Garage Interface
+```lua
+-- Open garage menu
+RegisterNetEvent('qb-garages:client:openGarage', function(garageId)
+    local garage = Config.Garages[garageId]
+    if not garage then return end
+    
+    -- Check access permissions
+    if not HasGarageAccess(garageId) then
+        QBCore.Functions.Notify('You do not have access to this garage', 'error')
+        return
+    end
+    
+    -- Get player's vehicles in this garage
+    QBCore.Functions.TriggerCallback('qb-garages:server:getGarageVehicles', function(vehicles)
+        if #vehicles > 0 then
+            SetNuiFocus(true, true)
+            SendNUIMessage({
+                action = "openGarage",
+                garage = garage,
+                vehicles = vehicles
+            })
+        else
+            QBCore.Functions.Notify('No vehicles in this garage', 'primary')
+        end
+    end, garageId)
+end)
+
+-- Vehicle spawning
+RegisterNetEvent('qb-garages:client:doSpawnVehicle', function(vehicleData)
+    local model = GetHashKey(vehicleData.model)
+    
+    -- Request model
+    RequestModel(model)
+    while not HasModelLoaded(model) do
+        Wait(10)
+    end
+    
+    -- Create vehicle
+    local vehicle = CreateVehicle(model, vehicleData.coords.x, vehicleData.coords.y, vehicleData.coords.z, vehicleData.coords.w, true, false)
+    
+    -- Apply vehicle properties
+    SetVehicleNumberPlateText(vehicle, vehicleData.plate)
+    SetVehicleMods(vehicle, vehicleData.mods)
+    SetVehicleFuelLevel(vehicle, vehicleData.fuel + 0.0)
+    SetVehicleEngineHealth(vehicle, vehicleData.engine + 0.0)
+    SetVehicleBodyHealth(vehicle, vehicleData.body + 0.0)
+    
+    -- Set player in vehicle
+    TaskWarpPedIntoVehicle(PlayerPedId(), vehicle, -1)
+    
+    -- Give keys
+    TriggerEvent('qb-vehiclekeys:client:SetOwner', vehicleData.plate)
+    
+    SetModelAsNoLongerNeeded(model)
+end)
+```
+
+### Exports
+
+#### Garage Access
+```lua
+-- Check if player owns garage
+local hasAccess = exports['qb-garages']:HasGarageAccess(garageId, citizenid)
+
+-- Get player's vehicles in specific garage
+local vehicles = exports['qb-garages']:GetGarageVehicles(garageId, citizenid)
+
+-- Check if garage has available parking spots
+local hasSpace = exports['qb-garages']:HasParkingSpace(garageId)
+```
+
+#### Vehicle Information
+```lua
+-- Get vehicle current status
+local status = exports['qb-garages']:GetVehicleStatus(plate)
+
+-- Check if vehicle can be spawned
+local canSpawn = exports['qb-garages']:CanSpawnVehicle(plate, garageId)
+
+-- Calculate repair costs
+local repairCost = exports['qb-garages']:CalculateRepairCost(vehicleData)
+```
+
+## 🎮 Player Experience
+
+### Garage Features
+
+1. **Vehicle Storage**
+   - Secure parking with persistent damage
+   - Vehicle condition monitoring
+   - Fuel level preservation
+   - Modification persistence
+
+2. **Access Control**
+   - Job-restricted garages
+   - Gang territory garages
+   - Private garage ownership
+   - Shared access permissions
+
+3. **Vehicle Management**
+   - Real-time vehicle status
+   - Location tracking
+   - Damage assessment
+   - Insurance claims
+
+### UI/UX Features
+```javascript
+// Garage interface JavaScript
+function openGarageMenu(vehicles, garage) {
+    $('.garage-container').fadeIn(300);
+    $('.garage-title').text(garage.label);
+    
+    // Populate vehicle list
+    vehicles.forEach(vehicle => {
+        const vehicleCard = createVehicleCard(vehicle);
+        $('.vehicle-list').append(vehicleCard);
+    });
+}
+
+function createVehicleCard(vehicle) {
+    const damageClass = getDamageClass(vehicle.engine, vehicle.body);
+    
+    return `
+        <div class="vehicle-card" data-plate="${vehicle.plate}">
+            <div class="vehicle-info">
+                <h3>${vehicle.model}</h3>
+                <p class="plate">${vehicle.plate}</p>
+                <div class="status-indicators">
+                    <span class="fuel">⛽ ${vehicle.fuel}%</span>
+                    <span class="engine ${damageClass}">🔧 ${vehicle.engine}%</span>
+                    <span class="body ${damageClass}">🚗 ${vehicle.body}%</span>
+                </div>
+            </div>
+            <div class="vehicle-actions">
+                <button class="spawn-btn" ${vehicle.engine < 25 ? 'disabled' : ''}>
+                    ${vehicle.engine < 25 ? 'Needs Repair' : 'Take Out'}
+                </button>
+            </div>
+        </div>
+    `;
+}
+```
+
+## 🛠️ Advanced Features
+
+### Parking Meter System
+```lua
+-- Parking meter implementation
+local parkingMeters = {}
+
+CreateThread(function()
+    while true do
+        Wait(3600000) -- Check every hour
+        
+        for plate, meterData in pairs(parkingMeters) do
+            if meterData.expires < os.time() then
+                -- Issue parking ticket
+                IssueParkingTicket(plate, Config.ParkingCost)
+                parkingMeters[plate] = nil
+            end
+        end
+    end
+end)
+
+function PayParkingMeter(plate, hours)
+    local cost = Config.ParkingCost * hours
+    local Player = QBCore.Functions.GetPlayerByPlate(plate)
+    
+    if Player and Player.Functions.RemoveMoney('cash', cost) then
+        parkingMeters[plate] = {
+            expires = os.time() + (hours * 3600),
+            paid = cost
+        }
+        return true
+    end
+    
+    return false
+end
+```
+
+### Vehicle Sharing System
+```lua
+-- Share vehicle access with other players
+RegisterNetEvent('qb-garages:server:shareVehicle', function(plate, targetCitizenId, duration)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then return end
+    
+    -- Verify ownership
+    local result = MySQL.Sync.fetchSingle(
+        'SELECT * FROM player_vehicles WHERE plate = ? AND citizenid = ?',
+        {plate, Player.PlayerData.citizenid}
+    )
+    
+    if result then
+        -- Create temporary access
+        MySQL.insert('INSERT INTO vehicle_shares (plate, owner_citizenid, shared_citizenid, expires) VALUES (?, ?, ?, ?)', {
+            plate,
+            Player.PlayerData.citizenid,
+            targetCitizenId,
+            os.time() + (duration * 3600) -- duration in hours
+        })
+        
+        TriggerClientEvent('QBCore:Notify', src, 'Vehicle access shared successfully', 'success')
+    end
+end)
+
+-- Check shared vehicle access
+function HasSharedAccess(plate, citizenid)
+    local result = MySQL.Sync.fetchSingle(
+        'SELECT * FROM vehicle_shares WHERE plate = ? AND shared_citizenid = ? AND expires > ?',
+        {plate, citizenid, os.time()}
+    )
+    
+    return result ~= nil
+end
+```
+
+### Anti-Theft System
+```lua
+-- Vehicle security measures
+local function CreateVehicleSecurity(vehicle, plate)
+    local securityLevel = GetVehicleSecurityLevel(vehicle)
+    
+    if securityLevel > 0 then
+        -- Enable alarm system
+        SetVehicleAlarm(vehicle, true)
+        SetVehicleAlarmTimeLeft(vehicle, 30000) -- 30 seconds
+        
+        -- Set door locks
+        SetVehicleDoorsLocked(vehicle, 2) -- Locked
+        
+        -- GPS tracking
+        if securityLevel >= 2 then
+            CreateVehicleGPSTracker(vehicle, plate)
+        end
+        
+        -- Remote engine disable
+        if securityLevel >= 3 then
+            SetVehicleEngineOn(vehicle, false, true, true)
+            SetVehicleUndriveable(vehicle, true)
+        end
+    end
+end
+
+-- GPS tracking system
+local vehicleTrackers = {}
+
+function CreateVehicleGPSTracker(vehicle, plate)
+    vehicleTrackers[plate] = {
+        vehicle = vehicle,
+        lastPosition = GetEntityCoords(vehicle),
+        lastUpdate = GetGameTimer()
+    }
+end
+
+CreateThread(function()
+    while true do
+        Wait(30000) -- Update every 30 seconds
+        
+        for plate, tracker in pairs(vehicleTrackers) do
+            if DoesEntityExist(tracker.vehicle) then
+                tracker.lastPosition = GetEntityCoords(tracker.vehicle)
+                tracker.lastUpdate = GetGameTimer()
+                
+                -- Update database
+                MySQL.update('UPDATE player_vehicles SET last_position = ? WHERE plate = ?', {
+                    json.encode({
+                        x = tracker.lastPosition.x,
+                        y = tracker.lastPosition.y,
+                        z = tracker.lastPosition.z
+                    }),
+                    plate
+                })
+            end
+        end
+    end
+end)
+```
+
+## 🏗️ Integration Examples
+
+### With QB-Fuel
+```lua
+-- Fuel integration for garage storage
+RegisterNetEvent('qb-garages:server:storeVehicle', function(plate, garage, vehProps)
+    -- Get current fuel level from QB-Fuel
+    local fuelLevel = exports['qb-fuel']:GetFuel(vehProps.entity)
+    
+    -- Update vehicle with fuel data
+    vehProps.fuel = fuelLevel
+    
+    -- Continue with normal storage process
+    StoreVehicleInGarage(plate, garage, vehProps)
+end)
+```
+
+### With QB-Inventory (Vehicle Trunk)
+```lua
+-- Trunk integration
+RegisterNetEvent('qb-garages:server:openTrunk', function(plate)
+    local src = source
+    
+    -- Check vehicle ownership
+    if HasVehicleAccess(src, plate) then
+        exports['qb-inventory']:OpenInventory(src, 'trunk', plate, {
+            maxweight = GetVehicleTrunkSpace(plate),
+            slots = 50,
+        })
+    end
+end)
+
+-- Transfer trunk items when storing vehicle
+function TransferTrunkToGarage(plate, garage)
+    local trunkItems = exports['qb-inventory']:GetInventory('trunk', plate)
+    
+    if trunkItems and #trunkItems > 0 then
+        -- Create temporary storage for trunk items
+        local storageId = 'garage_trunk_' .. plate
+        exports['qb-inventory']:CreateStorage(storageId, {
+            maxweight = 100000,
+            slots = 50,
+            items = trunkItems
+        })
+        
+        -- Clear trunk
+        exports['qb-inventory']:ClearInventory('trunk', plate)
+        
+        return storageId
+    end
+    
+    return nil
+end
+```
+
+### With QB-Mechanics
+```lua
+-- Vehicle repair integration
+RegisterNetEvent('qb-garages:server:repairVehicle', function(plate, repairType)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then return end
+    
+    local repairCost = CalculateRepairCost(plate, repairType)
+    
+    if Player.Functions.RemoveMoney('bank', repairCost) then
+        -- Full repair
+        if repairType == 'full' then
+            MySQL.update('UPDATE player_vehicles SET engine = 1000, body = 1000 WHERE plate = ?', {plate})
+        -- Engine only
+        elseif repairType == 'engine' then
+            MySQL.update('UPDATE player_vehicles SET engine = 1000 WHERE plate = ?', {plate})
+        -- Body only
+        elseif repairType == 'body' then
+            MySQL.update('UPDATE player_vehicles SET body = 1000 WHERE plate = ?', {plate})
+        end
+        
+        TriggerClientEvent('QBCore:Notify', src, 'Vehicle repaired successfully', 'success')
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'Insufficient funds for repair', 'error')
+    end
+end)
+```
+
+## 💰 Economic Features
+
+### Garage Rental System
+```lua
+-- Private garage rental
+Config.PrivateGarages = {
+    ["garage_1"] = {
+        label = "Downtown Private Garage",
+        coords = vector3(240.0, -800.0, 30.0),
+        monthlyRent = 5000,
+        maxVehicles = 10,
+        security = "high"
+    },
+    ["garage_2"] = {
+        label = "Sandy Shores Storage",
+        coords = vector3(1700.0, 3600.0, 35.0),
+        monthlyRent = 2500,
+        maxVehicles = 6,
+        security = "medium"
+    }
+}
+
+-- Rental payment system
+CreateThread(function()
+    while true do
+        Wait(2592000000) -- Run once per month (30 days)
+        
+        local rentalDue = MySQL.Sync.fetchAll('SELECT * FROM garage_ownership')
+        
+        for _, rental in pairs(rentalDue) do
+            local garage = Config.PrivateGarages[rental.garage_id]
+            if garage then
+                local Player = QBCore.Functions.GetPlayerByCitizenId(rental.citizenid)
+                
+                if Player then
+                    if Player.Functions.RemoveMoney('bank', garage.monthlyRent) then
+                        TriggerClientEvent('QBCore:Notify', Player.PlayerData.source, 
+                            'Garage rental fee paid: $' .. garage.monthlyRent, 'success')
+                    else
+                        -- Eviction process
+                        EvictFromGarage(rental.citizenid, rental.garage_id)
+                    end
+                end
+            end
+        end
+    end
+end)
+```
+
+### Vehicle Insurance
+```lua
+-- Insurance claim system
+RegisterNetEvent('qb-garages:server:claimInsurance', function(plate)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then return end
+    
+    local vehicle = MySQL.Sync.fetchSingle(
+        'SELECT * FROM player_vehicles WHERE plate = ? AND citizenid = ?',
+        {plate, Player.PlayerData.citizenid}
+    )
+    
+    if vehicle and vehicle.state == 3 then -- Destroyed state
+        local insuranceCost = CalculateInsuranceCost(vehicle.vehicle)
+        
+        if Player.Functions.RemoveMoney('bank', insuranceCost) then
+            -- Restore vehicle to garage
+            MySQL.update('UPDATE player_vehicles SET state = 1, engine = 1000, body = 1000, garage = ? WHERE plate = ?', {
+                'insurance_depot', plate
+            })
+            
+            TriggerClientEvent('QBCore:Notify', src, 'Insurance claim processed', 'success')
+        else
+            TriggerClientEvent('QBCore:Notify', src, 'Insufficient funds for insurance claim', 'error')
+        end
+    end
+end)
+```
+
+## 🛡️ Security & Anti-Abuse
+
+### Access Validation
+```lua
+-- Comprehensive access checking
+function ValidateGarageAccess(src, garageId, action)
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return false end
+    
+    local garage = Config.Garages[garageId]
+    if not garage then return false end
+    
+    -- Check if garage is open
+    if not garage.isOpened then
+        return false, "Garage is currently closed"
+    end
+    
+    -- Check job requirement
+    if garage.job and Player.PlayerData.job.name ~= garage.job then
+        return false, "Job access required"
+    end
+    
+    -- Check gang requirement
+    if garage.gang and Player.PlayerData.gang.name ~= garage.gang then
+        return false, "Gang access required"
+    end
+    
+    -- Check distance
+    local playerCoords = GetEntityCoords(GetPlayerPed(src))
+    local distance = #(playerCoords - garage.coords)
+    if distance > 10.0 then
+        return false, "Too far from garage"
+    end
+    
+    return true
+end
+```
+
+### Anti-Duplication Protection
+```lua
+-- Prevent vehicle duplication
+local spawnCooldowns = {}
+
+RegisterNetEvent('qb-garages:server:spawnvehicle', function(plate, garage, coords)
+    local src = source
+    local citizenid = QBCore.Functions.GetIdentifier(src, 'citizenid')
+    
+    -- Check spawn cooldown
+    local cooldownKey = citizenid .. '_' .. plate
+    if spawnCooldowns[cooldownKey] and spawnCooldowns[cooldownKey] > GetGameTimer() then
+        TriggerClientEvent('QBCore:Notify', src, 'Please wait before spawning another vehicle', 'error')
+        return
+    end
+    
+    -- Check if vehicle already exists in world
+    if IsVehicleSpawned(plate) then
+        TriggerClientEvent('QBCore:Notify', src, 'Vehicle is already spawned', 'error')
+        return
+    end
+    
+    -- Set cooldown (10 seconds)
+    spawnCooldowns[cooldownKey] = GetGameTimer() + 10000
+    
+    -- Continue with spawn process
+    SpawnVehicleFromGarage(src, plate, garage, coords)
+end)
+```
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+**Issue**: Vehicles not appearing in garage
+```lua
+-- Debug vehicle states
+RegisterCommand('checkgarage', function(source, args)
+    local garageId = args[1]
+    local vehicles = MySQL.Sync.fetchAll('SELECT * FROM player_vehicles WHERE garage = ?', {garageId})
+    
+    print('Vehicles in garage ' .. garageId .. ':')
+    for _, vehicle in pairs(vehicles) do
+        print(string.format('Plate: %s, Model: %s, State: %d', 
+            vehicle.plate, vehicle.vehicle, vehicle.state))
+    end
+end, true)
+```
+
+**Issue**: Vehicle spawning in wrong location
+```lua
+-- Validate spawn coordinates
+local function ValidateSpawnCoords(coords, garageId)
+    -- Check if coordinates are on ground
+    local ground, z = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z)
+    if not ground then
+        print('WARNING: Invalid spawn coords for garage ' .. garageId)
+        return false
+    end
+    
+    -- Check for obstacles
+    local vehicle = GetClosestVehicle(coords.x, coords.y, coords.z, 3.0, 0, 70)
+    if vehicle ~= 0 then
+        print('WARNING: Spawn location blocked for garage ' .. garageId)
+        return false
+    end
+    
+    return true
+end
+```
+
+**Issue**: Database connection problems
+```lua
+-- Test database connectivity
+RegisterCommand('testdb', function()
+    MySQL.ready(function()
+        local result = MySQL.Sync.fetchSingle('SELECT COUNT(*) as count FROM player_vehicles')
+        if result then
+            print('Database connected. Total vehicles: ' .. result.count)
+        else
+            print('Database connection failed')
+        end
+    end)
+end, true)
+```
+
+### Performance Optimization
+```lua
+-- Optimize garage loading
+local garageCache = {}
+
+function GetGarageVehicles(garageId, citizenid)
+    local cacheKey = garageId .. '_' .. citizenid
+    
+    if garageCache[cacheKey] and garageCache[cacheKey].expires > GetGameTimer() then
+        return garageCache[cacheKey].data
+    end
+    
+    local vehicles = MySQL.Sync.fetchAll(
+        'SELECT * FROM player_vehicles WHERE garage = ? AND citizenid = ? AND state = 1',
+        {garageId, citizenid}
+    )
+    
+    -- Cache for 30 seconds
+    garageCache[cacheKey] = {
+        data = vehicles,
+        expires = GetGameTimer() + 30000
+    }
+    
+    return vehicles
+end
+```
+
+## 🔗 Related Resources
+
+- [QB-Core](/docs/resources/qb-core) - Core framework
+- [QB-VehicleKeys](qb-vehiclekeys) - Vehicle access control
+- [QB-Fuel](qb-fuel) - Fuel system integration  
+- [QB-Inventory](qb-inventory) - Trunk storage
+- [QB-Banking](qb-banking) - Financial transactions
+
+## 📚 Additional Resources
+
+- [GitHub Repository](https://github.com/qbcore-framework/qb-garages)
+- [Vehicle Modification Guide](vehicle-mods)
+- [Security Configuration](security-setup)
+- [Performance Tuning](performance-optimization)

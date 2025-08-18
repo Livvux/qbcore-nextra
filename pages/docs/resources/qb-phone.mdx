@@ -1,0 +1,670 @@
+# QB-Phone - Smartphone System
+
+import { Callout } from 'nextra/components'
+
+The **qb-phone** resource provides a comprehensive smartphone system for QBCore servers, featuring a modern interface with multiple applications, messaging, calling, banking integration, and extensive customization options.
+
+## Overview
+
+QB-Phone creates an immersive smartphone experience that mimics real-world phone functionality. Players can communicate, access services, manage finances, and interact with various server systems through an intuitive mobile interface.
+
+### Key Features
+
+- **Modern UI/UX**: Responsive smartphone interface with app icons and navigation
+- **Communication**: Calls, SMS, and email systems
+- **Social Media**: Twitter-like social platform integration
+- **Banking App**: Mobile banking with account management
+- **GPS Navigation**: Map integration with route planning
+- **Camera System**: Photo capture and gallery management
+- **Settings**: Customizable wallpapers, ringtones, and notifications
+- **Custom Apps**: Framework for adding custom applications
+- **Real-time Notifications**: Push notifications for calls, messages, and app updates
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for phone interactions)
+- qb-banking (for banking app integration)
+- qb-houses (for GPS integration)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-phone.git
+```
+
+2. **Database Setup**
+```sql
+-- Add phone-related tables
+CREATE TABLE IF NOT EXISTS `phone_contacts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `name` varchar(50) DEFAULT NULL,
+  `number` varchar(50) DEFAULT NULL,
+  `iban` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `phone_messages` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `number` varchar(50) DEFAULT NULL,
+  `messages` text DEFAULT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `phone_gallery` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `image` varchar(255) DEFAULT NULL,
+  `date` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `phone_tweets` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `firstname` varchar(50) DEFAULT NULL,
+  `lastname` varchar(50) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `date` datetime DEFAULT current_timestamp(),
+  `url` text DEFAULT NULL,
+  `picture` text DEFAULT './img/default.png',
+  `tweetId` varchar(25) NOT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `phone_calls` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `number` varchar(50) DEFAULT NULL,
+  `incoming` int(11) DEFAULT NULL,
+  `date` timestamp NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Configure Items**
+```lua
+-- Add to qb-inventory/shared/items.lua
+['phone'] = {
+    ['name'] = 'phone',
+    ['label'] = 'Smartphone',
+    ['weight'] = 1000,
+    ['type'] = 'item',
+    ['image'] = 'phone.png',
+    ['unique'] = true,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'A modern smartphone'
+},
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-phone
+```
+
+5. **Restart Server**
+```bash
+restart qb-phone
+```
+
+<Callout type="info">
+  Ensure qb-phone loads after qb-core and qb-banking for proper integration
+</Callout>
+
+## Configuration
+
+### Basic Configuration
+
+The main configuration file is located at `config.lua`:
+
+```lua
+Config = {}
+
+-- General settings
+Config.MaxSlots = 16
+Config.OpenPhone = 288 -- F1 key
+Config.PhoneAsItem = true -- Require phone item to use
+Config.Animations = true
+
+-- Phone settings
+Config.BatteryDecay = true
+Config.BatteryDrainLevel = 1 -- Battery drain per minute
+Config.ChargeSpeed = 15 -- Charge speed when plugged in
+
+-- Apps configuration
+Config.DefaultApps = {
+    ['settings'] = {
+        app = 'settings',
+        color = '#2196F3',
+        icon = 'fas fa-cog',
+        name = 'Settings',
+        isGame = true,
+        tooltipText = 'Phone Settings',
+        job = false,
+        blockedjobs = {},
+        slot = 1,
+        Alerts = 0,
+    },
+    ['camera'] = {
+        app = 'camera',
+        color = '#4CAF50',
+        icon = 'fas fa-camera',
+        name = 'Camera',
+        isGame = true,
+        tooltipText = 'Take Photos',
+        job = false,
+        blockedjobs = {},
+        slot = 2,
+        Alerts = 0,
+    },
+    ['messages'] = {
+        app = 'messages',
+        color = '#2196F3',
+        icon = 'fas fa-comment',
+        name = 'Messages',
+        isGame = true,
+        tooltipText = 'Text Messages',
+        job = false,
+        blockedjobs = {},
+        slot = 3,
+        Alerts = 0,
+    },
+    ['contacts'] = {
+        app = 'contacts',
+        color = '#FF9800',
+        icon = 'fas fa-users',
+        name = 'Contacts',
+        isGame = true,
+        tooltipText = 'Phone Contacts',
+        job = false,
+        blockedjobs = {},
+        slot = 4,
+        Alerts = 0,
+    }
+}
+
+-- Banking app integration
+Config.BankingApp = {
+    enabled = true,
+    app = 'banking',
+    color = '#2E7D32',
+    icon = 'fas fa-university',
+    name = 'Banking',
+    tooltipText = 'Mobile Banking'
+}
+
+-- GPS settings
+Config.GPS = {
+    enabled = true,
+    app = 'maps',
+    blips = true,
+    routes = true
+}
+```
+
+### Twitter Configuration
+
+```lua
+Config.Twitter = {
+    enabled = true,
+    app = 'twitter',
+    characterLimit = 280,
+    allowImages = true,
+    hashtags = true,
+    mentions = true,
+    trending = {
+        '#LosSantos',
+        '#QBCore',
+        '#GTA5RP'
+    }
+}
+```
+
+### Job-Specific Apps
+
+```lua
+Config.JobApps = {
+    ['police'] = {
+        app = 'mdt',
+        color = '#1976D2',
+        icon = 'fas fa-shield-alt',
+        name = 'MDT',
+        tooltipText = 'Mobile Data Terminal',
+        slot = 15
+    },
+    ['ambulance'] = {
+        app = 'ambulance',
+        color = '#D32F2F',
+        icon = 'fas fa-ambulance',
+        name = 'EMS Alert',
+        tooltipText = 'Emergency Services',
+        slot = 16
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### OpenPhone
+Opens the phone interface.
+
+```lua
+-- Open phone
+exports['qb-phone']:OpenPhone()
+
+-- Open specific app
+exports['qb-phone']:OpenPhone('messages')
+```
+
+#### SendNotification
+Sends a phone notification.
+
+```lua
+-- Send notification
+exports['qb-phone']:SendNotification({
+    app = 'messages',
+    title = 'New Message',
+    text = 'You have a new text message',
+    timeout = 5000
+})
+```
+
+#### AddContact
+Adds a contact to the phone.
+
+```lua
+-- Add contact
+exports['qb-phone']:AddContact('John Doe', '555-0123')
+```
+
+#### GetPhoneNumber
+Gets the player's phone number.
+
+```lua
+-- Get phone number
+local phoneNumber = exports['qb-phone']:GetPhoneNumber()
+print("My number: " .. phoneNumber)
+```
+
+### Server Exports
+
+#### SendMessage
+Sends an SMS message.
+
+```lua
+-- Send SMS
+exports['qb-phone']:SendMessage(senderNumber, receiverNumber, message)
+```
+
+#### StartCall
+Initiates a phone call.
+
+```lua
+-- Start call
+exports['qb-phone']:StartCall(callerNumber, receiveeNumber)
+```
+
+#### AddTweet
+Posts a tweet.
+
+```lua
+-- Post tweet
+exports['qb-phone']:AddTweet(citizenId, message, image)
+```
+
+#### SendBankingNotification
+Sends banking-related notifications.
+
+```lua
+-- Send banking notification
+exports['qb-phone']:SendBankingNotification(citizenId, title, message, amount)
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Phone events
+RegisterNetEvent('qb-phone:client:openPhone', function()
+    -- Handle phone opening
+end)
+
+RegisterNetEvent('qb-phone:client:newMessage', function(data)
+    -- Handle new message
+end)
+
+RegisterNetEvent('qb-phone:client:incomingCall', function(data)
+    -- Handle incoming call
+end)
+
+-- App-specific events
+RegisterNetEvent('qb-phone:client:updateBankBalance', function(balance)
+    -- Update banking app balance
+end)
+
+RegisterNetEvent('qb-phone:client:newTweet', function(tweet)
+    -- Handle new tweet notification
+end)
+```
+
+#### Server Events
+
+```lua
+-- Message handling
+RegisterNetEvent('qb-phone:server:sendMessage', function(number, message))
+RegisterNetEvent('qb-phone:server:readMessage', function(messageId))
+
+-- Call handling
+RegisterNetEvent('qb-phone:server:callContact', function(number))
+RegisterNetEvent('qb-phone:server:acceptCall', function(callId))
+RegisterNetEvent('qb-phone:server:declineCall', function(callId))
+
+-- Contact management
+RegisterNetEvent('qb-phone:server:addContact', function(name, number))
+RegisterNetEvent('qb-phone:server:deleteContact', function(contactId))
+
+-- Banking integration
+RegisterNetEvent('qb-phone:server:transferMoney', function(targetAccount, amount))
+```
+
+## Usage Examples
+
+### Basic Phone Functionality
+
+```lua
+-- Give phone to new players
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    local Player = QBCore.Functions.GetPlayerData()
+    if not Player.Functions.GetItemByName('phone') then
+        TriggerServerEvent('qb-phone:server:givePhone')
+    end
+end)
+
+-- Phone item usage
+QBCore.Functions.CreateUseableItem('phone', function(source, item)
+    local Player = QBCore.Functions.GetPlayer(source)
+    TriggerClientEvent('qb-phone:client:openPhone', source)
+end)
+```
+
+### SMS Integration
+
+```lua
+-- Custom SMS system for businesses
+RegisterNetEvent('business:server:sendAdvertisement', function(businessName, message)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player.PlayerData.job.name == 'realestate' then
+        local players = QBCore.Functions.GetPlayers()
+        for _, playerId in pairs(players) do
+            exports['qb-phone']:SendMessage('555-REAL', QBCore.Functions.GetPlayer(playerId).PlayerData.charinfo.phone, businessName .. ': ' .. message)
+        end
+    end
+end)
+```
+
+### Banking App Integration
+
+```lua
+-- Update banking app when money changes
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if val.money then
+        TriggerClientEvent('qb-phone:client:updateBankBalance', src, {
+            bank = val.money.bank,
+            cash = val.money.cash
+        })
+    end
+end)
+```
+
+### Twitter Integration
+
+```lua
+-- Automatic tweets for events
+RegisterNetEvent('qb-racing:server:raceFinished', function(raceData)
+    local winner = QBCore.Functions.GetPlayer(raceData.winner)
+    local tweetMessage = winner.PlayerData.charinfo.firstname .. ' ' .. winner.PlayerData.charinfo.lastname .. ' just won the ' .. raceData.raceName .. ' race! 🏁'
+    
+    exports['qb-phone']:AddTweet('RACING_SYSTEM', tweetMessage, raceData.screenshot)
+end)
+```
+
+### Custom App Development
+
+```lua
+-- Register custom app
+RegisterNetEvent('qb-phone:server:registerApp', function()
+    local customApp = {
+        app = 'delivery',
+        color = '#FF5722',
+        icon = 'fas fa-truck',
+        name = 'Delivery',
+        tooltipText = 'Delivery Services',
+        job = 'delivery',
+        blockedjobs = {},
+        slot = 12,
+        Alerts = 0,
+        onOpen = function()
+            -- Custom app logic
+            TriggerClientEvent('delivery:client:openApp', source)
+        end
+    }
+    
+    TriggerClientEvent('qb-phone:client:addApp', -1, customApp)
+end)
+```
+
+### GPS Integration
+
+```lua
+-- Set GPS waypoint from server
+RegisterNetEvent('qb-phone:server:setGPSLocation', function(playerId, coords, label)
+    TriggerClientEvent('qb-phone:client:setGPSLocation', playerId, {
+        coords = coords,
+        label = label,
+        route = true
+    })
+end)
+```
+
+## Administrative Commands
+
+### Player Commands
+
+- `/phone` - Toggle phone on/off
+- `/phonebalance` - Check phone balance (if billing enabled)
+- `/phonenumber` - Check your phone number
+- `/setringtone [url]` - Set custom ringtone
+- `/setwallpaper [url]` - Set custom wallpaper
+
+### Admin Commands
+
+- `/givephone [id]` - Give phone to player
+- `/setphonenumber [id] [number]` - Set player's phone number
+- `/phonewipe [id]` - Wipe player's phone data
+- `/phonerepair [id]` - Repair broken phone
+
+### Console Commands
+
+```bash
+# Reset phone data
+resetphone ABC12345
+
+# Set phone number
+setphonenumber ABC12345 555-0123
+
+# Clear phone messages
+clearmessages ABC12345
+```
+
+## Integration with Other Resources
+
+### qb-banking Integration
+
+Mobile banking functionality:
+
+```lua
+-- Banking app in phone
+RegisterNUICallback('banking:transfer', function(data, cb)
+    TriggerServerEvent('qb-banking:server:transferMoney', data.target, data.amount, 'Mobile transfer')
+    cb('ok')
+end)
+
+RegisterNUICallback('banking:getBalance', function(data, cb)
+    QBCore.Functions.TriggerCallback('qb-banking:server:getBalance', function(balance)
+        cb(balance)
+    end)
+end)
+```
+
+### qb-houses Integration
+
+GPS navigation to owned properties:
+
+```lua
+-- Add houses to GPS
+RegisterNetEvent('qb-phone:client:loadHouses', function()
+    QBCore.Functions.TriggerCallback('qb-houses:server:getOwnedHouses', function(houses)
+        for _, house in pairs(houses) do
+            exports['qb-phone']:AddGPSLocation(house.coords, house.label, 'house')
+        end
+    end)
+end)
+```
+
+### qb-jobs Integration
+
+Job-specific apps and notifications:
+
+```lua
+-- Police MDT app
+if PlayerData.job.name == 'police' then
+    exports['qb-phone']:AddJobApp({
+        app = 'mdt',
+        name = 'MDT',
+        icon = 'fas fa-shield-alt',
+        onOpen = function()
+            TriggerEvent('qb-mdt:client:openMDT')
+        end
+    })
+end
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Phone Not Opening
+**Problem**: Phone interface doesn't appear when using item.
+
+**Solutions**:
+1. Check if phone item exists in inventory
+2. Verify resource load order
+3. Check for JavaScript errors in F12 console
+
+```lua
+-- Debug phone opening
+RegisterCommand('debugphone', function()
+    local hasPhone = QBCore.Functions.HasItem('phone')
+    local phoneData = exports['qb-phone']:GetPhoneData()
+    
+    print("Has phone: " .. tostring(hasPhone))
+    print("Phone data: " .. json.encode(phoneData))
+end, false)
+```
+
+#### Messages Not Sending
+**Problem**: SMS messages fail to send or receive.
+
+**Solutions**:
+1. Check database connections
+2. Verify phone numbers are valid
+3. Check server events are registered
+
+```lua
+-- Debug message sending
+RegisterNetEvent('qb-phone:debug:sendMessage', function(target, message)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local senderNumber = Player.PlayerData.charinfo.phone
+    
+    print("Sending message from: " .. senderNumber .. " to: " .. target)
+    print("Message: " .. message)
+    
+    exports['qb-phone']:SendMessage(senderNumber, target, message)
+end)
+```
+
+#### Banking App Issues
+**Problem**: Banking app shows incorrect balance or fails to load.
+
+**Solution**:
+```lua
+-- Refresh banking data
+RegisterCommand('refreshbank', function()
+    QBCore.Functions.TriggerCallback('qb-banking:server:getBalance', function(balance)
+        TriggerEvent('qb-phone:client:updateBankBalance', balance)
+    end)
+end, false)
+```
+
+#### Custom Apps Not Loading
+**Problem**: Custom apps don't appear on phone.
+
+**Solutions**:
+1. Check app registration syntax
+2. Verify job requirements
+3. Ensure proper app icons and colors
+
+```lua
+-- Debug app loading
+RegisterCommand('debugapps', function()
+    local apps = exports['qb-phone']:GetInstalledApps()
+    for appName, appData in pairs(apps) do
+        print("App: " .. appName .. " | Slot: " .. appData.slot)
+    end
+end, false)
+```
+
+### Performance Optimization
+
+```lua
+-- Optimize phone UI updates
+Config.UpdateInterval = 5000 -- Update every 5 seconds
+Config.MaxMessages = 100 -- Limit message history
+Config.MaxCalls = 50 -- Limit call history
+
+-- Disable unnecessary features
+Config.TwitterEnabled = false -- Disable if not used
+Config.GPSEnabled = false -- Disable if not needed
+```
+
+## Related Resources
+
+- **[qb-core](/docs/resources/qb-core)** - Core framework functions
+- **[qb-banking](/docs/resources/qb-banking)** - Banking app integration
+- **qb-houses** - GPS integration with properties
+- **qb-target** - Phone interaction system
+- **qb-inventory** - Phone item management
+
+## Support
+
+For issues and feature requests:
+- **GitHub**: [qb-phone Repository](https://github.com/qbcore-framework/qb-phone)
+- **Discord**: [QBCore Community](https://discord.gg/qbcore)
+- **Documentation**: [QBCore Docs](https://docs.qbcore.org)

@@ -1,0 +1,286 @@
+# QB-Casino - Gaming and Entertainment System
+
+import { Callout } from 'nextra/components'
+
+The **qb-casino** resource provides a comprehensive casino gaming system for QBCore servers, featuring various gambling games, chip management, VIP systems, and entertainment venues.
+
+## Overview
+
+QB-Casino creates a realistic casino experience with multiple gambling games, chip-based economy, membership tiers, and complete casino operations. Players can enjoy poker, blackjack, slots, and other casino games.
+
+### Key Features
+
+- **Multiple Games**: Poker, Blackjack, Roulette, Slots
+- **Chip System**: Casino-specific currency management
+- **VIP Membership**: Exclusive perks and access
+- **Tournaments**: Organized gaming events
+- **House Edge**: Realistic casino economics
+- **Security System**: Anti-cheat and monitoring
+- **Entertainment**: Shows and special events
+- **High Roller Rooms**: Premium gaming areas
+- **Loyalty Rewards**: Player retention system
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for casino menus)
+- qb-inventory (for chip management)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-casino.git
+```
+
+2. **Database Setup**
+```sql
+-- Casino tables
+CREATE TABLE IF NOT EXISTS `casino_chips` (
+  `citizenid` varchar(50) NOT NULL,
+  `chips` int(11) DEFAULT 0,
+  `lifetime_winnings` int(11) DEFAULT 0,
+  `lifetime_losses` int(11) DEFAULT 0,
+  `vip_level` int(11) DEFAULT 0,
+  `last_visit` timestamp DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`citizenid`)
+);
+
+CREATE TABLE IF NOT EXISTS `casino_games` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `game_type` varchar(50) DEFAULT NULL,
+  `bet_amount` int(11) DEFAULT 0,
+  `win_amount` int(11) DEFAULT 0,
+  `result` varchar(10) DEFAULT NULL,
+  `timestamp` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Casino Items
+['casino_chips'] = {
+    ['name'] = 'casino_chips',
+    ['label'] = 'Casino Chips',
+    ['weight'] = 0,
+    ['type'] = 'item',
+    ['image'] = 'casino_chips.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Chips for casino gaming'
+},
+['vip_card'] = {
+    ['name'] = 'vip_card',
+    ['label'] = 'VIP Casino Card',
+    ['weight'] = 10,
+    ['type'] = 'item',
+    ['image'] = 'vip_card.png',
+    ['unique'] = true,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'VIP access card for premium gaming'
+}
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-casino
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.ChipExchangeRate = 1 -- 1 chip = $1
+Config.HouseEdge = {
+    blackjack = 0.02, -- 2%
+    poker = 0.05,     -- 5%
+    roulette = 0.027, -- 2.7%
+    slots = 0.10      -- 10%
+}
+
+-- Casino Locations
+Config.Locations = {
+    ["diamond"] = {
+        label = "Diamond Casino & Resort",
+        coords = vector3(1089.99, 206.3, -48.999),
+        blip = {
+            sprite = 679,
+            color = 5,
+            scale = 0.8
+        },
+        games = {
+            ["blackjack"] = {
+                coords = vector3(1129.52, 261.95, -50.84),
+                min_bet = 100,
+                max_bet = 10000
+            },
+            ["poker"] = {
+                coords = vector3(1143.52, 268.95, -50.84),
+                min_bet = 500,
+                max_bet = 50000
+            },
+            ["roulette"] = {
+                coords = vector3(1132.52, 278.95, -50.84),
+                min_bet = 50,
+                max_bet = 25000
+            },
+            ["slots"] = {
+                coords = vector3(1110.52, 230.95, -50.84),
+                min_bet = 25,
+                max_bet = 5000
+            }
+        }
+    }
+}
+
+-- Game Configuration
+Config.Games = {
+    ["blackjack"] = {
+        label = "Blackjack",
+        min_players = 1,
+        max_players = 6,
+        dealer_stands = 17,
+        blackjack_payout = 1.5
+    },
+    ["poker"] = {
+        label = "Texas Hold'em",
+        min_players = 2,
+        max_players = 8,
+        tournament_fee = 1000
+    },
+    ["roulette"] = {
+        label = "European Roulette",
+        numbers = 37, -- 0-36
+        payouts = {
+            straight = 35,
+            split = 17,
+            street = 11,
+            corner = 8,
+            red_black = 1,
+            odd_even = 1
+        }
+    },
+    ["slots"] = {
+        label = "Slot Machines",
+        symbols = {"cherry", "lemon", "orange", "bell", "bar", "seven"},
+        payouts = {
+            ["seven-seven-seven"] = 1000,
+            ["bar-bar-bar"] = 500,
+            ["bell-bell-bell"] = 250
+        }
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### StartGame
+Start a casino game.
+
+```lua
+exports['qb-casino']:StartGame(gameType, betAmount)
+```
+
+#### ExchangeChips
+Exchange money for chips or vice versa.
+
+```lua
+local success = exports['qb-casino']:ExchangeChips(amount, direction)
+-- direction: "buy" or "sell"
+```
+
+### Server Exports
+
+#### GetPlayerChips
+Get player's chip balance.
+
+```lua
+local chips = exports['qb-casino']:GetPlayerChips(source)
+```
+
+#### ProcessGameResult
+Process game outcome and payouts.
+
+```lua
+exports['qb-casino']:ProcessGameResult(source, gameType, betAmount, result)
+```
+
+## Usage Examples
+
+### Blackjack Game Implementation
+
+```lua
+-- Simplified blackjack game
+RegisterNetEvent('qb-casino:client:playBlackjack', function(betAmount)
+    local gameData = {
+        playerCards = {},
+        dealerCards = {},
+        playerTotal = 0,
+        dealerTotal = 0,
+        gamePhase = "dealing"
+    }
+    
+    -- Deal initial cards
+    DealCard(gameData, "player")
+    DealCard(gameData, "dealer")
+    DealCard(gameData, "player")
+    DealCard(gameData, "dealer", true) -- Hidden card
+    
+    -- Player's turn
+    while gameData.playerTotal < 21 and gameData.gamePhase == "player_turn" do
+        local action = GetPlayerAction() -- Hit, Stand, Double Down
+        
+        if action == "hit" then
+            DealCard(gameData, "player")
+        elseif action == "stand" then
+            gameData.gamePhase = "dealer_turn"
+        end
+    end
+    
+    -- Dealer's turn
+    if gameData.playerTotal <= 21 then
+        while gameData.dealerTotal < 17 do
+            DealCard(gameData, "dealer")
+        end
+    end
+    
+    -- Determine winner and process payout
+    local result = DetermineWinner(gameData)
+    TriggerServerEvent('qb-casino:server:processBlackjack', betAmount, result)
+end)
+
+function DealCard(gameData, target, hidden)
+    local card = GetRandomCard()
+    
+    if target == "player" then
+        table.insert(gameData.playerCards, card)
+        gameData.playerTotal = CalculateHandValue(gameData.playerCards)
+    else
+        table.insert(gameData.dealerCards, card)
+        if not hidden then
+            gameData.dealerTotal = CalculateHandValue(gameData.dealerCards)
+        end
+    end
+end
+```
+
+<Callout type="info">
+  This is a simplified implementation. A full casino system would include detailed game logic, anti-cheat measures, and comprehensive UI elements.
+</Callout>

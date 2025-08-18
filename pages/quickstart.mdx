@@ -1,0 +1,206 @@
+---
+title: "QBCore Quick Start Guide 2025 - Set Up FiveM Server in 10 Minutes"
+description: "Fast QBCore installation guide! Get your FiveM roleplay server running in under 10 minutes with this step-by-step quick start tutorial. Perfect for beginners in 2025."
+keywords: "qbcore quick start, fivem server 10 minutes, fast qbcore setup, beginner qbcore guide, quick fivem installation 2025"
+---
+
+# QBCore Quick Start Guide 2025 - Set Up FiveM Server in 10 Minutes
+
+**⚡ Estimated Time: 10 minutes | 🎯 Difficulty: Beginner | 🚀 Perfect for First-Time Users**
+
+Get your QBCore FiveM roleplay server up and running in under 10 minutes! This streamlined guide covers the essential steps to have a basic QBCore server ready for your community to start playing immediately.
+
+## Prerequisites
+
+Before you begin, make sure you have:
+
+- ✅ **FiveM Server** - A working FiveM server installation
+- ✅ **MySQL Database** - MySQL 8.0+ or MariaDB 10.6+
+- ✅ **Basic Knowledge** - Familiarity with FiveM server management
+- ✅ **Text Editor** - VS Code, Sublime Text, or similar
+
+## Step 1: Download QBCore
+
+Get the latest version of QBCore from our official repository:
+
+```bash
+# Clone the main QBCore repository
+git clone https://github.com/qbcore-framework/qb-core.git [qb-core]
+
+# Clone essential resources
+git clone https://github.com/qbcore-framework/qb-multicharacter.git [qb-multicharacter]
+git clone https://github.com/qbcore-framework/qb-spawn.git [qb-spawn]
+git clone https://github.com/qbcore-framework/qb-garages.git [qb-garages]
+```
+
+Alternatively, download the [QBCore Starter Pack](https://github.com/qbcore-framework/qb-starter) which includes all essential resources, or explore [pre-configured server templates](https://fivemx.com/qbcore-server-packs/) for faster deployment with optimized configurations.
+
+## Step 2: Database Setup
+
+1. **Create a new MySQL database** for your server
+2. **Import the QBCore SQL file** located in `qb-core/server/database.sql`
+3. **Configure your database connection** in your server configuration
+
+```sql
+-- Create database
+CREATE DATABASE qbcore;
+
+-- Import the base structure
+SOURCE qb-core/server/database.sql;
+```
+
+## Step 3: Server Configuration
+
+Update your `server.cfg` file with the essential QBCore resources:
+
+```bash
+# QBCore Framework
+ensure qb-core
+ensure qb-multicharacter
+ensure qb-spawn
+ensure qb-garages
+
+# Optional but recommended
+ensure qb-inventory
+ensure qb-hud
+ensure qb-phone
+```
+
+## Step 4: Configure QBCore
+
+Edit the configuration file at `qb-core/config.lua`:
+
+```lua
+QBConfig = {}
+
+-- Core Settings
+QBConfig.MaxPlayers = GetConvarInt('sv_maxclients', 48)
+QBConfig.DefaultSpawn = vector4(-1035.71, -2731.87, 12.86, 0.0)
+
+-- Database Configuration
+QBConfig.Server = {
+    ['hostname'] = 'localhost',
+    ['username'] = 'your_username',
+    ['password'] = 'your_password',
+    ['database'] = 'qbcore',
+    ['port'] = 3306
+}
+
+-- Money Configuration
+QBConfig.Money = {
+    ['MoneyTypes'] = {
+        ['cash'] = 500,    -- Starting cash
+        ['bank'] = 5000,   -- Starting bank money
+        ['crypto'] = 0     -- Starting crypto
+    }
+}
+```
+
+## Step 5: Start Your Server
+
+1. **Start your FiveM server** with the updated configuration
+2. **Check the console** for any errors
+3. **Connect to your server** and test character creation
+
+If everything is configured correctly, you should see:
+- QBCore loading messages in the console
+- Character creation screen when connecting
+- No critical errors in the server logs
+
+## Essential Commands
+
+Once your server is running, these commands will be helpful:
+
+### Admin Commands
+```bash
+# Give yourself admin permissions
+/setgroup [player_id] admin
+
+# Give money to a player
+/givemoney [player_id] [type] [amount]
+
+# Set a player's job
+/setjob [player_id] [job] [grade]
+```
+
+### Player Commands
+```bash
+# Check your character info
+/me
+
+# Check your money
+/bank
+
+# Logout and return to character selection
+/logout
+```
+
+## Frequently Asked Questions
+
+### Can I really set up QBCore in 10 minutes?
+Yes! This quick start guide focuses on the essential steps. For a basic testing server, 10 minutes is realistic. Production servers may take longer for optimization.
+
+### What's the difference between Quick Start and Full Installation?
+Quick Start gets you running fast with minimal configuration. For production servers, use our detailed [Windows](/docs/installation/windows) or [Linux](/docs/installation/linux) installation guides.
+
+### Do I need coding experience for QBCore?
+Not for basic setup! QBCore comes pre-configured. However, customization and script development benefit from Lua programming knowledge.
+
+### How many players can a basic QBCore server handle?
+A basic setup can handle 16-32 players. For larger communities, follow our [performance optimization guide](/docs/performance).
+
+### Is QBCore free to use?
+Yes, QBCore is completely free and open-source. Some hosting providers and custom scripts may have costs, but the framework itself is free.
+
+### What if I encounter errors during setup?
+Check our [troubleshooting section](#troubleshooting) below, or visit our detailed installation guides for [Windows](/docs/installation/windows) or [Linux](/docs/installation/linux).
+
+## Next Steps
+
+Now that you have a basic QBCore server running:
+
+1. **[Detailed Installation Guides](/docs/installation/)** - Complete setup for production servers
+2. **[Customize Jobs](/docs/jobs)** - Add custom jobs for your roleplay scenarios  
+3. **[Configure Economy](/docs/economy)** - Set up banking, businesses, and pricing
+4. **[Browse QBCore Resources](/docs/resources)** - Install additional scripts and features
+5. **[Security Setup](/docs/security)** - Configure anti-cheat and protection
+6. **[Performance Optimization](/docs/performance)** - Optimize for your player count
+7. **[Getting Started Tutorial](/tutorials/getting-started)** - Learn QBCore framework basics
+8. **[Pre-configured Server Templates](https://fivemx.com/qbcore-server-packs/)** - Skip the configuration hassle with ready-to-deploy server packs
+
+## Troubleshooting
+
+### Common Issues
+
+**Database Connection Failed**
+- Verify your database credentials in the config
+- Ensure MySQL service is running
+- Check if the database exists and has the correct tables
+
+**Character Creation Not Working**
+- Make sure `qb-multicharacter` is started
+- Check that the database tables were imported correctly
+- Verify there are no resource conflicts
+
+**Console Errors**
+- Check for missing dependencies
+- Ensure all resources are properly named (brackets in server.cfg)
+- Verify file permissions if on Linux
+
+### Getting Help
+
+If you encounter issues:
+
+1. **Check our [Documentation](/docs)** for detailed guides
+2. **Browse [GitHub Issues](https://github.com/qbcore-framework/qb-core/issues)** for known problems
+3. **Join [GitHub Discussions](https://github.com/qbcore-framework/qb-core/discussions)** for community support
+
+## Video Tutorial
+
+Prefer to watch? Check out our video tutorial:
+
+[🎥 QBCore Installation Guide](https://youtube.com/watch?v=example)
+
+---
+
+**Congratulations!** 🎉 You now have a working QBCore server. Time to start building your roleplay community!

@@ -1,0 +1,583 @@
+# 🔧 Custom Resource Development
+
+Learn how to create custom QBCore resources from the ground up, following best practices and professional development patterns.
+
+import { Callout } from 'nextra/components'
+
+## Getting Started
+
+Custom resources extend QBCore's functionality by adding new features, jobs, systems, or gameplay mechanics. This guide covers the complete development lifecycle.
+
+### Resource Types
+
+QBCore supports several types of custom resources:
+
+- **Job Resources** - Custom employment systems
+- **Activity Resources** - Gameplay activities and mini-games  
+- **Utility Resources** - Helper systems and tools
+- **Integration Resources** - Third-party system connections
+
+## Basic Resource Structure
+
+### Minimum Required Files
+
+Every QBCore resource needs this basic structure:
+
+```
+your-resource/
+├── fxmanifest.lua      # Resource manifest
+├── server/
+│   └── main.lua        # Server-side logic
+├── client/
+│   └── main.lua        # Client-side logic
+├── shared/
+│   └── config.lua      # Shared configuration
+└── README.md           # Documentation
+```
+
+### Advanced Resource Structure
+
+For complex resources, use this extended structure:
+
+```
+your-resource/
+├── fxmanifest.lua
+├── server/
+│   ├── main.lua
+│   ├── events.lua      # Server events
+│   ├── functions.lua   # Server functions
+│   ├── callbacks.lua   # Server callbacks
+│   └── commands.lua    # Server commands
+├── client/
+│   ├── main.lua
+│   ├── events.lua      # Client events
+│   ├── functions.lua   # Client functions
+│   ├── menu.lua        # Menu systems
+│   └── ui.lua          # UI interactions
+├── shared/
+│   ├── config.lua      # Configuration
+│   ├── locale.lua      # Localization
+│   └── utils.lua       # Shared utilities
+├── html/               # UI files
+│   ├── index.html
+│   ├── style.css
+│   └── script.js
+├── locales/            # Language files
+│   ├── en.lua
+│   └── es.lua
+└── sql/                # Database files
+    └── install.sql
+```
+
+## Creating the Manifest
+
+The `fxmanifest.lua` file defines your resource:
+
+```lua
+fx_version 'cerulean'
+game 'gta5'
+
+author 'Your Name'
+description 'Custom QBCore Resource'
+version '1.0.0'
+
+-- Dependencies
+dependencies {
+    'qb-core',
+    'qb-target',  -- If using target system
+    'qb-menu'     -- If using menu system
+}
+
+-- Shared files
+shared_scripts {
+    'shared/config.lua',
+    'shared/locale.lua'
+}
+
+-- Client files
+client_scripts {
+    'client/main.lua',
+    'client/events.lua',
+    'client/functions.lua'
+}
+
+-- Server files
+server_scripts {
+    'server/main.lua',
+    'server/events.lua',
+    'server/functions.lua'
+}
+
+-- UI files (if needed)
+ui_page 'html/index.html'
+
+files {
+    'html/index.html',
+    'html/style.css',
+    'html/script.js'
+}
+
+-- Exports
+exports {
+    'GetResourceData',
+    'IsPlayerEligible'
+}
+
+server_exports {
+    'CreateCustomJob',
+    'ProcessPayment'
+}
+
+lua54 'yes'
+```
+
+## Basic Implementation
+
+### 1. Server-Side Setup
+
+```lua
+-- server/main.lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Resource initialization
+CreateThread(function()
+    print('^2[' .. GetCurrentResourceName() .. ']^7 Resource started successfully')
+    
+    -- Initialize database tables if needed
+    InitializeDatabase()
+    
+    -- Load existing data
+    LoadResourceData()
+end)
+
+-- Core functions
+function InitializeDatabase()
+    -- Create tables if they don't exist
+    MySQL.query([[
+        CREATE TABLE IF NOT EXISTS custom_resource_data (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            citizenid VARCHAR(50) NOT NULL,
+            data LONGTEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+    ]])
+end
+
+function LoadResourceData()
+    -- Load any persistent data your resource needs
+    local result = MySQL.query.await('SELECT * FROM custom_resource_data')
+    for i = 1, #result do
+        -- Process loaded data
+        ProcessLoadedData(result[i])
+    end
+end
+
+-- Player joined handler
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    
+    if player then
+        -- Initialize player data for your resource
+        InitializePlayerData(src, player)
+    end
+end)
+
+function InitializePlayerData(source, player)
+    -- Setup player-specific data
+    TriggerClientEvent('your-resource:client:initialize', source, {
+        citizenid = player.PlayerData.citizenid,
+        permissions = GetPlayerPermissions(player),
+        settings = GetPlayerSettings(player.PlayerData.citizenid)
+    })
+end
+```
+
+### 2. Client-Side Setup
+
+```lua
+-- client/main.lua
+local QBCore = exports['qb-core']:GetCoreObject()
+local PlayerData = QBCore.Functions.GetPlayerData()
+
+-- Resource initialization
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    PlayerData = QBCore.Functions.GetPlayerData()
+    InitializeClientSide()
+end)
+
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    PlayerData = {}
+    CleanupClientSide()
+end)
+
+function InitializeClientSide()
+    -- Setup client-side functionality
+    CreateThread(function()
+        while PlayerData do
+            -- Main client loop
+            Wait(1000)
+            
+            -- Check conditions, update UI, etc.
+            UpdateClientState()
+        end
+    end)
+end
+
+function CleanupClientSide()
+    -- Clean up client-side resources
+    -- Remove blips, NPCs, objects, etc.
+end
+
+-- Resource-specific initialization
+RegisterNetEvent('your-resource:client:initialize', function(data)
+    print('Initializing custom resource for player:', data.citizenid)
+    
+    -- Setup player-specific client data
+    SetupPlayerInterface(data)
+    CreateResourceBlips()
+    SpawnResourceNPCs()
+end)
+```
+
+### 3. Configuration System
+
+```lua
+-- shared/config.lua
+Config = {}
+
+-- General Settings
+Config.Debug = false
+Config.Locale = 'en'
+
+-- Feature Toggles
+Config.EnableNotifications = true
+Config.EnableBlips = true
+Config.EnableNPCs = true
+
+-- Locations
+Config.Locations = {
+    main_office = {
+        coords = vector3(100.0, 200.0, 25.0),
+        heading = 90.0,
+        blip = {
+            sprite = 280,
+            color = 2,
+            scale = 0.8,
+            label = "Custom Resource Office"
+        }
+    }
+}
+
+-- Job Configuration
+Config.Jobs = {
+    allowed_jobs = {"police", "ambulance", "mechanic"},
+    payment_range = {min = 500, max = 1500},
+    experience_multiplier = 1.0
+}
+
+-- Items and Rewards
+Config.Items = {
+    required_items = {"id_card", "phone"},
+    reward_items = {
+        {item = "money", amount = {min = 100, max = 500}},
+        {item = "custom_item", amount = 1}
+    }
+}
+
+-- Timing Configuration
+Config.Timers = {
+    cooldown_time = 300, -- 5 minutes
+    process_time = 60,   -- 1 minute
+    reset_time = 86400   -- 24 hours
+}
+```
+
+## Event System Integration
+
+### Server Events
+
+```lua
+-- server/events.lua
+
+-- Custom resource events
+RegisterNetEvent('your-resource:server:processAction', function(actionType, data)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    
+    if not player then return end
+    
+    -- Validate the action
+    if not ValidateAction(player, actionType, data) then
+        TriggerClientEvent('QBCore:Notify', src, 'Action not allowed', 'error')
+        return
+    end
+    
+    -- Process the action
+    local result = ProcessPlayerAction(player, actionType, data)
+    
+    if result.success then
+        -- Update player data
+        UpdatePlayerProgress(player, result.progress)
+        
+        -- Send success response
+        TriggerClientEvent('your-resource:client:actionComplete', src, result)
+        TriggerClientEvent('QBCore:Notify', src, result.message, 'success')
+    else
+        TriggerClientEvent('QBCore:Notify', src, result.error, 'error')
+    end
+end)
+
+-- Integration with other resources
+RegisterNetEvent('qb-phone:server:sendMessage', function(phoneNumber, message)
+    -- Handle phone integration
+    if message:find("#customresource") then
+        ProcessPhoneCommand(source, message)
+    end
+end)
+
+function ValidateAction(player, actionType, data)
+    -- Check player permissions
+    if not HasRequiredJob(player) then
+        return false
+    end
+    
+    -- Check cooldowns
+    if IsPlayerOnCooldown(player.PlayerData.citizenid, actionType) then
+        return false
+    end
+    
+    -- Check required items
+    if not HasRequiredItems(player, actionType) then
+        return false
+    end
+    
+    return true
+end
+```
+
+### Client Events
+
+```lua
+-- client/events.lua
+
+-- Handle server responses
+RegisterNetEvent('your-resource:client:actionComplete', function(result)
+    -- Update UI
+    UpdateProgressBar(result.progress)
+    
+    -- Play effects
+    if result.effects then
+        PlayEffects(result.effects)
+    end
+    
+    -- Update local data
+    UpdateLocalPlayerData(result.playerData)
+end)
+
+-- Integration events
+RegisterNetEvent('your-resource:client:receivePhoneMessage', function(sender, message)
+    -- Handle phone notifications
+    TriggerEvent('qb-phone:client:addMessage', {
+        sender = sender,
+        message = message,
+        time = os.date('%H:%M')
+    })
+end)
+
+RegisterNetEvent('your-resource:client:showNotification', function(data)
+    -- Custom notification system
+    if Config.EnableNotifications then
+        ShowCustomNotification(data.title, data.message, data.type)
+    end
+end)
+```
+
+## Database Integration
+
+### Setting Up Tables
+
+```sql
+-- sql/install.sql
+CREATE TABLE IF NOT EXISTS `custom_resource_players` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `citizenid` VARCHAR(50) NOT NULL,
+    `level` INT(11) DEFAULT 1,
+    `experience` INT(11) DEFAULT 0,
+    `settings` LONGTEXT DEFAULT '{}',
+    `statistics` LONGTEXT DEFAULT '{}',
+    `last_active` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `citizenid` (`citizenid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `custom_resource_actions` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `citizenid` VARCHAR(50) NOT NULL,
+    `action_type` VARCHAR(50) NOT NULL,
+    `action_data` LONGTEXT DEFAULT '{}',
+    `timestamp` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `citizenid` (`citizenid`),
+    KEY `action_type` (`action_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+### Database Functions
+
+```lua
+-- server/functions.lua
+
+function GetPlayerResourceData(citizenid)
+    local result = MySQL.query.await('SELECT * FROM custom_resource_players WHERE citizenid = ?', {citizenid})
+    if result[1] then
+        return {
+            level = result[1].level,
+            experience = result[1].experience,
+            settings = json.decode(result[1].settings),
+            statistics = json.decode(result[1].statistics)
+        }
+    end
+    return CreateDefaultPlayerData(citizenid)
+end
+
+function UpdatePlayerResourceData(citizenid, data)
+    MySQL.insert('INSERT INTO custom_resource_players (citizenid, level, experience, settings, statistics) VALUES (?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE level = VALUES(level), experience = VALUES(experience), settings = VALUES(settings), statistics = VALUES(statistics), last_active = CURRENT_TIMESTAMP', {
+        citizenid,
+        data.level,
+        data.experience,
+        json.encode(data.settings),
+        json.encode(data.statistics)
+    })
+end
+
+function LogPlayerAction(citizenid, actionType, actionData)
+    MySQL.insert('INSERT INTO custom_resource_actions (citizenid, action_type, action_data) VALUES (?, ?, ?)', {
+        citizenid,
+        actionType,
+        json.encode(actionData)
+    })
+end
+```
+
+## Testing Your Resource
+
+### Development Testing
+
+```lua
+-- Add debug commands for testing
+if Config.Debug then
+    RegisterCommand('test-resource', function(source, args)
+        local player = QBCore.Functions.GetPlayer(source)
+        if player then
+            -- Test your resource functionality
+            TriggerEvent('your-resource:server:processAction', 'test', {
+                type = args[1] or 'default'
+            })
+        end
+    end, false)
+    
+    RegisterCommand('reset-resource-data', function(source, args)
+        local player = QBCore.Functions.GetPlayer(source)
+        if player then
+            ResetPlayerData(player.PlayerData.citizenid)
+            TriggerClientEvent('QBCore:Notify', source, 'Resource data reset', 'info')
+        end
+    end, false)
+end
+```
+
+### Quality Assurance Checklist
+
+- ✅ **Performance Testing**: Resource uses minimal server resources
+- ✅ **Error Handling**: All functions have proper error handling
+- ✅ **Database Validation**: All database operations are validated
+- ✅ **Client-Server Sync**: Data synchronization works correctly
+- ✅ **Integration Testing**: Works with other QBCore resources
+- ✅ **Security Validation**: No exploitable endpoints
+- ✅ **Documentation**: Code is well-documented
+
+## Best Practices
+
+### Code Organization
+
+1. **Modular Structure**: Split functionality into logical files
+2. **Clear Naming**: Use descriptive function and variable names
+3. **Error Handling**: Always handle potential errors gracefully
+4. **Performance**: Optimize loops and database queries
+5. **Security**: Validate all user inputs and server events
+
+### Resource Integration
+
+1. **Event Naming**: Use consistent event naming patterns
+2. **Data Validation**: Always validate data before processing
+3. **Cleanup**: Properly clean up resources on player disconnect
+4. **Configuration**: Make features configurable when possible
+5. **Backwards Compatibility**: Consider version compatibility
+
+<Callout type="info">
+  Remember to thoroughly test your custom resource in a development environment before deploying to production servers.
+</Callout>
+
+## Common Patterns
+
+### Interaction Systems
+
+```lua
+-- Using qb-target for interactions
+exports['qb-target']:AddBoxZone("custom-resource-interaction", vector3(100.0, 200.0, 25.0), 2.0, 2.0, {
+    name = "custom-resource-interaction",
+    heading = 90.0,
+    debugPoly = Config.Debug,
+    minZ = 24.0,
+    maxZ = 26.0,
+}, {
+    options = {
+        {
+            type = "client",
+            event = "your-resource:client:openMenu",
+            icon = "fas fa-hand",
+            label = "Open Custom Menu",
+            canInteract = function()
+                return HasRequiredJob()
+            end,
+        },
+    },
+    distance = 2.5
+})
+```
+
+### Menu Systems
+
+```lua
+-- Using qb-menu for interfaces
+RegisterNetEvent('your-resource:client:openMenu', function()
+    local menuOptions = {
+        {
+            header = "Custom Resource Menu",
+            isMenuHeader = true,
+        },
+        {
+            header = "Option 1",
+            txt = "Description of option 1",
+            params = {
+                event = "your-resource:client:option1",
+                args = {type = "option1"}
+            }
+        },
+        {
+            header = "Option 2", 
+            txt = "Description of option 2",
+            params = {
+                event = "your-resource:client:option2",
+                args = {type = "option2"}
+            }
+        }
+    }
+    
+    exports['qb-menu']:openMenu(menuOptions)
+end)
+```
+
+This guide provides a solid foundation for creating professional QBCore custom resources. Continue with specific implementation details based on your resource's requirements.

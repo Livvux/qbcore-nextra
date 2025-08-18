@@ -1,0 +1,479 @@
+# Player Data
+
+Player Data is the core structure that contains all information about a player in the QBCore framework. Understanding this structure is essential for developing resources that interact with player information.
+
+## Overview
+
+The Player Data object contains:
+- Character information (name, citizenid, etc.)
+- Job and gang data
+- Money amounts (cash, bank, crypto)
+- Character metadata
+- Inventory items
+- Position and other gameplay data
+
+## Accessing Player Data
+
+### Server-Side
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Get player object
+local Player = QBCore.Functions.GetPlayer(source)
+
+if Player then
+    -- Access player data
+    local playerData = Player.PlayerData
+    print("Player name: " .. playerData.charinfo.firstname .. " " .. playerData.charinfo.lastname)
+end
+```
+
+### Client-Side
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Get local player data
+local playerData = QBCore.Functions.GetPlayerData()
+print("My job: " .. playerData.job.name)
+
+-- Listen for data updates
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
+    playerData = val
+    -- Player data has been updated
+end)
+```
+
+## Player Data Structure
+
+### Core Information
+
+```lua
+PlayerData = {
+    source = 1,                    -- Server ID
+    license = "license:hex",       -- Rockstar license
+    name = "PlayerName",           -- Steam/Social name
+    citizenid = "ABC12345",        -- Unique character ID
+    cid = 1,                       -- Character database ID
+    
+    -- Character Information
+    charinfo = {
+        firstname = "John",
+        lastname = "Doe",
+        birthdate = "1990-01-01",
+        gender = 0,                -- 0 = male, 1 = female
+        nationality = "USA",
+        phone = "555-0123",
+        account = "US06QB1234567890" -- Bank account number
+    },
+    
+    -- Money
+    money = {
+        cash = 500,        -- Cash on hand
+        bank = 5000,       -- Bank account
+        crypto = 0         -- Cryptocurrency
+    },
+    
+    -- Job Information
+    job = {
+        name = "unemployed",
+        label = "Civilian",
+        payment = 10,
+        type = "none",
+        onduty = false,
+        isboss = false,
+        grade = {
+            name = "Freelancer",
+            level = 0
+        }
+    },
+    
+    -- Gang Information
+    gang = {
+        name = "none",
+        label = "No Gang Affiliation",
+        isboss = false,
+        grade = {
+            name = "none",
+            level = 0
+        }
+    },
+    
+    -- Metadata
+    metadata = {
+        hunger = 100,
+        thirst = 100,
+        stress = 0,
+        isdead = false,
+        inlaststand = false,
+        armor = 0,
+        ishandcuffed = false,
+        tracker = false,
+        injail = 0,
+        jailitems = {},
+        status = {},
+        phone = {},
+        fitbit = {},
+        commandbinds = {},
+        bloodtype = "O+",
+        fingerprint = "unique_print",
+        walletid = "wallet_id",
+        criminalrecord = {
+            hasRecord = false,
+            date = nil
+        },
+        licences = {
+            driver = true,
+            business = false,
+            weapon = false
+        },
+        inside = {
+            house = nil,
+            apartment = {
+                apartmentType = nil,
+                apartmentId = nil
+            }
+        },
+        callsign = "NO CALLSIGN",
+        thermalcharge = 0,
+        attachmentcraftingrep = 0,
+        currentapartment = nil,
+        jobrep = {
+            tow = 0,
+            trucker = 0,
+            taxi = 0,
+            hotdog = 0
+        }
+    },
+    
+    -- Items (simplified structure)
+    items = {
+        [1] = {
+            name = "water_bottle",
+            amount = 1,
+            info = {},
+            label = "Water Bottle",
+            description = "For all the thirsty people",
+            weight = 500,
+            type = "item",
+            unique = false,
+            useable = true,
+            image = "water_bottle.png",
+            shouldClose = true,
+            combinable = nil,
+            slot = 1
+        }
+        -- ... more items
+    },
+    
+    -- Position
+    position = {
+        x = 0.0,
+        y = 0.0,
+        z = 0.0,
+        a = 0.0  -- heading
+    }
+}
+```
+
+## Common Player Data Operations
+
+### Character Information
+
+```lua
+-- Get full name
+local fullName = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
+
+-- Update character info
+Player.Functions.SetCharinfo("phone", "555-9999")
+
+-- Get citizen ID
+local citizenId = Player.PlayerData.citizenid
+```
+
+### Money Management
+
+```lua
+-- Check money amount
+local cashAmount = Player.Functions.GetMoney("cash")
+local bankAmount = Player.Functions.GetMoney("bank")
+
+-- Add money
+Player.Functions.AddMoney("cash", 100, "salary")
+Player.Functions.AddMoney("bank", 1000, "job-payment")
+
+-- Remove money (returns true/false)
+local success = Player.Functions.RemoveMoney("cash", 50, "purchase")
+if success then
+    print("Purchase successful")
+else
+    print("Insufficient funds")
+end
+
+-- Set money amount
+Player.Functions.SetMoney("bank", 5000, "admin-set")
+```
+
+### Job and Gang Management
+
+```lua
+-- Set job
+Player.Functions.SetJob("police", 2) -- job name, grade level
+
+-- Set gang
+Player.Functions.SetGang("ballas", 1)
+
+-- Check if player has specific job
+if Player.PlayerData.job.name == "police" then
+    print("Player is a police officer")
+end
+
+-- Check job grade
+if Player.PlayerData.job.grade.level >= 3 then
+    print("Player is a supervisor")
+end
+
+-- Check if on duty
+if Player.PlayerData.job.onduty then
+    print("Player is on duty")
+end
+```
+
+### Metadata Management
+
+```lua
+-- Set metadata
+Player.Functions.SetMetaData("hunger", 75)
+Player.Functions.SetMetaData("stress", 10)
+
+-- Get metadata
+local hunger = Player.PlayerData.metadata.hunger
+local stress = Player.PlayerData.metadata.stress
+
+-- Add to metadata (useful for numbers)
+Player.Functions.AddMetaData("stress", 5) -- adds 5 to current stress
+
+-- Custom metadata
+Player.Functions.SetMetaData("customfield", "customvalue")
+```
+
+### Item Management
+
+```lua
+-- Give item
+Player.Functions.AddItem("water_bottle", 1, false, {quality = 100})
+
+-- Remove item
+Player.Functions.RemoveItem("water_bottle", 1)
+
+-- Check if player has item
+local hasItem = Player.Functions.GetItemByName("water_bottle")
+if hasItem then
+    print("Player has water bottle")
+end
+
+-- Get item count
+local itemCount = Player.Functions.GetItemsByName("water_bottle")
+print("Player has " .. #itemCount .. " water bottles")
+
+-- Clear inventory
+Player.Functions.ClearInventory()
+```
+
+### Position Management
+
+```lua
+-- Set position
+Player.Functions.SetPosition({x = 100.0, y = 200.0, z = 30.0, a = 90.0})
+
+-- Get position
+local pos = Player.PlayerData.position
+print("Player position: " .. pos.x .. ", " .. pos.y .. ", " .. pos.z)
+```
+
+## Client-Side Data Synchronization
+
+### Listening for Updates
+
+```lua
+-- Client-side: Listen for player data updates
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
+    local playerData = val
+    -- Update your UI or perform actions based on new data
+    updateHUD(playerData)
+end)
+
+-- Listen for specific data changes
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
+    if val.job.name ~= QBCore.Functions.GetPlayerData().job.name then
+        -- Job changed
+        print("Job changed to: " .. val.job.label)
+    end
+end)
+```
+
+### Triggering Updates
+
+```lua
+-- Server-side: Trigger client update after changing data
+Player.Functions.SetJob("police", 2)
+TriggerClientEvent('QBCore:Player:SetPlayerData', Player.PlayerData.source, Player.PlayerData)
+```
+
+## Advanced Usage
+
+### Custom Player Functions
+
+```lua
+-- Add custom function to player object
+local function CustomFunction(self, param)
+    -- Custom logic here
+    return self.PlayerData.money.bank > param
+end
+
+-- In your resource initialization
+local Player = QBCore.Functions.GetPlayer(source)
+Player.Functions.CustomFunction = CustomFunction
+
+-- Usage
+if Player.Functions.CustomFunction(1000) then
+    print("Player has more than $1000 in bank")
+end
+```
+
+### Batch Operations
+
+```lua
+-- Update multiple fields at once
+local updates = {
+    money = {
+        cash = Player.PlayerData.money.cash + 500,
+        bank = Player.PlayerData.money.bank + 1000
+    },
+    metadata = {
+        hunger = 100,
+        thirst = 100
+    }
+}
+
+-- Apply updates (custom function)
+for category, data in pairs(updates) do
+    for key, value in pairs(data) do
+        if category == "money" then
+            Player.Functions.SetMoney(key, value)
+        elseif category == "metadata" then
+            Player.Functions.SetMetaData(key, value)
+        end
+    end
+end
+```
+
+## Data Validation
+
+### Server-Side Validation
+
+```lua
+-- Validate player data before operations
+local function ValidatePlayer(source)
+    local Player = QBCore.Functions.GetPlayer(source)
+    
+    if not Player then
+        print("Invalid player")
+        return false
+    end
+    
+    if not Player.PlayerData.citizenid then
+        print("Invalid citizenid")
+        return false
+    end
+    
+    return true
+end
+
+-- Usage in events
+RegisterNetEvent('myresource:doSomething', function()
+    local src = source
+    
+    if not ValidatePlayer(src) then
+        return
+    end
+    
+    -- Safe to proceed
+    local Player = QBCore.Functions.GetPlayer(src)
+    -- ... your code
+end)
+```
+
+## Best Practices
+
+### 1. Always Check Player Existence
+```lua
+-- Good
+local Player = QBCore.Functions.GetPlayer(source)
+if not Player then return end
+
+-- Avoid
+local Player = QBCore.Functions.GetPlayer(source)
+local name = Player.PlayerData.charinfo.firstname -- Can error if Player is nil
+```
+
+### 2. Use Proper Money Management
+```lua
+-- Good - Use functions for money operations
+Player.Functions.AddMoney("cash", 100, "salary")
+
+-- Avoid - Direct manipulation
+Player.PlayerData.money.cash = Player.PlayerData.money.cash + 100
+```
+
+### 3. Validate Data Types
+```lua
+-- Good
+local amount = tonumber(args[1])
+if not amount or amount <= 0 then
+    return
+end
+
+-- Avoid assuming data types
+Player.Functions.AddMoney("cash", args[1]) -- args[1] might not be a number
+```
+
+### 4. Use Metadata for Custom Data
+```lua
+-- Good - Use metadata for custom fields
+Player.Functions.SetMetaData("customfield", value)
+
+-- Avoid adding to core structure
+Player.PlayerData.mycustomfield = value -- Don't modify core structure
+```
+
+## Related Documentation
+
+- [Core Object](/docs/core/core-object) - Core framework functions
+- [Server Functions](/docs/api/server-functions) - Complete server function reference
+- [Client Functions](/docs/api/client-functions) - Client-side functions
+- [Database Structure](/docs/installation/database) - Database schema information
+
+## Common Patterns
+
+### Resource Initialization with Player Check
+```lua
+AddEventHandler('QBCore:Server:PlayerLoaded', function(source)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if Player then
+        -- Player has loaded, initialize your resource
+        print("Player loaded: " .. Player.PlayerData.charinfo.firstname)
+    end
+end)
+```
+
+### Player Disconnect Cleanup
+```lua
+AddEventHandler('QBCore:Server:OnPlayerUnload', function(source)
+    -- Clean up any resource-specific data
+    print("Player disconnected: " .. source)
+end)
+```
+
+This comprehensive player data structure and API allows for robust character management and gameplay mechanics in your QBCore server.

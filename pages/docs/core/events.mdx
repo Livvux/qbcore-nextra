@@ -1,0 +1,610 @@
+# QBCore Events Reference
+
+Comprehensive reference guide for all QBCore framework events, including client-side and server-side events for player management, jobs, gangs, and system integration.
+
+## Player Events
+
+### Client-Side Player Events
+
+#### QBCore:Client:OnPlayerLoaded
+Triggered when a player fully loads into the server and their data is available.
+
+```lua
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    print('Player loaded:', PlayerData.charinfo.firstname, PlayerData.charinfo.lastname)
+    
+    -- Initialize your script here
+    -- Player data is now available
+end)
+```
+
+**When to use:**
+- Initialize client-side scripts after player loads
+- Set up HUD elements
+- Load player-specific configurations
+
+#### QBCore:Client:OnPlayerUnload  
+Triggered when a player disconnects or their session ends.
+
+```lua
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    print('Player unloaded, cleaning up...')
+    
+    -- Clean up resources
+    -- Reset variables
+    -- Close interfaces
+end)
+```
+
+**When to use:**
+- Clean up client-side resources
+- Save temporary data
+- Reset client state
+
+#### QBCore:Player:SetPlayerData
+Triggered when player data is updated (money, metadata, etc.).
+
+```lua
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
+    PlayerData = val
+    
+    -- React to data changes
+    if PlayerData.money then
+        TriggerEvent('hud:client:UpdateMoney', PlayerData.money)
+    end
+end)
+```
+
+**When to use:**
+- Update HUD elements when data changes
+- React to money/metadata updates
+- Sync client state with server data
+
+### Server-Side Player Events
+
+#### QBCore:Server:OnPlayerLoaded
+Triggered when a player's data is loaded on the server.
+
+```lua
+RegisterNetEvent('QBCore:Server:OnPlayerLoaded', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    print('Server: Player loaded -', Player.PlayerData.charinfo.firstname)
+    
+    -- Server-side initialization
+    -- Load player-specific data
+    -- Send welcome messages
+end)
+```
+
+#### QBCore:Server:PlayerLoggedOut
+Triggered when a player logs out or disconnects.
+
+```lua
+RegisterNetEvent('QBCore:Server:PlayerLoggedOut', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player then
+        print('Player logged out:', Player.PlayerData.charinfo.firstname)
+        -- Save data, cleanup resources
+    end
+end)
+```
+
+## Job Events
+
+### Job Update Events
+
+#### QBCore:Client:OnJobUpdate
+Triggered when a player's job changes.
+
+```lua
+RegisterNetEvent('QBCore:Client:OnJobUpdate', function(JobInfo)
+    print('Job changed to:', JobInfo.label, 'Grade:', JobInfo.grade.level)
+    
+    -- Update job-specific UI
+    -- Enable/disable job features
+    -- Load job-specific assets
+    
+    if JobInfo.name == 'police' then
+        -- Enable police features
+        TriggerEvent('police:client:enableFeatures')
+    end
+end)
+```
+
+**JobInfo structure:**
+```lua
+{
+    name = 'police',           -- Job name/ID
+    label = 'Police Officer',  -- Display name
+    defaultDuty = true,        -- Default on-duty status
+    offDutyPay = false,        -- Pay when off duty
+    grades = {...},            -- Job grades
+    grade = {                  -- Current grade
+        level = 0,
+        name = 'recruit',
+        salary = 50
+    }
+}
+```
+
+#### QBCore:Client:SetDuty  
+Triggered when a player goes on/off duty.
+
+```lua
+RegisterNetEvent('QBCore:Client:SetDuty', function(duty)
+    print('Duty status changed:', duty)
+    
+    if duty then
+        -- Player went on duty
+        TriggerEvent('job:client:onDuty')
+    else
+        -- Player went off duty  
+        TriggerEvent('job:client:offDuty')
+    end
+end)
+```
+
+### Server-Side Job Events
+
+#### QBCore:Server:OnJobUpdate
+Server-side job change event.
+
+```lua
+RegisterNetEvent('QBCore:Server:OnJobUpdate', function(source, jobInfo)
+    local Player = QBCore.Functions.GetPlayer(source)
+    
+    print('Server: Job updated for', Player.PlayerData.charinfo.firstname)
+    
+    -- Update database
+    -- Notify other players
+    -- Trigger job-specific events
+end)
+```
+
+## Gang Events
+
+### Gang Update Events
+
+#### QBCore:Client:OnGangUpdate
+Triggered when a player's gang changes.
+
+```lua
+RegisterNetEvent('QBCore:Client:OnGangUpdate', function(GangInfo)
+    print('Gang changed to:', GangInfo.label, 'Grade:', GangInfo.grade.level)
+    
+    -- Update gang-specific features
+    -- Change UI elements
+    -- Load gang assets
+end)
+```
+
+**GangInfo structure:**
+```lua
+{
+    name = 'lostmc',          -- Gang name/ID
+    label = 'Lost MC',        -- Display name
+    grades = {...},           -- Gang grades
+    grade = {                 -- Current grade
+        level = 0,
+        name = 'prospect'
+    }
+}
+```
+
+## Money Events
+
+### Money Update Events
+
+#### hud:client:UpdateMoney
+Standard event for updating money displays.
+
+```lua
+RegisterNetEvent('hud:client:UpdateMoney', function(type, amount, reason)
+    print('Money updated:', type, amount, reason)
+    
+    -- Update HUD money display
+    -- Show money change notification
+    -- Play sound effects
+end)
+```
+
+**Parameters:**
+- `type`: 'cash', 'bank', or 'crypto'
+- `amount`: New amount
+- `reason`: Reason for change (optional)
+
+#### QBCore:Client:OnMoneyChange
+More detailed money change event.
+
+```lua
+RegisterNetEvent('QBCore:Client:OnMoneyChange', function(moneyType, amount, operation, reason)
+    print(string.format('%s %s: %d (%s)', 
+        operation, moneyType, amount, reason or 'Unknown'))
+    
+    -- Log transaction
+    -- Update displays
+    -- Trigger effects
+end)
+```
+
+**Parameters:**
+- `moneyType`: 'cash', 'bank', 'crypto'
+- `amount`: Amount changed
+- `operation`: 'add', 'remove', 'set'
+- `reason`: Transaction reason
+
+## Vehicle Events
+
+### Vehicle Interaction Events
+
+#### QBCore:Client:VehicleInfo
+Provides vehicle information when entering/near vehicles.
+
+```lua
+RegisterNetEvent('QBCore:Client:VehicleInfo', function(info)
+    print('Vehicle info:', json.encode(info))
+    
+    -- Update HUD with vehicle data
+    -- Show vehicle statistics
+    -- Enable vehicle-specific features
+end)
+```
+
+#### QBCore:Client:EnteredVehicle
+Triggered when player enters a vehicle.
+
+```lua
+RegisterNetEvent('QBCore:Client:EnteredVehicle', function()
+    local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+    local plate = QBCore.Functions.GetPlate(vehicle)
+    
+    print('Entered vehicle with plate:', plate)
+    
+    -- Show vehicle HUD
+    -- Load vehicle data
+    -- Enable vehicle features
+end)
+```
+
+#### QBCore:Client:LeftVehicle
+Triggered when player exits a vehicle.
+
+```lua
+RegisterNetEvent('QBCore:Client:LeftVehicle', function()
+    print('Left vehicle')
+    
+    -- Hide vehicle HUD
+    -- Disable vehicle features
+    -- Save vehicle state
+end)
+```
+
+## Inventory Events
+
+### Item Events
+
+#### QBCore:Client:OnUseItem
+Triggered when an item is used.
+
+```lua
+RegisterNetEvent('QBCore:Client:OnUseItem', function(itemName, itemData)
+    print('Used item:', itemName)
+    
+    -- Handle item usage
+    -- Trigger item effects
+    -- Update inventory display
+end)
+```
+
+#### QBCore:Client:ItemBox
+Shows item notification box.
+
+```lua
+RegisterNetEvent('QBCore:Client:ItemBox', function(itemData, type)
+    print('Item box:', itemData.name, type)
+    
+    -- Show item received/removed notification
+    -- Play sound effect
+    -- Update HUD
+end)
+```
+
+**Parameters:**
+- `itemData`: Item information
+- `type`: 'add' or 'remove'
+
+### Inventory Management Events
+
+#### inventory:client:ItemBox
+Alternative item notification system.
+
+```lua
+RegisterNetEvent('inventory:client:ItemBox', function(itemData, type)
+    local itemInfo = QBCore.Shared.Items[itemData.name]
+    
+    if itemInfo then
+        -- Show modern item notification
+        -- Display item image and info
+    end
+end)
+```
+
+## Status Events
+
+### Needs Events (Hunger, Thirst, Stress)
+
+#### hud:client:UpdateNeeds
+Updates player needs display.
+
+```lua
+RegisterNetEvent('hud:client:UpdateNeeds', function(hunger, thirst)
+    print('Needs updated - Hunger:', hunger, 'Thirst:', thirst)
+    
+    -- Update HUD bars
+    -- Show warnings if low
+    -- Trigger effects
+end)
+```
+
+#### hud:client:UpdateStress
+Updates player stress level.
+
+```lua
+RegisterNetEvent('hud:client:UpdateStress', function(stress)
+    print('Stress level:', stress)
+    
+    -- Update stress display
+    -- Apply stress effects
+    -- Show stress indicators
+    
+    if stress > 80 then
+        -- High stress effects
+        SetPedMotionBlur(PlayerPedId(), true)
+    end
+end)
+```
+
+## Notification Events
+
+### Standard Notifications
+
+#### QBCore:Notify
+Standard QBCore notification system.
+
+```lua
+RegisterNetEvent('QBCore:Notify', function(text, type, length)
+    print('Notification:', text, type)
+    
+    -- Show notification
+    -- Play notification sound
+    -- Queue multiple notifications
+end)
+```
+
+**Parameters:**
+- `text`: Notification message
+- `type`: 'success', 'error', 'primary', 'warning', 'info'
+- `length`: Display duration in milliseconds
+
+#### QBCore:Command:Update
+Updates available commands for a player.
+
+```lua
+RegisterNetEvent('QBCore:Command:Update', function(commands)
+    print('Commands updated:', #commands, 'available')
+    
+    -- Update command suggestions
+    -- Refresh help system
+end)
+```
+
+## System Events
+
+### Framework Events
+
+#### QBCore:Client:UpdateObject
+Updates the QBCore object (usually after restarts).
+
+```lua
+RegisterNetEvent('QBCore:Client:UpdateObject', function()
+    QBCore = exports['qb-core']:GetCoreObject()
+    print('QBCore object updated')
+    
+    -- Refresh QBCore references
+    -- Re-initialize systems
+end)
+```
+
+#### QBCore:Server:UpdateObject
+Server-side QBCore object update.
+
+```lua
+RegisterNetEvent('QBCore:Server:UpdateObject', function()
+    QBCore = exports['qb-core']:GetCoreObject()
+    print('Server QBCore object updated')
+end)
+```
+
+## Custom Event Examples
+
+### Creating Custom Events
+
+#### Client-Side Custom Event
+
+```lua
+-- Register custom event
+RegisterNetEvent('myresource:client:customEvent', function(data)
+    print('Custom event received:', json.encode(data))
+    
+    -- Handle custom logic
+    -- Update UI
+    -- Trigger other events
+end)
+
+-- Trigger custom event from server
+-- Server-side:
+TriggerClientEvent('myresource:client:customEvent', source, {
+    message = 'Hello from server!',
+    timestamp = os.time()
+})
+```
+
+#### Server-Side Custom Event
+
+```lua
+-- Register server event
+RegisterNetEvent('myresource:server:customEvent', function(data)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player then
+        print('Custom server event from:', Player.PlayerData.charinfo.firstname)
+        
+        -- Process server logic
+        -- Update database
+        -- Notify other players
+    end
+end)
+
+-- Trigger from client
+-- Client-side:
+TriggerServerEvent('myresource:server:customEvent', {
+    action = 'test',
+    value = 123
+})
+```
+
+## Event Best Practices
+
+### Performance Tips
+
+1. **Avoid Spamming Events**
+   ```lua
+   -- Bad: Triggers every frame
+   CreateThread(function()
+       while true do
+           TriggerEvent('myevent:update', GetEntityCoords(PlayerPedId()))
+           Wait(0)
+       end
+   end)
+   
+   -- Good: Triggers when needed with reasonable intervals
+   local lastUpdate = 0
+   CreateThread(function()
+       while true do
+           local currentTime = GetGameTimer()
+           if currentTime - lastUpdate > 1000 then -- 1 second
+               TriggerEvent('myevent:update', GetEntityCoords(PlayerPedId()))
+               lastUpdate = currentTime
+           end
+           Wait(100)
+       end
+   end)
+   ```
+
+2. **Use Event Handlers Efficiently**
+   ```lua
+   -- Bad: Creates new handler each time
+   function StartListening()
+       RegisterNetEvent('someevent', function(data)
+           -- Handle event
+       end)
+   end
+   
+   -- Good: Register once, use flags for control
+   local isListening = false
+   
+   RegisterNetEvent('someevent', function(data)
+       if isListening then
+           -- Handle event
+       end
+   end)
+   
+   function StartListening()
+       isListening = true
+   end
+   
+   function StopListening()
+       isListening = false
+   end
+   ```
+
+3. **Validate Event Data**
+   ```lua
+   RegisterNetEvent('myresource:server:processData', function(data)
+       local src = source
+       
+       -- Always validate incoming data
+       if not data or type(data) ~= 'table' then
+           return
+       end
+       
+       if not data.playerId or not data.action then
+           TriggerClientEvent('QBCore:Notify', src, 'Invalid data', 'error')
+           return
+       end
+       
+       -- Process validated data
+       ProcessPlayerAction(data.playerId, data.action)
+   end)
+   ```
+
+### Security Considerations
+
+1. **Server Validation**
+   ```lua
+   RegisterNetEvent('economy:server:giveMoney', function(amount)
+       local src = source
+       local Player = QBCore.Functions.GetPlayer(src)
+       
+       -- Always validate on server
+       if not Player then return end
+       
+       -- Check if player has permission
+       if Player.PlayerData.job.name ~= 'admin' then
+           TriggerClientEvent('QBCore:Notify', src, 'Access denied', 'error')
+           return
+       end
+       
+       -- Validate amount
+       if not amount or amount <= 0 or amount > 1000000 then
+           TriggerClientEvent('QBCore:Notify', src, 'Invalid amount', 'error')
+           return
+       end
+       
+       -- Process safely
+       Player.Functions.AddMoney('bank', amount, 'Admin grant')
+   end)
+   ```
+
+2. **Rate Limiting**
+   ```lua
+   local eventCooldowns = {}
+   
+   RegisterNetEvent('expensive:server:operation', function()
+       local src = source
+       local currentTime = os.time()
+       
+       -- Check cooldown (5 seconds)
+       if eventCooldowns[src] and currentTime - eventCooldowns[src] < 5 then
+           TriggerClientEvent('QBCore:Notify', src, 'Please wait before trying again', 'error')
+           return
+       end
+       
+       eventCooldowns[src] = currentTime
+       
+       -- Process operation
+       ProcessExpensiveOperation(src)
+   end)
+   ```
+
+---
+
+**Master QBCore event handling!** Understanding these events is crucial for creating responsive and well-integrated scripts that work seamlessly with the QBCore framework.
+
+For function references, check out our [QBCore Functions](/docs/core/functions) documentation.

@@ -1,0 +1,578 @@
+# QB-Spawn
+
+QB-Spawn provides a flexible and user-friendly player spawning system, allowing players to choose where they want to spawn on the server with an intuitive selection interface.
+
+## 📋 Overview
+
+QB-Spawn offers:
+- **Interactive Spawn Menu** - Beautiful UI for location selection
+- **Multiple Spawn Locations** - Hotels, motels, apartments, and custom locations
+- **Camera System** - Preview spawn locations before selecting
+- **Integration Ready** - Works seamlessly with QB-MultiCharacter and QB-Apartments
+- **Customizable Locations** - Easy to add new spawn points
+- **Apartment Integration** - Automatic apartment spawning support
+
+## ⚙️ Installation & Setup
+
+### Prerequisites
+- **QB-Core** framework installed
+- **QB-MultiCharacter** (recommended for character selection integration)
+- **QB-Apartments** (optional, for apartment spawning)
+
+### Installation Steps
+
+1. **Download Resource**
+   ```bash
+   git clone https://github.com/qbcore-framework/qb-spawn.git
+   ```
+
+2. **Place in Resources**
+   ```
+   resources/
+   └── [qb]/
+       └── qb-spawn/
+   ```
+
+3. **Server Configuration**
+   ```cfg
+   # server.cfg
+   ensure qb-spawn
+   ```
+
+4. **Integration Setup**
+   - No database setup required
+   - Configuration through config files only
+
+## 🔧 Configuration
+
+### Main Configuration
+```lua
+-- config.lua
+Config = Config or {}
+
+-- Enable spawn selection menu
+Config.EnableSpawnSelection = true
+
+-- Default spawn if no selection is made
+Config.DefaultSpawn = vector4(-1035.71, -2731.87, 12.86, 0.0)
+
+-- Camera settings
+Config.CamSpeed = 2.0
+Config.CamHeight = 100.0
+
+-- UI settings
+Config.UISettings = {
+    fadeTime = 500,
+    showWeather = true,
+    showTime = true
+}
+```
+
+### Spawn Locations
+```lua
+-- config.lua - Spawn locations configuration
+Config.Spawns = {
+    ["legion"] = {
+        coords = vector4(195.17, -933.77, 29.7, 144.5),
+        location = "legion",
+        label = "Legion Square",
+        type = "public"
+    },
+    ["apartments"] = {
+        coords = vector4(-1037.17, -2738.01, 13.76, 331.47),
+        location = "apartments",
+        label = "South Rockford Drive",
+        type = "apartment"
+    },
+    ["motel"] = {
+        coords = vector4(327.56, -205.08, 53.22, 163.5),
+        location = "motel",
+        label = "Pink Cage Motel",
+        type = "motel"
+    },
+    ["hotel"] = {
+        coords = vector4(-1330.23, -1578.08, 2.61, 214.14),
+        location = "hotel",
+        label = "Bahama Mamas",
+        type = "hotel"
+    },
+    ["paleto"] = {
+        coords = vector4(80.35, 6424.12, 31.67, 45.5),
+        location = "paleto",
+        label = "Paleto Bay",
+        type = "public"
+    },
+    ["sandy"] = {
+        coords = vector4(1122.39, 2667.75, 38.04, 180.0),
+        location = "sandy",
+        label = "Sandy Shores",
+        type = "public"
+    }
+}
+```
+
+### Camera Positions
+```lua
+-- Camera positions for location previews
+Config.CamPositions = {
+    ["legion"] = {
+        coords = vector3(200.0, -940.0, 50.0),
+        rotation = vector3(-10.0, 0.0, 45.0)
+    },
+    ["apartments"] = {
+        coords = vector3(-1040.0, -2730.0, 30.0),
+        rotation = vector3(-5.0, 0.0, 160.0)
+    },
+    ["motel"] = {
+        coords = vector3(330.0, -200.0, 70.0),
+        rotation = vector3(-15.0, 0.0, 200.0)
+    }
+}
+```
+
+## 🎮 Player Experience
+
+### Spawn Selection Process
+
+1. **Menu Activation**
+   - Triggered on first spawn or character selection
+   - Shows list of available spawn locations
+   - Displays location previews
+
+2. **Location Preview**
+   - Camera moves to location for preview
+   - Shows area around spawn point
+   - Weather and time information displayed
+
+3. **Spawn Confirmation**
+   - Player selects desired location
+   - Fade transition to spawn
+   - Character loads at selected location
+
+### UI Features
+
+- **Location Cards** - Visual representation of spawn locations
+- **Weather Display** - Current weather at location
+- **Time Display** - Current server time
+- **Preview Camera** - Cinematic view of location
+- **Quick Select** - Keyboard shortcuts for frequent locations
+
+## 🔌 API Reference
+
+### Client Events
+
+#### Open Spawn UI
+```lua
+-- Trigger spawn selection menu
+TriggerEvent('qb-spawn:client:openUI', spawnData, isNewCharacter)
+
+-- Open with specific locations
+local customSpawns = {
+    ["custom"] = {
+        coords = vector4(100.0, 200.0, 30.0, 90.0),
+        label = "Custom Location"
+    }
+}
+TriggerEvent('qb-spawn:client:openUI', customSpawns)
+```
+
+#### Handle Spawn Selection
+```lua
+-- Listen for spawn selection
+RegisterNetEvent('qb-spawn:client:spawnSelected', function(location, coords)
+    print('Player selected spawn: ' .. location)
+    -- Custom logic after spawn selection
+end)
+```
+
+#### Force Spawn
+```lua
+-- Force spawn at specific location
+TriggerEvent('qb-spawn:client:forceSpawn', vector4(x, y, z, heading))
+```
+
+### Server Events
+
+#### Setup Player Spawn
+```lua
+-- Setup spawn for new player
+RegisterNetEvent('qb-spawn:server:setupSpawn', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player then
+        TriggerClientEvent('qb-spawn:client:openUI', src, Config.Spawns, true)
+    end
+end)
+```
+
+#### Save Spawn Location
+```lua
+-- Save player's preferred spawn location
+RegisterNetEvent('qb-spawn:server:saveSpawnLocation', function(location)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player then
+        -- Save to player metadata
+        Player.Functions.SetMetaData('preferredSpawn', location)
+    end
+end)
+```
+
+### Exports
+
+#### Open Spawn Menu
+```lua
+-- Export for other resources
+exports['qb-spawn']:openUI(function(coords, location)
+    print('Spawn selected: ' .. location)
+    print('Coordinates: ' .. coords)
+end)
+```
+
+#### Add Custom Spawn
+```lua
+-- Add custom spawn location dynamically
+exports['qb-spawn']:addSpawn('myCustomSpawn', {
+    coords = vector4(100.0, 200.0, 30.0, 90.0),
+    label = "My Custom Location",
+    type = "custom"
+})
+```
+
+#### Remove Spawn
+```lua
+-- Remove spawn location
+exports['qb-spawn']:removeSpawn('spawnId')
+```
+
+## 🏠 Integration Examples
+
+### With QB-MultiCharacter
+```lua
+-- In qb-multicharacter, trigger spawn selection after character creation
+RegisterNetEvent('qb-multicharacter:client:characterCreated', function()
+    TriggerEvent('qb-spawn:client:openUI', Config.Spawns, true)
+end)
+```
+
+### With QB-Apartments
+```lua
+-- Check if player has apartment before showing spawn menu
+RegisterNetEvent('qb-spawn:client:checkApartment', function()
+    QBCore.Functions.TriggerCallback('qb-apartments:server:GetOwnedApartment', function(result)
+        if result then
+            -- Add apartment spawn option
+            local apartmentSpawn = {
+                coords = vector4(result.coords.x, result.coords.y, result.coords.z, result.coords.w),
+                label = "My Apartment"
+            }
+            TriggerEvent('qb-spawn:client:openUI', {apartment = apartmentSpawn})
+        else
+            TriggerEvent('qb-spawn:client:openUI', Config.Spawns)
+        end
+    end)
+end)
+```
+
+### With QB-Housing
+```lua
+-- Integration with advanced housing system
+QBCore.Functions.TriggerCallback('qb-housing:server:GetPlayerHouses', function(houses)
+    local spawnOptions = Config.Spawns
+    
+    for _, house in pairs(houses) do
+        spawnOptions['house_' .. house.id] = {
+            coords = house.coords,
+            label = house.label,
+            type = "house"
+        }
+    end
+    
+    TriggerEvent('qb-spawn:client:openUI', spawnOptions)
+end)
+```
+
+## 🎨 UI Customization
+
+### HTML Structure
+```html
+<!-- Spawn selection interface -->
+<div class="spawn-container">
+    <div class="spawn-header">
+        <h1>Choose Spawn Location</h1>
+        <div class="weather-info">
+            <span id="weather"></span>
+            <span id="time"></span>
+        </div>
+    </div>
+    
+    <div class="spawn-list">
+        <!-- Spawn location cards -->
+    </div>
+    
+    <div class="spawn-actions">
+        <button id="confirm-spawn">Spawn Here</button>
+        <button id="random-spawn">Random Location</button>
+    </div>
+</div>
+```
+
+### CSS Styling
+```css
+/* Spawn UI styling */
+.spawn-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.spawn-card {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.spawn-card:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+```
+
+### JavaScript Events
+```javascript
+// Handle spawn selection
+$(document).on('click', '.spawn-card', function() {
+    const spawnId = $(this).data('spawn-id');
+    const coords = $(this).data('coords');
+    
+    // Preview location
+    $.post('https://qb-spawn/previewLocation', JSON.stringify({
+        spawn: spawnId,
+        coords: coords
+    }));
+});
+
+// Confirm spawn selection
+$(document).on('click', '#confirm-spawn', function() {
+    const selectedSpawn = $('.spawn-card.selected').data('spawn-id');
+    
+    $.post('https://qb-spawn/selectSpawn', JSON.stringify({
+        spawn: selectedSpawn
+    }));
+});
+```
+
+## 📱 Advanced Features
+
+### Weather Integration
+```lua
+-- Show weather at spawn location
+local function GetLocationWeather(coords)
+    local weather = GetWeatherTypeTransition()
+    local windSpeed = GetWindSpeed()
+    
+    return {
+        type = weather,
+        wind = windSpeed,
+        temperature = math.random(15, 35) -- Simulated temperature
+    }
+end
+
+-- Update UI with weather info
+TriggerClientEvent('qb-spawn:client:updateWeather', src, GetLocationWeather(coords))
+```
+
+### Time of Day Effects
+```lua
+-- Adjust camera brightness based on time
+local function AdjustCameraForTime()
+    local hour = GetClockHours()
+    local brightness = 1.0
+    
+    if hour >= 20 or hour <= 6 then
+        brightness = 0.6 -- Darker for night time
+    elseif hour >= 6 and hour <= 8 then
+        brightness = 0.8 -- Dawn
+    elseif hour >= 18 and hour <= 20 then
+        brightness = 0.8 -- Dusk
+    end
+    
+    SetTimecycleModifier('default')
+    SetTimecycleModifierStrength(brightness)
+end
+```
+
+### Location Validation
+```lua
+-- Validate spawn location before spawning
+local function ValidateSpawnLocation(coords)
+    local ground, z = GetGroundZFor_3dCoord(coords.x, coords.y, coords.z)
+    
+    if ground then
+        return vector4(coords.x, coords.y, z, coords.w)
+    else
+        return Config.DefaultSpawn
+    end
+end
+```
+
+## ⚡ Performance Optimization
+
+### Efficient Spawn Loading
+```lua
+-- Preload spawn areas to reduce loading times
+local function PreloadSpawnAreas()
+    for spawnId, spawn in pairs(Config.Spawns) do
+        local coords = spawn.coords
+        
+        -- Request collision and map data
+        RequestCollisionAtCoord(coords.x, coords.y, coords.z)
+        
+        -- Load map area
+        NewLoadSceneStart(coords.x, coords.y, coords.z, coords.x, coords.y, coords.z, 50.0, 0)
+    end
+end
+
+-- Call on resource start
+CreateThread(function()
+    Wait(5000) -- Wait for game to load
+    PreloadSpawnAreas()
+end)
+```
+
+### Camera Management
+```lua
+-- Efficient camera transitions
+local activeCamera = nil
+
+local function CreateSpawnCamera(coords, rotation)
+    if activeCamera then
+        DestroyCam(activeCamera, false)
+    end
+    
+    activeCamera = CreateCam('DEFAULT_SCRIPTED_CAMERA', true)
+    SetCamCoord(activeCamera, coords.x, coords.y, coords.z)
+    SetCamRot(activeCamera, rotation.x, rotation.y, rotation.z, 2)
+    SetCamActive(activeCamera, true)
+    RenderScriptCams(true, true, 1000, true, false)
+end
+```
+
+## 🛡️ Security Features
+
+### Spawn Validation
+```lua
+-- Prevent spawning in restricted areas
+local RestrictedZones = {
+    {coords = vector2(461.0, -1000.0), radius = 100.0}, -- Police station
+    {coords = vector2(1854.0, 3700.0), radius = 200.0}  -- Military base
+}
+
+local function IsValidSpawnLocation(coords)
+    for _, zone in pairs(RestrictedZones) do
+        local distance = #(vector2(coords.x, coords.y) - zone.coords)
+        if distance < zone.radius then
+            return false
+        end
+    end
+    return true
+end
+```
+
+### Anti-Exploit Protection
+```lua
+-- Prevent rapid spawn changes
+local spawnCooldown = {}
+
+RegisterNetEvent('qb-spawn:server:selectSpawn', function(spawnData)
+    local src = source
+    local license = QBCore.Functions.GetIdentifier(src, 'license')
+    
+    -- Check cooldown
+    if spawnCooldown[license] and spawnCooldown[license] > GetGameTimer() then
+        return TriggerClientEvent('QBCore:Notify', src, 'Please wait before spawning again', 'error')
+    end
+    
+    -- Set cooldown (5 seconds)
+    spawnCooldown[license] = GetGameTimer() + 5000
+    
+    -- Process spawn
+    TriggerClientEvent('qb-spawn:client:processSpawn', src, spawnData)
+end)
+```
+
+## ❓ Troubleshooting
+
+### Common Issues
+
+**Issue**: Spawn menu not showing
+```lua
+-- Check if UI is properly loaded
+RegisterCommand('testspawn', function()
+    TriggerEvent('qb-spawn:client:openUI', Config.Spawns, true)
+end)
+```
+
+**Issue**: Camera not working
+```lua
+-- Reset camera system
+local function ResetCamera()
+    if activeCamera then
+        DestroyCam(activeCamera, false)
+        activeCamera = nil
+    end
+    RenderScriptCams(false, true, 1000, true, false)
+    FreezeEntityPosition(PlayerPedId(), false)
+end
+```
+
+**Issue**: Spawn locations not working
+```lua
+-- Debug spawn coordinates
+for spawnId, spawn in pairs(Config.Spawns) do
+    print(string.format('Spawn %s: x=%.2f, y=%.2f, z=%.2f', 
+        spawnId, spawn.coords.x, spawn.coords.y, spawn.coords.z))
+end
+```
+
+### Debug Commands
+```lua
+-- Admin commands for testing
+QBCore.Commands.Add('tpspawn', 'Teleport to spawn location', {
+    {name = 'spawnid', help = 'Spawn location ID'}
+}, true, function(source, args)
+    local spawn = Config.Spawns[args[1]]
+    if spawn then
+        TriggerClientEvent('qb-spawn:client:forceSpawn', source, spawn.coords)
+    end
+end, 'admin')
+```
+
+## 🔗 Related Resources
+
+- [QB-MultiCharacter](/docs/resources/qb-multicharacter) - Character selection integration
+- [QB-Apartments](/docs/resources/qb-apartments) - Apartment spawning
+- [QB-Housing](qb-housing) - Advanced housing spawns
+- [QB-Core](/docs/resources/qb-core) - Core framework
+
+## 📚 Additional Resources
+
+- [GitHub Repository](https://github.com/qbcore-framework/qb-spawn)
+- [UI Customization Guide](ui-customization)
+- [Camera System Documentation](camera-system)
+- [Integration Examples](integration-examples)

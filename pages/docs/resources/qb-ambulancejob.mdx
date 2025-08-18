@@ -1,0 +1,494 @@
+# QB-AmbulanceJob - EMS/Medical System
+
+import { Callout } from 'nextra/components'
+
+The **qb-ambulancejob** resource provides a comprehensive Emergency Medical Services (EMS) system for QBCore servers, featuring hospital locations, injury mechanics, medical supplies, and emergency response operations.
+
+## Overview
+
+QB-AmbulanceJob transforms medical roleplay with realistic injury systems, hospital operations, and emergency response mechanics. Players can work as paramedics, doctors, or other medical professionals while others experience dynamic health and injury systems.
+
+### Key Features
+
+- **Hospital Locations**: Fully functional hospital buildings with medical equipment
+- **Injury System**: Realistic injury mechanics with different injury types
+- **Medical Supplies**: Bandages, painkillers, and advanced medical equipment
+- **Ambulance Fleet**: Emergency vehicles with medical equipment
+- **Respawn System**: Death and revival mechanics
+- **Medical Records**: Patient history and treatment logs
+- **Pharmacy System**: Prescription and over-the-counter medications
+- **Surgery Operations**: Complex medical procedures
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for medical menus)
+- qb-input (for medical forms)
+- qb-inventory (for medical items)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-ambulancejob.git
+```
+
+2. **Database Setup**
+```sql
+-- Add ambulance job tables
+CREATE TABLE IF NOT EXISTS `player_meds` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `type` varchar(50) DEFAULT NULL,
+  `amount` int(11) DEFAULT 0,
+  `created_at` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `medical_records` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `doctor` varchar(50) DEFAULT NULL,
+  `diagnosis` text DEFAULT NULL,
+  `treatment` text DEFAULT NULL,
+  `date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+-- Update players table for injury system
+ALTER TABLE `players` ADD COLUMN `injuries` longtext DEFAULT NULL;
+ALTER TABLE `players` ADD COLUMN `medical_status` varchar(50) DEFAULT 'healthy';
+```
+
+3. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Medical Items
+['bandage'] = {
+    ['name'] = 'bandage',
+    ['label'] = 'Bandage',
+    ['weight'] = 100,
+    ['type'] = 'item',
+    ['image'] = 'bandage.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'A bandage to treat wounds'
+},
+['painkillers'] = {
+    ['name'] = 'painkillers',
+    ['label'] = 'Painkillers',
+    ['weight'] = 50,
+    ['type'] = 'item',
+    ['image'] = 'painkillers.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Strong painkillers for injuries'
+},
+['firstaid'] = {
+    ['name'] = 'firstaid',
+    ['label'] = 'First Aid Kit',
+    ['weight'] = 500,
+    ['type'] = 'item',
+    ['image'] = 'firstaid.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Complete first aid kit'
+},
+['defibrillator'] = {
+    ['name'] = 'defibrillator',
+    ['label'] = 'Defibrillator',
+    ['weight'] = 2000,
+    ['type'] = 'item',
+    ['image'] = 'defibrillator.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Medical defibrillator for revival'
+}
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-ambulancejob
+```
+
+<Callout type="info">
+  Ensure qb-ambulancejob loads after qb-core, qb-target, and qb-menu in your server.cfg
+</Callout>
+
+## Configuration
+
+### Basic Configuration
+
+The main configuration file is located at `config.lua`:
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.MinimalDoctors = 2
+Config.DocCooldown = 1 -- Minutes
+Config.WipeInventoryOnRespawn = true
+Config.BillCost = 2000
+Config.DeathTime = 300 -- 5 minutes
+
+-- Hospital Locations
+Config.Locations = {
+    ["main"] = {
+        label = "Pillbox Medical Center",
+        coords = vector4(304.27, -600.33, 43.28, 272.249),
+        RespawnPoint = {
+            coords = vector4(341.64, -581.05, 43.31, 253.5),
+            heading = 253.5
+        }
+    },
+    ["paleto"] = {
+        label = "Paleto Bay Medical",
+        coords = vector4(-254.88, 6324.5, 32.58, 315.0),
+        RespawnPoint = {
+            coords = vector4(-258.16, 6327.84, 32.43, 315.0),
+            heading = 315.0
+        }
+    }
+}
+
+-- Ambulance Spawn Points
+Config.AmbulanceSpawns = {
+    vector4(294.578, -574.761, 43.179, 71.0),
+    vector4(296.278, -571.39, 43.179, 71.0),
+    vector4(338.52, -588.86, 28.8, 253.5)
+}
+
+-- Medical Supplies
+Config.MedicalSupplies = {
+    ["main"] = {
+        vector3(306.7, -601.5, 43.28),
+        vector3(309.4, -597.2, 43.28)
+    }
+}
+```
+
+### Injury System Configuration
+
+```lua
+-- Injury Types and Effects
+Config.InjuryTypes = {
+    ["head"] = {
+        label = "Head Injury",
+        effects = {
+            health = -20,
+            walkSpeed = 0.8,
+            runSpeed = 0.6
+        },
+        treatment = {"bandage", "painkillers"}
+    },
+    ["chest"] = {
+        label = "Chest Injury", 
+        effects = {
+            health = -15,
+            stamina = 0.7
+        },
+        treatment = {"firstaid"}
+    },
+    ["leg"] = {
+        label = "Leg Injury",
+        effects = {
+            health = -10,
+            walkSpeed = 0.5,
+            runSpeed = 0.3
+        },
+        treatment = {"bandage"}
+    },
+    ["arm"] = {
+        label = "Arm Injury",
+        effects = {
+            health = -8,
+            accuracy = 0.6
+        },
+        treatment = {"bandage", "painkillers"}
+    }
+}
+
+-- Medical Item Effects
+Config.MedicalItems = {
+    ["bandage"] = {
+        healAmount = 20,
+        healTime = 5000,
+        removeInjuries = {"arm", "leg"}
+    },
+    ["painkillers"] = {
+        healAmount = 10,
+        healTime = 3000,
+        removeInjuries = {"head", "arm"}
+    },
+    ["firstaid"] = {
+        healAmount = 40,
+        healTime = 8000,
+        removeInjuries = {"chest", "head", "arm", "leg"}
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### RevivePlayer
+Revive a player who is unconscious or dead.
+
+```lua
+-- Basic revival
+exports['qb-ambulancejob']:RevivePlayer()
+
+-- Revive with specific health
+exports['qb-ambulancejob']:RevivePlayer(100)
+
+-- Parameters:
+-- health (optional): Health amount to set (default: 100)
+```
+
+#### GetPlayerInjuries
+Get current player injuries.
+
+```lua
+local injuries = exports['qb-ambulancejob']:GetPlayerInjuries()
+
+-- Returns table of current injuries
+-- Example: {head = true, leg = true}
+```
+
+#### TreatPatient
+Treat another player's injuries.
+
+```lua
+-- Treat specific injury
+exports['qb-ambulancejob']:TreatPatient(targetPlayerId, "head")
+
+-- Treat all injuries
+exports['qb-ambulancejob']:TreatPatient(targetPlayerId, "all")
+
+-- Parameters:
+-- targetId: Server ID of target player
+-- injuryType: Type of injury to treat or "all"
+```
+
+### Server Exports
+
+#### AddInjury
+Add an injury to a player.
+
+```lua
+-- Add specific injury
+exports['qb-ambulancejob']:AddInjury(source, "head")
+
+-- Add random injury based on damage
+exports['qb-ambulancejob']:AddInjury(source, nil, damageAmount)
+
+-- Parameters:
+-- source: Player server ID
+-- injuryType: Type of injury (optional)
+-- damage: Damage amount for random injury (optional)
+```
+
+#### HealPlayer
+Heal a player completely.
+
+```lua
+exports['qb-ambulancejob']:HealPlayer(source)
+
+-- Removes all injuries and restores full health
+```
+
+#### GetMedicalRecord
+Get a player's medical history.
+
+```lua
+local records = exports['qb-ambulancejob']:GetMedicalRecord(citizenId)
+
+-- Returns array of medical records
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Player revival event
+RegisterNetEvent('qb-ambulancejob:client:revive', function(health)
+    -- Handle player revival
+end)
+
+-- Injury event
+RegisterNetEvent('qb-ambulancejob:client:addInjury', function(injury)
+    -- Handle new injury
+end)
+
+-- Medical treatment event
+RegisterNetEvent('qb-ambulancejob:client:treatInjury', function(injury)
+    -- Handle injury treatment
+end)
+```
+
+#### Server Events
+
+```lua
+-- Player death event
+RegisterNetEvent('qb-ambulancejob:server:playerDied', function(reason)
+    -- Handle player death
+end)
+
+-- Medical bill event
+RegisterNetEvent('qb-ambulancejob:server:billPatient', function(targetId, amount)
+    -- Handle medical billing
+end)
+
+-- Medical record creation
+RegisterNetEvent('qb-ambulancejob:server:createRecord', function(data)
+    -- Create medical record
+end)
+```
+
+## Usage Examples
+
+### Basic Medical Treatment
+
+```lua
+-- Client-side injury treatment
+RegisterNetEvent('hospital:client:treatWounds', function()
+    local player = QBCore.Functions.GetPlayerData()
+    local injuries = exports['qb-ambulancejob']:GetPlayerInjuries()
+    
+    if next(injuries) then
+        QBCore.Functions.Progressbar("treating_wounds", "Treating wounds...", 5000, false, true, {
+            disableMovement = true,
+            disableCarMovement = true,
+            disableMouse = false,
+            disableCombat = true,
+        }, {
+            animDict = "mini@repair",
+            anim = "fixing_a_ped",
+        }, {}, {}, function()
+            -- Treatment complete
+            TriggerServerEvent('qb-ambulancejob:server:treatAllInjuries')
+        end)
+    else
+        QBCore.Functions.Notify("You have no injuries to treat", "error")
+    end
+end)
+```
+
+### Emergency Response System
+
+```lua
+-- Server-side emergency call handler
+RegisterNetEvent('qb-ambulancejob:server:emergencyCall', function(location, description)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    
+    if not player then return end
+    
+    local callData = {
+        id = math.random(10000, 99999),
+        caller = player.PlayerData.charinfo.firstname .. " " .. player.PlayerData.charinfo.lastname,
+        location = location,
+        description = description,
+        time = os.date("%H:%M")
+    }
+    
+    -- Send alert to all EMS personnel
+    for k, v in pairs(QBCore.Functions.GetQBPlayers()) do
+        if v.PlayerData.job.name == "ambulance" and v.PlayerData.job.onduty then
+            TriggerClientEvent('qb-ambulancejob:client:emergencyCall', v.PlayerData.source, callData)
+        end
+    end
+end)
+```
+
+### Advanced Injury System
+
+```lua
+-- Damage event handler with injury calculation
+RegisterNetEvent('qb-ambulancejob:client:onPlayerDamage', function(damage, weapon, component)
+    local player = QBCore.Functions.GetPlayerData()
+    local health = GetEntityHealth(PlayerPedId())
+    
+    -- Calculate injury based on damage location
+    local injuryType = nil
+    
+    if component == 0 then -- Head
+        injuryType = "head"
+    elseif component == 1 or component == 2 then -- Chest/Back
+        injuryType = "chest"  
+    elseif component == 6 or component == 7 then -- Arms
+        injuryType = "arm"
+    elseif component == 4 or component == 5 then -- Legs
+        injuryType = "leg"
+    end
+    
+    if injuryType and damage > 20 then
+        TriggerServerEvent('qb-ambulancejob:server:addInjury', injuryType)
+    end
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Players Not Reviving Properly
+```lua
+-- Check if revival system is working
+if not exports['qb-ambulancejob']:RevivePlayer() then
+    print("Revival failed - check permissions and player state")
+end
+```
+
+#### Injury System Not Working
+- Verify database tables are created correctly
+- Check if qb-inventory is properly configured with medical items
+- Ensure damage events are being triggered
+
+#### Medical Bills Not Processing
+```lua
+-- Verify banking integration
+RegisterNetEvent('qb-ambulancejob:server:billPatient', function(targetId, amount)
+    local target = QBCore.Functions.GetPlayer(targetId)
+    if target then
+        target.Functions.RemoveMoney('bank', amount, 'medical-bill')
+    end
+end)
+```
+
+### Debug Commands
+
+```lua
+-- Add injury for testing (server console)
+TriggerEvent('qb-ambulancejob:server:addInjury', playerId, 'head')
+
+-- Heal player completely
+TriggerEvent('qb-ambulancejob:server:healPlayer', playerId)
+
+-- Check player injuries
+/checkinjuries [player_id]
+```
+
+### Performance Optimization
+
+1. **Injury Checks**: Limit injury calculations to prevent performance issues
+2. **Database Queries**: Use proper indexing on medical tables
+3. **Event Optimization**: Minimize server-client communication for injury updates
+
+<Callout type="warning">
+  Always test the injury system thoroughly as it directly affects player experience and server stability.
+</Callout>

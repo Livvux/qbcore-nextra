@@ -1,0 +1,462 @@
+# QBCore Inventory System
+
+A comprehensive inventory management system for QBCore that handles player storage, vehicle storage, shops, and item interactions.
+
+## Overview
+
+The QBCore Inventory system (qb-inventory) is a powerful resource that manages all player storage including personal inventory, vehicle trunks, stashes, shops, and item drops. It provides a modern, user-friendly interface with drag-and-drop functionality and extensive customization options.
+
+## Key Features
+
+### ✨ Core Functionality
+- **Personal Inventory** - Player item storage with weight limits
+- **Vehicle Storage** - Trunk and glovebox access
+- **Stashes** - Personal and shared storage containers
+- **Item Drops** - Physical item dropping and pickup
+- **Shops** - Integrated shopping system
+- **Weapon Attachments** - Advanced weapon customization
+
+### 🎯 Advanced Features
+- **Inventory State Management** - Control when inventory can be opened
+- **Item Metadata** - Custom item information and attributes
+- **Drag & Drop Interface** - Intuitive item management
+- **Weight System** - Realistic inventory limitations with advanced [weight tuning options](https://fivemx.com/inventory-weight-tuning/)
+- **Item Images** - Visual representation of all items
+- **Useable Items** - Interactive item functionality
+
+## Download & Installation
+
+<div className="flex flex-col sm:flex-row gap-4 my-6">
+  <a 
+    href="https://codeload.github.com/qbcore-framework/qb-inventory/zip/refs/heads/main"
+    className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    📥 Download qb-inventory
+  </a>
+  <a 
+    href="https://github.com/qbcore-framework/qb-inventory"
+    className="inline-flex items-center px-6 py-3 border border-gray-300 hover:border-gray-400 text-gray-700 dark:text-gray-300 dark:border-gray-600 dark:hover:border-gray-500 font-semibold rounded-lg transition-colors"
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    🔗 View on GitHub
+  </a>
+</div>
+
+### Installation Steps
+
+1. **Download** the script and place it in your `[qb]` directory
+2. **Import** `qb-inventory.sql` into your database
+3. **Add** to your `server.cfg`: `ensure qb-inventory`
+4. **Restart** your server
+
+## Inventory State Management
+
+Control when players can access their inventory using state bags:
+
+```lua
+-- Server-side state control
+RegisterCommand('lockInventory', function(source)
+    local player = Player(source)
+    player.state.inv_busy = true
+    print('Inventory locked for player', source)
+end, true)
+
+RegisterCommand('unlockInventory', function(source)
+    local player = Player(source)
+    player.state.inv_busy = false
+    print('Inventory unlocked for player', source)
+end, true)
+```
+
+```lua
+-- Client-side state control
+RegisterCommand('lockInventory', function()
+    LocalPlayer.state:set('inv_busy', true, true)
+end, false)
+```
+
+## Item Management
+
+### Adding Items with Metadata
+
+```lua
+-- Add item with custom information
+RegisterCommand('addItemWithInfo', function(source, args)
+    local itemName = args[1]
+    if not itemName then return end
+    
+    local info = {
+        serial = QBCore.Shared.RandomStr(8),
+        condition = 100,
+        owner = 'John Doe',
+        timestamp = os.time()
+    }
+    
+    exports['qb-inventory']:AddItem(source, itemName, 1, false, info, 'admin:giveItem')
+end, true)
+```
+
+### Item Definition Structure
+
+Items are defined in `qb-core/shared/items.lua`:
+
+```lua
+['phone'] = {
+    name = 'phone',
+    label = 'Phone',
+    weight = 500,
+    type = 'item',
+    image = 'phone.png',
+    unique = true,
+    useable = true,
+    shouldClose = true,
+    combinable = nil,
+    description = 'A modern smartphone'
+}
+```
+
+## Essential Exports
+
+### Server Exports
+
+```lua
+-- Load player inventory from database
+exports['qb-inventory']:LoadInventory(source, citizenid)
+
+-- Save player inventory to database
+exports['qb-inventory']:SaveInventory(source, false)
+
+-- Add item to player inventory
+exports['qb-inventory']:AddItem(source, 'itemname', amount, slot, info, reason)
+
+-- Remove item from player inventory
+exports['qb-inventory']:RemoveItem(source, 'itemname', amount, slot, reason)
+
+-- Check if player can add item
+exports['qb-inventory']:CanAddItem(source, 'itemname', amount)
+
+-- Check if player has item
+exports['qb-inventory']:HasItem(source, 'itemname', amount)
+
+-- Open player inventory
+exports['qb-inventory']:OpenInventory(source, identifier, data)
+
+-- Close player inventory
+exports['qb-inventory']:CloseInventory(source, identifier)
+
+-- Clear player inventory
+exports['qb-inventory']:ClearInventory(source, filterItems)
+```
+
+### Client Exports
+
+```lua
+-- Check if player has item (client-side)
+exports['qb-inventory']:HasItem('itemname', amount)
+```
+
+## Shop System
+
+### Creating Custom Shops
+
+```lua
+-- Define shop items
+local shopItems = {
+    { name = 'sandwich', amount = 10, price = 5 },
+    { name = 'water_bottle', amount = 20, price = 2 },
+    { name = 'bandage', amount = 15, price = 10 }
+}
+
+-- Create shop
+RegisterCommand('createShop', function(source)
+    local playerPed = GetPlayerPed(source)
+    local playerCoords = GetEntityCoords(playerPed)
+    
+    exports['qb-inventory']:CreateShop({
+        name = 'convenienceStore',
+        label = 'Convenience Store',
+        coords = playerCoords,
+        slots = #shopItems,
+        items = shopItems
+    })
+end, true)
+
+-- Open shop
+RegisterCommand('openShop', function(source)
+    exports['qb-inventory']:OpenShop(source, 'convenienceStore')
+end, true)
+```
+
+## Stash System
+
+### Creating Stashes
+
+```lua
+-- Create personal stash
+RegisterNetEvent('inventory:server:createStash', function(stashId)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player then
+        local data = {
+            label = 'Personal Stash',
+            maxweight = 50000,
+            slots = 25
+        }
+        exports['qb-inventory']:OpenInventory(src, stashId, data)
+    end
+end)
+```
+
+### House Storage Example
+
+```lua
+-- House storage integration
+RegisterNetEvent('qb-houses:client:openStash', function(houseId)
+    local stashData = {
+        label = 'House Storage',
+        maxweight = 200000,
+        slots = 50
+    }
+    exports['qb-inventory']:OpenInventory(GetPlayerServerId(PlayerId()), 'house_' .. houseId, stashData)
+end)
+```
+
+## Vehicle Inventory
+
+### Trunk Access
+
+```lua
+-- Open vehicle trunk
+RegisterNetEvent('qb-inventory:client:openTrunk', function(plate)
+    local vehicle = QBCore.Functions.GetClosestVehicle()
+    if vehicle then
+        local trunkData = {
+            label = 'Vehicle Trunk',
+            maxweight = 60000,
+            slots = 15
+        }
+        exports['qb-inventory']:OpenInventory(GetPlayerServerId(PlayerId()), 'trunk_' .. plate, trunkData)
+    end
+end)
+```
+
+### Glovebox Access
+
+```lua
+-- Open vehicle glovebox
+RegisterNetEvent('qb-inventory:client:openGlovebox', function(plate)
+    local gloveboxData = {
+        label = 'Glovebox',
+        maxweight = 10000,
+        slots = 5
+    }
+    exports['qb-inventory']:OpenInventory(GetPlayerServerId(PlayerId()), 'glovebox_' .. plate, gloveboxData)
+end)
+```
+
+## Useable Items
+
+### Creating Useable Items
+
+```lua
+-- Food item example
+QBCore.Functions.CreateUseableItem('sandwich', function(source, item)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    
+    Player.Functions.RemoveItem('sandwich', 1)
+    Player.Functions.SetMetaData('hunger', Player.PlayerData.metadata.hunger + 25)
+    TriggerClientEvent('QBCore:Notify', source, 'You ate a delicious sandwich', 'success')
+end)
+
+-- Tool item example
+QBCore.Functions.CreateUseableItem('lockpick', function(source, item)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    
+    TriggerClientEvent('qb-inventory:client:useLockpick', source)
+end)
+```
+
+## Weapon Attachments
+
+### Adding Weapon Attachments
+
+```lua
+-- Add attachment to weapon
+RegisterNetEvent('qb-inventory:server:addWeaponAttachment', function(weaponSlot, attachment)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player then
+        local weapon = Player.PlayerData.items[weaponSlot]
+        if weapon and weapon.type == 'weapon' then
+            if not weapon.info.attachments then
+                weapon.info.attachments = {}
+            end
+            weapon.info.attachments[attachment] = true
+            Player.Functions.SetPlayerData('items', Player.PlayerData.items)
+        end
+    end
+end)
+```
+
+## Item Drops
+
+### Configuring Item Drops
+
+```lua
+-- In qb-inventory/config.lua
+Config.ItemDrops = true
+Config.MaxDropDistance = 5.0
+Config.PickupKey = 38 -- E key
+Config.MaxDroppedItems = 100
+```
+
+### Custom Drop Logic
+
+```lua
+-- Server-side drop handling
+RegisterNetEvent('qb-inventory:server:dropItem', function(itemSlot, amount)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local ped = GetPlayerPed(src)
+    local coords = GetEntityCoords(ped)
+    
+    if Player then
+        local item = Player.PlayerData.items[itemSlot]
+        if item and item.amount >= amount then
+            Player.Functions.RemoveItem(item.name, amount, itemSlot)
+            
+            -- Create dropped item
+            local dropId = QBCore.Shared.RandomStr(8)
+            Config.DroppedItems[dropId] = {
+                name = item.name,
+                amount = amount,
+                info = item.info,
+                coords = coords
+            }
+            
+            TriggerClientEvent('qb-inventory:client:createDrop', -1, dropId, coords, item)
+        end
+    end
+end)
+```
+
+## Advanced Features
+
+### Item Conditions
+
+```lua
+-- Weapon condition system
+RegisterNetEvent('qb-inventory:server:updateWeaponCondition', function(weaponSlot, damage)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player then
+        local weapon = Player.PlayerData.items[weaponSlot]
+        if weapon and weapon.type == 'weapon' then
+            local currentCondition = weapon.info.condition or 100
+            local newCondition = math.max(0, currentCondition - damage)
+            
+            weapon.info.condition = newCondition
+            Player.Functions.SetPlayerData('items', Player.PlayerData.items)
+            
+            if newCondition <= 0 then
+                TriggerClientEvent('QBCore:Notify', src, 'Your weapon is broken!', 'error')
+            end
+        end
+    end
+end)
+```
+
+### Inventory Limits by Job
+
+```lua
+-- Job-specific inventory limits
+local function GetInventorySize(Player)
+    local job = Player.PlayerData.job.name
+    local sizes = {
+        police = { slots = 35, weight = 75000 },
+        ambulance = { slots = 30, weight = 65000 },
+        mechanic = { slots = 40, weight = 85000 },
+        default = { slots = 25, weight = 50000 }
+    }
+    
+    return sizes[job] or sizes.default
+end
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Items not showing:**
+- Verify item definitions in `shared/items.lua`
+- Check item images exist in `html/images/`
+- Ensure proper image file naming
+
+**Inventory not opening:**
+- Check inventory state (`inv_busy`)
+- Verify exports are called correctly
+- Check console for JavaScript errors
+
+**Weight issues:**
+- Review item weights in configuration
+- Check player weight limits
+- Verify weight calculations
+
+### Debug Commands
+
+```lua
+-- Debug inventory contents
+RegisterCommand('debuginv', function(source)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if Player then
+        for slot, item in pairs(Player.PlayerData.items) do
+            print(string.format('Slot %d: %s x%d', slot, item.name, item.amount))
+        end
+    end
+end, true)
+```
+
+## Best Practices
+
+1. **Regular Backups** - Always backup inventory data before updates
+2. **Item Validation** - Validate all item additions server-side
+3. **Weight Management** - Set realistic weight limits for items. For comprehensive weight balancing strategies, refer to this [inventory weight tuning guide](https://fivemx.com/inventory-weight-tuning/)
+4. **Error Handling** - Implement proper error handling for all operations
+5. **Performance** - Monitor inventory operations for performance impact
+
+## Migration from Old qb-inventory
+
+### Database Migration
+
+1. Upload the new `inventory.sql` file
+2. Use the provided `migrate.sql` to transfer data
+3. Delete old tables: `gloveboxitems`, `stashitems`, `trunkitems`
+
+```sql
+CREATE TABLE IF NOT EXISTS `inventories` (
+  `id` INT(11) NOT NULL AUTO_INCREMENT,
+  `identifier` VARCHAR(50) NOT NULL,
+  `items` LONGTEXT DEFAULT ('[]'),
+  PRIMARY KEY (`identifier`),
+  KEY `id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4;
+```
+
+## Related Resources
+
+- **[QBCore Scripts Collection](/scripts)** - Browse all QBCore scripts
+- **[Item Creation Tutorial](/tutorials/create-item)** - Learn to create custom items
+- **[Shop Integration Guide](/tutorials/shop-integration)** - Set up custom shops
+- **[Vehicle Storage Setup](/tutorials/vehicle-storage)** - Configure vehicle inventories
+
+---
+
+**Need help with inventory setup?** Check our [documentation](/docs) and join [GitHub discussions](https://github.com/qbcore-framework/qb-core/discussions) for support.

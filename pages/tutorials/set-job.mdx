@@ -1,0 +1,516 @@
+# How to Set Job on QBCore
+
+Learn how to set player jobs in QBCore, create custom jobs, and manage job permissions effectively.
+
+## Overview
+
+Jobs in QBCore define player roles, permissions, and gameplay mechanics. This guide covers setting jobs for players, creating custom jobs, and managing job-related features.
+
+## Basic Job Commands
+
+### Setting Player Jobs
+
+**Admin Command (In-Game):**
+```
+/setjob [player_id] [job_name] [grade]
+```
+
+**Examples:**
+```
+/setjob 1 police 0        # Set player 1 as police cadet
+/setjob 2 mechanic 2      # Set player 2 as mechanic supervisor  
+/setjob 3 unemployed 0    # Set player 3 as unemployed
+```
+
+### Checking Current Job
+
+**Player Command:**
+```
+/job                      # Check your current job
+```
+
+## Default QBCore Jobs
+
+### Available Jobs
+
+| Job Name | Description | Grades |
+|----------|-------------|---------|
+| `unemployed` | Default job for all players | 0 |
+| `police` | Law enforcement | 0-4 (Cadet to Chief) |
+| `ambulance` | Emergency medical services | 0-4 (Trainee to Chief) |
+| `mechanic` | Vehicle repair services | 0-3 (Trainee to Boss) |
+| `taxi` | Transportation services | 0-1 (Driver to Boss) |
+| `bus` | Public transportation | 0-1 (Driver to Boss) |
+| `garbage` | Waste management | 0-1 (Worker to Boss) |
+| `trucking` | Logistics and delivery | 0-1 (Driver to Boss) |
+
+### Job Grades Explained
+
+Each job has multiple grades (ranks) with different permissions:
+
+- **Grade 0**: Entry level, basic permissions
+- **Grade 1**: Experienced worker, additional permissions  
+- **Grade 2**: Supervisor, management permissions
+- **Grade 3**: Manager, advanced permissions
+- **Grade 4**: Boss/Chief, full permissions
+
+## Creating Custom Jobs
+
+### Step 1: Define Job in Shared Config
+
+Edit `qb-core/shared/jobs.lua`:
+
+```lua
+-- Add your custom job
+['realestate'] = {
+    label = 'Real Estate',
+    defaultDuty = true,
+    offDutyPay = false,
+    grades = {
+        ['0'] = {
+            name = 'Intern',
+            payment = 50,
+            isboss = false,
+        },
+        ['1'] = {
+            name = 'Agent',
+            payment = 75,
+            isboss = false,
+        },
+        ['2'] = {
+            name = 'Senior Agent',
+            payment = 100,
+            isboss = false,
+        },
+        ['3'] = {
+            name = 'Manager',
+            payment = 125,
+            isboss = true,
+        },
+        ['4'] = {
+            name = 'CEO',
+            payment = 150,
+            isboss = true,
+        },
+    },
+},
+
+['delivery'] = {
+    label = 'Delivery Services',
+    defaultDuty = false,
+    offDutyPay = false,
+    grades = {
+        ['0'] = {
+            name = 'Driver',
+            payment = 40,
+            isboss = false,
+        },
+        ['1'] = {
+            name = 'Supervisor',
+            payment = 60,
+            isboss = true,
+        },
+    },
+}
+```
+
+### Step 2: Job Configuration Options
+
+**Job Properties:**
+- `label`: Display name for the job
+- `defaultDuty`: Whether players start on duty by default
+- `offDutyPay`: Whether players get paid when off duty
+- `grades`: Job ranks and their properties
+
+**Grade Properties:**
+- `name`: Display name for the grade
+- `payment`: Salary amount per paycheck
+- `isboss`: Whether this grade has boss permissions
+
+### Step 3: Add Job Permissions
+
+Edit your job-specific resources to check for the new job:
+
+```lua
+-- Example: Check if player has realestate job
+RegisterNetEvent('realestate:server:checkJob', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player.PlayerData.job.name == 'realestate' then
+        -- Player has realestate job
+        TriggerClientEvent('realestate:client:openMenu', src)
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'You are not a real estate agent', 'error')
+    end
+end)
+```
+
+## Server-Side Job Management
+
+### Setting Jobs via Script
+
+```lua
+-- Set player job (server-side)
+local function SetPlayerJob(source, jobName, grade)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return false end
+    
+    local jobInfo = QBCore.Shared.Jobs[jobName]
+    if not jobInfo then return false end
+    
+    local gradeInfo = jobInfo.grades[tostring(grade)]
+    if not gradeInfo then return false end
+    
+    Player.Functions.SetJob(jobName, grade)
+    return true
+end
+
+-- Usage example
+RegisterNetEvent('admin:server:setJob', function(targetId, jobName, grade)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    -- Check if source has admin permissions
+    if QBCore.Functions.HasPermission(src, 'admin') then
+        if SetPlayerJob(targetId, jobName, grade) then
+            TriggerClientEvent('QBCore:Notify', src, 'Job set successfully', 'success')
+            TriggerClientEvent('QBCore:Notify', targetId, 'Your job has been updated', 'success')
+        else
+            TriggerClientEvent('QBCore:Notify', src, 'Failed to set job', 'error')
+        end
+    end
+end)
+```
+
+### Job-Based Callbacks
+
+```lua
+-- Get all players with specific job
+QBCore.Functions.CreateCallback('admin:server:getJobPlayers', function(source, cb, jobName)
+    local players = {}
+    local QBPlayers = QBCore.Functions.GetQBPlayers()
+    
+    for _, player in pairs(QBPlayers) do
+        if player.PlayerData.job.name == jobName then
+            table.insert(players, {
+                source = player.PlayerData.source,
+                name = player.PlayerData.charinfo.firstname .. ' ' .. player.PlayerData.charinfo.lastname,
+                grade = player.PlayerData.job.grade.name
+            })
+        end
+    end
+    
+    cb(players)
+end)
+```
+
+## Client-Side Job Handling
+
+### Job Change Events
+
+```lua
+-- Listen for job changes
+RegisterNetEvent('QBCore:Client:OnJobUpdate', function(JobInfo)
+    -- JobInfo contains new job data
+    print('Job changed to: ' .. JobInfo.label)
+    print('Grade: ' .. JobInfo.grade.name)
+    print('Payment: $' .. JobInfo.grade.payment)
+    
+    -- Update UI or other client features
+    TriggerEvent('hud:client:updateJob', JobInfo)
+end)
+
+-- Check player's current job
+RegisterNetEvent('jobs:client:checkMyJob', function()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    local jobInfo = PlayerData.job
+    
+    local message = string.format(
+        'Job: %s\nRank: %s\nPayment: $%d\nOn Duty: %s',
+        jobInfo.label,
+        jobInfo.grade.name,
+        jobInfo.grade.payment,
+        jobInfo.onduty and 'Yes' or 'No'
+    )
+    
+    TriggerEvent('chat:addMessage', {
+        color = {0, 255, 0},
+        multiline = true,
+        args = {'Job Info', message}
+    })
+end)
+```
+
+### Duty System
+
+```lua
+-- Toggle duty status
+RegisterNetEvent('jobs:client:toggleDuty', function()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    local newDutyStatus = not PlayerData.job.onduty
+    
+    TriggerServerEvent('QBCore:ToggleDuty')
+    
+    local status = newDutyStatus and 'on' or 'off'
+    TriggerEvent('QBCore:Notify', 'You are now ' .. status .. ' duty', 'primary')
+end)
+```
+
+## Advanced Job Features
+
+### Job-Specific Vehicles
+
+```lua
+-- Define job vehicles in shared config
+Config.JobVehicles = {
+    ['police'] = {
+        ['police'] = 'Police Cruiser',
+        ['police2'] = 'Police Buffalo', 
+        ['policeb'] = 'Police Bike'
+    },
+    ['ambulance'] = {
+        ['ambulance'] = 'Ambulance',
+        ['firetruk'] = 'Fire Truck'
+    },
+    ['mechanic'] = {
+        ['towtruck'] = 'Tow Truck',
+        ['towtruck2'] = 'Flatbed Tow'
+    }
+}
+
+-- Spawn job vehicle
+RegisterNetEvent('jobs:client:spawnVehicle', function(vehicleModel)
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    local jobVehicles = Config.JobVehicles[PlayerData.job.name]
+    
+    if jobVehicles and jobVehicles[vehicleModel] then
+        -- Spawn vehicle logic here
+        QBCore.Functions.SpawnVehicle(vehicleModel, function(veh)
+            SetEntityHeading(veh, GetEntityHeading(PlayerPedId()))
+            TaskWarpPedIntoVehicle(PlayerPedId(), veh, -1)
+            TriggerEvent('vehiclekeys:client:SetOwner', QBCore.Functions.GetPlate(veh))
+        end)
+    else
+        TriggerEvent('QBCore:Notify', 'You cannot access this vehicle', 'error')
+    end
+end)
+```
+
+### Job-Based Blips
+
+```lua
+-- Create blips for job locations
+local jobBlips = {
+    {
+        job = 'police',
+        coords = vector3(428.23, -984.28, 29.76),
+        sprite = 60,
+        color = 29,
+        label = 'Police Department'
+    },
+    {
+        job = 'ambulance', 
+        coords = vector3(307.39, -1433.52, 29.9),
+        sprite = 61,
+        color = 1,
+        label = 'Hospital'
+    }
+}
+
+-- Show blips based on player job
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    CreateJobBlips()
+end)
+
+RegisterNetEvent('QBCore:Client:OnJobUpdate', function(JobInfo)
+    RemoveJobBlips()
+    CreateJobBlips()
+end)
+
+function CreateJobBlips()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    
+    for _, blipData in pairs(jobBlips) do
+        if blipData.job == PlayerData.job.name then
+            local blip = AddBlipForCoord(blipData.coords.x, blipData.coords.y, blipData.coords.z)
+            SetBlipSprite(blip, blipData.sprite)
+            SetBlipColour(blip, blipData.color)
+            SetBlipScale(blip, 0.8)
+            SetBlipAsShortRange(blip, true)
+            BeginTextCommandSetBlipName('STRING')
+            AddTextComponentString(blipData.label)
+            EndTextCommandSetBlipName(blip)
+        end
+    end
+end
+```
+
+### Job-Based Permissions
+
+```lua
+-- Check job permissions
+function HasJobPermission(source, requiredJob, minGrade)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return false end
+    
+    local playerJob = Player.PlayerData.job
+    
+    -- Check job name
+    if playerJob.name ~= requiredJob then
+        return false
+    end
+    
+    -- Check minimum grade
+    if minGrade and playerJob.grade.level < minGrade then
+        return false
+    end
+    
+    -- Check if on duty (optional)
+    if not playerJob.onduty then
+        return false
+    end
+    
+    return true
+end
+
+-- Usage in server events
+RegisterNetEvent('police:server:accessArmory', function()
+    local src = source
+    
+    if HasJobPermission(src, 'police', 2) then
+        -- Player is police with grade 2+
+        TriggerClientEvent('police:client:openArmory', src)
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'Insufficient permissions', 'error')
+    end
+end)
+```
+
+## Admin Tools
+
+### Job Management Menu
+
+Create an admin menu for job management:
+
+```lua
+-- Admin job menu
+RegisterNetEvent('admin:client:jobMenu', function()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    
+    if QBCore.Functions.HasPermission(PlayerData.source, 'admin') then
+        local jobOptions = {}
+        
+        for jobName, jobData in pairs(QBCore.Shared.Jobs) do
+            local gradeOptions = {}
+            
+            for grade, gradeData in pairs(jobData.grades) do
+                table.insert(gradeOptions, {
+                    title = gradeData.name .. ' (Grade ' .. grade .. ')',
+                    description = 'Payment: $' .. gradeData.payment,
+                    event = 'admin:client:setJobGrade',
+                    args = {job = jobName, grade = tonumber(grade)}
+                })
+            end
+            
+            table.insert(jobOptions, {
+                title = jobData.label,
+                description = 'Set player to ' .. jobData.label,
+                menu = 'job_grades_' .. jobName,
+                submenu = gradeOptions
+            })
+        end
+        
+        TriggerEvent('qb-menu:client:openMenu', jobOptions)
+    end
+end)
+```
+
+### Bulk Job Operations
+
+```lua
+-- Set multiple players to same job
+RegisterCommand('setjobmultiple', function(source, args, rawCommand)
+    if not QBCore.Functions.HasPermission(source, 'admin') then return end
+    
+    local jobName = args[1]
+    local grade = tonumber(args[2])
+    
+    if not jobName or not grade then
+        TriggerClientEvent('QBCore:Notify', source, 'Usage: /setjobmultiple [job] [grade]', 'error')
+        return
+    end
+    
+    -- Get all online players
+    local QBPlayers = QBCore.Functions.GetQBPlayers()
+    local count = 0
+    
+    for _, player in pairs(QBPlayers) do
+        if player.PlayerData.job.name == 'unemployed' then
+            player.Functions.SetJob(jobName, grade)
+            count = count + 1
+        end
+    end
+    
+    TriggerClientEvent('QBCore:Notify', source, 'Set ' .. count .. ' unemployed players to ' .. jobName, 'success')
+end, 'admin')
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Job not saving after restart:**
+- Check database connection
+- Verify job exists in shared/jobs.lua
+- Check for script errors in console
+
+**Grade permissions not working:**
+- Ensure grade number matches config
+- Check isboss property for boss permissions
+- Verify permission checks in scripts
+
+**Players not getting paid:**
+- Check paycheck script is running
+- Verify job payment amounts
+- Ensure players are on duty if required
+
+### Debug Commands
+
+```lua
+-- Debug player job info
+RegisterCommand('debugjob', function(source, args, rawCommand)
+    if not QBCore.Functions.HasPermission(source, 'admin') then return end
+    
+    local targetId = tonumber(args[1]) or source
+    local Player = QBCore.Functions.GetPlayer(targetId)
+    
+    if Player then
+        local job = Player.PlayerData.job
+        print('=== JOB DEBUG ===')
+        print('Player: ' .. Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname)
+        print('Job: ' .. job.name .. ' (' .. job.label .. ')')
+        print('Grade: ' .. job.grade.level .. ' (' .. job.grade.name .. ')')
+        print('Payment: $' .. job.grade.payment)
+        print('Boss: ' .. tostring(job.isboss))
+        print('On Duty: ' .. tostring(job.onduty))
+        print('=================')
+    end
+end, 'admin')
+```
+
+## Best Practices
+
+1. **Job Naming**: Use clear, descriptive job names
+2. **Grade Structure**: Create logical progression in grades
+3. **Permissions**: Use appropriate permission checks
+4. **Documentation**: Document custom jobs and their features
+5. **Testing**: Test job changes on development server first
+
+## Conclusion
+
+Job management is crucial for roleplay servers. Proper job setup enables diverse gameplay experiences and helps organize your server community effectively.
+
+---
+
+**Need more help?** Join our [GitHub discussions](https://github.com/qbcore-framework/qb-core/discussions) or check out more [QBCore tutorials](/tutorials).

@@ -1,0 +1,459 @@
+# Migration Tools
+
+Comprehensive collection of tools and utilities to help you migrate your server from other frameworks to QBCore, or upgrade between QBCore versions with minimal downtime and data loss.
+
+## Available Migration Tools
+
+### Framework Migration Tools
+
+#### ESX to QBCore Migration Tool
+Complete migration utility for converting ESX servers to QBCore framework.
+
+**Features:**
+- Player data conversion (accounts, jobs, inventory)
+- Vehicle ownership transfer
+- Property and real estate migration
+- Job and grade conversion
+- Banking system migration
+- Automated backup creation
+
+**Download:** [ESX-to-QBCore-Converter](https://github.com/qbcore-framework/esx-to-qbcore)
+
+#### vRP to QBCore Migration Tool
+Specialized tool for migrating from vRP framework to QBCore.
+
+**Features:**
+- User identity conversion
+- Vehicle garage migration
+- Inventory system conversion  
+- Property ownership transfer
+- Business data migration
+- Custom data preservation
+
+**Download:** [vRP-to-QBCore-Converter](https://github.com/qbcore-framework/vrp-to-qbcore)
+
+### Version Migration Tools
+
+#### QBCore v1 to v2 Migration
+Automated tool for upgrading from QBCore v1.x to v2.x with minimal disruption.
+
+**What it migrates:**
+- Player data structure updates
+- Job system improvements
+- New gang system integration
+- Updated inventory format
+- Modernized vehicle system
+- Enhanced metadata handling
+
+**Usage:**
+```bash
+# 1. Backup your database
+mysqldump -u username -p database_name > qbcore_backup.sql
+
+# 2. Run migration script
+node migrate-v1-to-v2.js
+
+# 3. Update resources to v2 compatible versions
+```
+
+#### QBCore Database Schema Updater
+Tool to update database schemas when upgrading QBCore versions.
+
+**Features:**
+- Automatic schema detection
+- Safe column additions
+- Data preservation during updates
+- Rollback capability
+- Validation checks
+
+### Utility Tools
+
+#### Database Backup & Restore Tool
+Comprehensive backup solution specifically designed for QBCore servers.
+
+**Features:**
+- Automated daily backups
+- Selective table backups
+- Compression and encryption
+- Cloud storage integration
+- One-click restore functionality
+
+**Configuration:**
+```lua
+Config.Backup = {
+    enabled = true,
+    schedule = '0 3 * * *', -- Daily at 3 AM
+    retention = 30, -- Keep 30 days
+    compress = true,
+    encrypt = true,
+    
+    tables = {
+        'players',
+        'player_vehicles', 
+        'player_houses',
+        'player_mails',
+        'bank_accounts'
+    },
+    
+    storage = {
+        type = 'local', -- 'local', 's3', 'ftp'
+        path = './backups/'
+    }
+}
+```
+
+#### Character Data Converter
+Tool for converting character data between different formats and structures.
+
+**Supported Conversions:**
+- ESX character format → QBCore format
+- Legacy QBCore → Modern QBCore
+- Custom character systems → QBCore
+- Standalone character data → Framework integration
+
+**Usage Example:**
+```javascript
+const converter = new CharacterConverter({
+    source: 'esx',
+    target: 'qbcore',
+    preserveIds: true,
+    validateData: true
+});
+
+converter.convertPlayers('./esx_players.json', './qbcore_players.json');
+```
+
+#### Vehicle Migration Tool
+Specialized tool for migrating vehicle data between frameworks and versions.
+
+**Features:**
+- Ownership preservation
+- Garage assignment
+- Modification data transfer
+- Insurance information migration
+- Impound status conversion
+
+**Supported Migrations:**
+- ESX vehicles → QBCore vehicles
+- vRP vehicles → QBCore vehicles
+- Legacy QBCore → Modern QBCore vehicles
+- Custom vehicle systems → QBCore
+
+### Custom Resource Migration
+
+#### Resource Compatibility Checker
+Tool to analyze custom resources for QBCore compatibility.
+
+**What it checks:**
+- Event naming conventions
+- Function calls and exports
+- Database table structures
+- Configuration formats
+- Deprecated functions
+
+**Usage:**
+```bash
+# Check single resource
+node check-compatibility.js ./resources/my-custom-script/
+
+# Check all resources
+node check-compatibility.js ./resources/ --recursive
+
+# Generate report
+node check-compatibility.js ./resources/ --output report.html
+```
+
+#### Script Converter
+Automated tool for converting common script patterns to QBCore format.
+
+**Conversions:**
+- ESX script patterns → QBCore patterns
+- Old QBCore patterns → New QBCore patterns
+- Common function calls and events
+- Configuration file updates
+
+**Example:**
+```lua
+-- Before (ESX)
+ESX.TriggerServerCallback('esx:getPlayerData', function(data)
+    -- Handle data
+end)
+
+-- After (QBCore) - Auto-converted
+QBCore.Functions.TriggerCallback('QBCore:GetPlayerData', function(data)
+    -- Handle data  
+end)
+```
+
+## Step-by-Step Migration Guides
+
+### ESX to QBCore Migration
+
+#### Pre-Migration Checklist
+- [ ] Create complete database backup
+- [ ] Document current resource list
+- [ ] Test migration on development server
+- [ ] Notify players of maintenance window
+- [ ] Prepare QBCore installation files
+
+#### Migration Process
+
+1. **Database Backup**
+   ```bash
+   # Create timestamped backup
+   mysqldump -u username -p database_name > esx_backup_$(date +%Y%m%d_%H%M%S).sql
+   ```
+
+2. **Install QBCore Framework**
+   ```bash
+   cd resources/
+   git clone https://github.com/qbcore-framework/qb-core.git [qb]
+   cd [qb]/qb-core
+   ```
+
+3. **Run Migration Tool**
+   ```bash
+   cd migration-tools/
+   node esx-to-qbcore.js --config migration-config.json
+   ```
+
+4. **Update Server Configuration**
+   ```cfg
+   # server.cfg updates
+   ensure qb-core
+   ensure qb-multicharacter
+   ensure qb-spawn
+   ensure qb-garages
+   # ... other QBCore resources
+   
+   # Remove ESX resources
+   # stop es_extended
+   # stop esx_multicharacter
+   ```
+
+5. **Verify Migration**
+   ```sql
+   -- Check player count
+   SELECT COUNT(*) FROM players;
+   
+   -- Verify data integrity
+   SELECT citizenid, JSON_EXTRACT(charinfo, '$.firstname') as firstname 
+   FROM players LIMIT 10;
+   ```
+
+#### Post-Migration Steps
+- [ ] Test player login process
+- [ ] Verify inventory systems
+- [ ] Check vehicle spawning
+- [ ] Test job assignments
+- [ ] Validate banking system
+- [ ] Review logs for errors
+
+### vRP to QBCore Migration
+
+#### Database Schema Changes
+```sql
+-- Convert vRP users to QBCore players
+INSERT INTO players (citizenid, license, name, money, charinfo, job, gang, position, metadata)
+SELECT 
+    CONCAT('VRP', id) as citizenid,
+    CONCAT('license:', user_id) as license,
+    CONCAT(firstname, ' ', lastname) as name,
+    JSON_OBJECT('cash', wallet, 'bank', bank) as money,
+    JSON_OBJECT('firstname', firstname, 'lastname', lastname, 'phone', phone) as charinfo,
+    JSON_OBJECT('name', job, 'grade', job_grade) as job,
+    JSON_OBJECT('name', 'none', 'grade', 0) as gang,
+    JSON_OBJECT('x', x, 'y', y, 'z', z) as position,
+    JSON_OBJECT('hunger', 100, 'thirst', 100) as metadata
+FROM vrp_users u
+JOIN vrp_user_identities i ON u.id = i.user_id;
+```
+
+#### Vehicle Migration
+```sql
+-- Convert vRP vehicles to QBCore
+INSERT INTO player_vehicles (license, citizenid, vehicle, hash, mods, plate, state)
+SELECT 
+    CONCAT('license:', user_id) as license,
+    CONCAT('VRP', user_id) as citizenid,
+    vehicle as vehicle,
+    GetHashKey(vehicle) as hash,
+    custom as mods,
+    plate as plate,
+    1 as state
+FROM vrp_user_vehicles;
+```
+
+## Troubleshooting Common Issues
+
+### Database Connection Issues
+
+**Problem:** Migration fails with database connection errors
+**Solution:**
+```bash
+# Check MySQL connection
+mysql -u username -p -e "SELECT 1;"
+
+# Verify database permissions
+SHOW GRANTS FOR 'username'@'localhost';
+
+# Update migration config
+{
+    "database": {
+        "host": "localhost",
+        "port": 3306,
+        "user": "username",
+        "password": "password",
+        "database": "database_name",
+        "charset": "utf8mb4"
+    }
+}
+```
+
+### Character Encoding Issues
+
+**Problem:** Special characters corrupted during migration
+**Solution:**
+```sql
+-- Set proper charset
+ALTER DATABASE database_name CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- Convert existing tables
+ALTER TABLE players CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### Resource Compatibility Issues
+
+**Problem:** Custom resources don't work after migration
+**Solution:**
+1. Run compatibility checker
+2. Update event names and function calls
+3. Convert configuration formats
+4. Test individually before full deployment
+
+### Performance Issues After Migration
+
+**Problem:** Server runs slowly after migration
+**Solution:**
+```sql
+-- Optimize database tables
+OPTIMIZE TABLE players;
+OPTIMIZE TABLE player_vehicles;
+
+-- Add missing indexes
+CREATE INDEX idx_players_license ON players(license);
+CREATE INDEX idx_vehicles_citizenid ON player_vehicles(citizenid);
+
+-- Update table statistics
+ANALYZE TABLE players;
+```
+
+## Automated Migration Scripts
+
+### Complete ESX Migration Script
+
+```bash
+#!/bin/bash
+
+# ESX to QBCore Migration Script
+echo "Starting ESX to QBCore migration..."
+
+# 1. Create backup
+echo "Creating database backup..."
+mysqldump -u $DB_USER -p$DB_PASS $DB_NAME > "backup_$(date +%Y%m%d_%H%M%S).sql"
+
+# 2. Download QBCore
+echo "Downloading QBCore framework..."
+cd resources/
+git clone https://github.com/qbcore-framework/qb-core.git [qb]/qb-core
+
+# 3. Run migration
+echo "Running migration tool..."
+node migration-tools/esx-to-qbcore.js
+
+# 4. Update server config
+echo "Updating server configuration..."
+cp server.cfg server.cfg.backup
+cp server-qbcore.cfg server.cfg
+
+# 5. Restart server
+echo "Restarting server..."
+screen -S fivem -X quit
+sleep 5
+screen -dmS fivem ./run.sh
+
+echo "Migration completed! Check logs for any issues."
+```
+
+### Post-Migration Validation Script
+
+```javascript
+const mysql = require('mysql2/promise');
+
+async function validateMigration() {
+    const connection = await mysql.createConnection({
+        host: 'localhost',
+        user: 'username', 
+        password: 'password',
+        database: 'database_name'
+    });
+
+    try {
+        // Check player count
+        const [players] = await connection.execute('SELECT COUNT(*) as count FROM players');
+        console.log(`Migrated ${players[0].count} players`);
+
+        // Validate data structure
+        const [sample] = await connection.execute('SELECT * FROM players LIMIT 1');
+        if (sample[0]) {
+            console.log('Player data structure:', Object.keys(sample[0]));
+        }
+
+        // Check for missing data
+        const [missing] = await connection.execute(
+            'SELECT COUNT(*) as count FROM players WHERE charinfo IS NULL OR money IS NULL'
+        );
+        
+        if (missing[0].count > 0) {
+            console.warn(`Warning: ${missing[0].count} players have missing data`);
+        } else {
+            console.log('All players have complete data');
+        }
+
+    } catch (error) {
+        console.error('Validation failed:', error);
+    } finally {
+        await connection.end();
+    }
+}
+
+validateMigration();
+```
+
+## Best Practices
+
+### Before Migration
+1. **Always create backups** - Database, resources, and server files
+2. **Test on development server** - Never migrate production directly
+3. **Document custom modifications** - Track all custom changes
+4. **Plan maintenance window** - Allow sufficient time for migration
+5. **Notify community** - Inform players about the migration
+
+### During Migration
+1. **Monitor progress** - Watch for errors and warnings
+2. **Validate data integrity** - Check critical data structures
+3. **Test incrementally** - Verify each step before proceeding
+4. **Keep logs** - Maintain detailed logs of the migration process
+
+### After Migration
+1. **Thorough testing** - Test all major systems
+2. **Performance monitoring** - Watch server performance metrics
+3. **Player feedback** - Listen to player reports
+4. **Documentation updates** - Update any custom documentation
+5. **Backup new setup** - Create fresh backups of migrated system
+
+---
+
+**Migrate with confidence!** These tools and guides help ensure smooth transitions between frameworks while preserving your valuable server data and maintaining player experience.
+
+For more migration assistance, visit our [support page](/support) or check the main [migration guide](/docs/migration).

@@ -1,0 +1,685 @@
+# QB-Weapons - Weapon Management System
+
+import { Callout } from 'nextra/components'
+
+The **qb-weapons** resource provides comprehensive weapon management for QBCore servers, featuring weapon attachments, ammunition systems, weapon degradation, and advanced ballistics.
+
+## Overview
+
+QB-Weapons enhances the weapon experience with realistic mechanics, customization options, maintenance requirements, and advanced combat features. The system balances realism with gameplay enjoyment.
+
+### Key Features
+
+- **Weapon Attachments**: Scopes, silencers, grips, and modifications
+- **Ammunition System**: Different ammo types and effects
+- **Weapon Degradation**: Durability and maintenance mechanics
+- **Ballistics System**: Realistic bullet physics and damage
+- **Weapon Crafting**: Custom weapon creation and modification
+- **Serial Numbers**: Weapon tracking and identification
+- **License System**: Legal weapon ownership requirements
+- **Advanced Combat**: Enhanced shooting mechanics
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for weapon menus)
+- qb-inventory (for weapon storage)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-weapons.git
+```
+
+2. **Database Setup**
+```sql
+-- Weapon system tables
+CREATE TABLE IF NOT EXISTS `weapon_attachments` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `weapon_serial` varchar(100) DEFAULT NULL,
+  `attachment_type` varchar(50) DEFAULT NULL,
+  `attachment_component` varchar(100) DEFAULT NULL,
+  `installed_by` varchar(50) DEFAULT NULL,
+  `installed_date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `weapon_licenses` (
+  `citizenid` varchar(50) NOT NULL,
+  `license_type` varchar(50) DEFAULT 'basic',
+  `issued_date` timestamp DEFAULT current_timestamp(),
+  `expires_date` timestamp DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'active',
+  `issued_by` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`citizenid`)
+);
+```
+
+3. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Weapon Attachments
+['weapon_scope'] = {
+    ['name'] = 'weapon_scope',
+    ['label'] = 'Weapon Scope',
+    ['weight'] = 200,
+    ['type'] = 'item',
+    ['image'] = 'weapon_scope.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Precision scope for weapons'
+},
+['weapon_silencer'] = {
+    ['name'] = 'weapon_silencer',
+    ['label'] = 'Weapon Silencer',
+    ['weight'] = 150,
+    ['type'] = 'item',
+    ['image'] = 'weapon_silencer.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Sound suppressor for firearms'
+},
+-- Ammunition Types
+['ammo_regular'] = {
+    ['name'] = 'ammo_regular',
+    ['label'] = 'Regular Ammunition',
+    ['weight'] = 5,
+    ['type'] = 'item',
+    ['image'] = 'ammo_regular.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Standard ammunition'
+},
+['ammo_armor_piercing'] = {
+    ['name'] = 'ammo_armor_piercing',
+    ['label'] = 'Armor Piercing Rounds',
+    ['weight'] = 6,
+    ['type'] = 'item',
+    ['image'] = 'ammo_ap.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'High penetration ammunition'
+}
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-weapons
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.WeaponDegradation = true
+Config.RequireLicense = true
+Config.AttachmentSystem = true
+
+-- Weapon Categories
+Config.WeaponCategories = {
+    ["pistols"] = {
+        label = "Pistols",
+        license_required = "basic",
+        attachments_allowed = {"silencer", "flashlight", "scope"},
+        max_attachments = 3
+    },
+    ["rifles"] = {
+        label = "Rifles", 
+        license_required = "rifle",
+        attachments_allowed = {"scope", "silencer", "grip", "bipod"},
+        max_attachments = 4
+    },
+    ["shotguns"] = {
+        label = "Shotguns",
+        license_required = "shotgun",
+        attachments_allowed = {"flashlight", "grip"},
+        max_attachments = 2
+    }
+}
+
+-- Attachment Configuration
+Config.Attachments = {
+    ["silencer"] = {
+        label = "Silencer",
+        component = "COMPONENT_AT_PI_SUPP",
+        effects = {
+            noise_reduction = 0.7,
+            damage_modifier = 0.95,
+            range_modifier = 0.98
+        },
+        compatible_weapons = {"weapon_pistol", "weapon_combatpistol", "weapon_carbinerifle"}
+    },
+    ["scope"] = {
+        label = "Scope",
+        component = "COMPONENT_AT_SCOPE_LARGE",
+        effects = {
+            accuracy_bonus = 0.15,
+            range_bonus = 1.2
+        },
+        compatible_weapons = {"weapon_carbinerifle", "weapon_assaultrifle", "weapon_sniperrifle"}
+    },
+    ["flashlight"] = {
+        label = "Flashlight",
+        component = "COMPONENT_AT_PI_FLSH",
+        effects = {
+            visibility_bonus = true
+        },
+        compatible_weapons = {"weapon_pistol", "weapon_combatpistol", "weapon_pumpshotgun"}
+    }
+}
+
+-- Degradation System
+Config.Degradation = {
+    base_degradation_rate = 0.1, -- Per shot
+    repair_kits = {
+        ["weapon_repair_kit"] = {
+            repair_amount = 25,
+            success_rate = 0.9
+        },
+        ["advanced_repair_kit"] = {
+            repair_amount = 50,
+            success_rate = 0.95
+        }
+    },
+    breakdown_threshold = 10, -- Weapon jams below this durability
+    destruction_threshold = 0  -- Weapon destroyed at 0 durability
+}
+```
+
+### Ammunition System
+
+```lua
+-- Ammunition Types and Effects
+Config.AmmunitionTypes = {
+    ["regular"] = {
+        label = "Regular Ammunition",
+        damage_modifier = 1.0,
+        penetration = 0.5,
+        cost = 5
+    },
+    ["hollow_point"] = {
+        label = "Hollow Point",
+        damage_modifier = 1.25,
+        penetration = 0.3,
+        cost = 8,
+        license_required = "advanced"
+    },
+    ["armor_piercing"] = {
+        label = "Armor Piercing",
+        damage_modifier = 0.9,
+        penetration = 0.9,
+        cost = 12,
+        license_required = "advanced"
+    },
+    ["incendiary"] = {
+        label = "Incendiary Rounds",
+        damage_modifier = 1.1,
+        penetration = 0.6,
+        special_effect = "fire",
+        cost = 15,
+        license_required = "special"
+    }
+}
+
+-- License Types
+Config.LicenseTypes = {
+    ["basic"] = {
+        label = "Basic Firearms License",
+        cost = 2500,
+        duration = 90, -- days
+        weapons_allowed = {"pistols"},
+        background_check = true
+    },
+    ["rifle"] = {
+        label = "Rifle License", 
+        cost = 5000,
+        duration = 90,
+        prerequisites = {"basic"},
+        weapons_allowed = {"pistols", "rifles"},
+        training_required = true
+    },
+    ["advanced"] = {
+        label = "Advanced Firearms License",
+        cost = 10000,
+        duration = 60,
+        prerequisites = {"rifle"},
+        weapons_allowed = {"pistols", "rifles", "shotguns"},
+        special_ammunition = true
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### AttachComponent
+Attach a component to a weapon.
+
+```lua
+local success = exports['qb-weapons']:AttachComponent(weaponHash, componentHash)
+
+-- Parameters:
+-- weaponHash: Weapon hash
+-- componentHash: Component hash to attach
+-- Returns: boolean success status
+```
+
+#### GetWeaponDurability
+Get current weapon durability.
+
+```lua
+local durability = exports['qb-weapons']:GetWeaponDurability(weaponSerial)
+
+-- Returns: durability percentage (0-100)
+```
+
+#### RepairWeapon
+Repair a weapon using repair kit.
+
+```lua
+local success = exports['qb-weapons']:RepairWeapon(weaponSerial, repairKitType)
+
+-- Parameters:
+-- weaponSerial: Weapon serial number
+-- repairKitType: Type of repair kit to use
+```
+
+### Server Exports
+
+#### CreateWeapon
+Create a new weapon with serial number.
+
+```lua
+local weaponData = exports['qb-weapons']:CreateWeapon(weaponType, quality, craftedBy)
+
+-- Parameters:
+-- weaponType: Type of weapon to create
+-- quality: Weapon quality (0-100)
+-- craftedBy: Creator citizen ID
+```
+
+#### CheckWeaponLicense
+Verify player's weapon license.
+
+```lua
+local isValid = exports['qb-weapons']:CheckWeaponLicense(source, weaponCategory)
+
+-- Parameters:
+-- source: Player server ID
+-- weaponCategory: Category of weapon
+-- Returns: boolean license validity
+```
+
+#### RegisterWeapon
+Register weapon to player.
+
+```lua
+exports['qb-weapons']:RegisterWeapon(source, weaponSerial, weaponType)
+
+-- Parameters:
+-- source: Player server ID
+-- weaponSerial: Weapon serial number
+-- weaponType: Type of weapon
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Weapon degraded
+RegisterNetEvent('qb-weapons:client:weaponDegraded', function(weaponHash, newDurability)
+    -- Handle weapon degradation
+end)
+
+-- Attachment installed
+RegisterNetEvent('qb-weapons:client:attachmentInstalled', function(weaponHash, componentHash)
+    -- Handle attachment installation
+end)
+
+-- Weapon jammed
+RegisterNetEvent('qb-weapons:client:weaponJammed', function(weaponHash)
+    -- Handle weapon jam
+end)
+```
+
+#### Server Events
+
+```lua
+-- Weapon fired
+RegisterNetEvent('qb-weapons:server:weaponFired', function(weaponHash, ammoType)
+    -- Handle weapon firing
+end)
+
+-- License application
+RegisterNetEvent('qb-weapons:server:applyLicense', function(licenseType)
+    -- Handle license application
+end)
+
+-- Weapon crafted
+RegisterNetEvent('qb-weapons:server:weaponCrafted', function(weaponType, components)
+    -- Handle weapon crafting
+end)
+```
+
+## Usage Examples
+
+### Weapon Degradation System
+
+```lua
+-- Client-side degradation tracking
+local weaponDurability = {}
+
+RegisterNetEvent('qb-weapons:client:weaponFired', function()
+    local ped = PlayerPedId()
+    local weapon = GetSelectedPedWeapon(ped)
+    
+    if weapon and weapon ~= GetHashKey("WEAPON_UNARMED") then
+        local weaponSerial = GetWeaponSerial(weapon)
+        
+        if weaponSerial then
+            -- Apply degradation
+            TriggerServerEvent('qb-weapons:server:degradeWeapon', weaponSerial)
+        end
+    end
+end)
+
+-- Server-side degradation processing
+RegisterNetEvent('qb-weapons:server:degradeWeapon', function(weaponSerial)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    
+    if not player then return end
+    
+    -- Get weapon from inventory
+    local weapon = GetWeaponBySerial(player, weaponSerial)
+    if not weapon then return end
+    
+    -- Calculate degradation
+    local currentDurability = weapon.info.durability or 100
+    local degradationAmount = Config.Degradation.base_degradation_rate
+    
+    -- Apply ammunition type modifiers
+    local ammoType = weapon.info.ammo_type or "regular"
+    local ammoConfig = Config.AmmunitionTypes[ammoType]
+    if ammoConfig and ammoConfig.degradation_modifier then
+        degradationAmount = degradationAmount * ammoConfig.degradation_modifier
+    end
+    
+    local newDurability = math.max(0, currentDurability - degradationAmount)
+    
+    -- Update weapon durability
+    weapon.info.durability = newDurability
+    player.Functions.SetItemInfo(weapon.slot, weapon.info)
+    
+    -- Check for weapon jam or breakdown
+    if newDurability <= Config.Degradation.breakdown_threshold and newDurability > 0 then
+        -- Chance of weapon jam
+        if math.random() < 0.1 then -- 10% chance
+            TriggerClientEvent('qb-weapons:client:weaponJammed', src, weapon.name)
+        end
+    elseif newDurability <= 0 then
+        -- Weapon destroyed
+        player.Functions.RemoveItem(weapon.name, 1, weapon.slot)
+        TriggerClientEvent('QBCore:Notify', src, 'Your weapon broke beyond repair!', 'error')
+    end
+    
+    TriggerClientEvent('qb-weapons:client:updateDurability', src, weaponSerial, newDurability)
+end)
+```
+
+### Attachment System
+
+```lua
+-- Attachment installation system
+RegisterNetEvent('qb-weapons:client:installAttachment', function(attachmentType)
+    local ped = PlayerPedId()
+    local weapon = GetSelectedPedWeapon(ped)
+    
+    if weapon == GetHashKey("WEAPON_UNARMED") then
+        QBCore.Functions.Notify("You need to have a weapon equipped", "error")
+        return
+    end
+    
+    -- Check if attachment is compatible
+    local weaponName = GetWeaponNameFromHash(weapon)
+    local attachmentConfig = Config.Attachments[attachmentType]
+    
+    if not attachmentConfig then
+        QBCore.Functions.Notify("Invalid attachment type", "error")
+        return
+    end
+    
+    local isCompatible = false
+    for i = 1, #attachmentConfig.compatible_weapons do
+        if attachmentConfig.compatible_weapons[i] == weaponName then
+            isCompatible = true
+            break
+        end
+    end
+    
+    if not isCompatible then
+        QBCore.Functions.Notify("Attachment not compatible with this weapon", "error")
+        return
+    end
+    
+    -- Check if player has attachment item
+    QBCore.Functions.TriggerCallback('qb-weapons:server:hasAttachment', function(hasAttachment)
+        if hasAttachment then
+            -- Install attachment animation
+            QBCore.Functions.Progressbar("installing_attachment", "Installing " .. attachmentConfig.label .. "...", 10000, false, true, {
+                disableMovement = true,
+                disableCarMovement = true,
+                disableMouse = false,
+                disableCombat = true,
+            }, {
+                animDict = "amb@world_human_clipboard@male@base",
+                anim = "base",
+            }, {}, {}, function()
+                -- Installation complete
+                TriggerServerEvent('qb-weapons:server:installAttachment', weapon, attachmentType)
+            end)
+        else
+            QBCore.Functions.Notify("You don't have this attachment", "error")
+        end
+    end, attachmentType)
+end)
+
+-- Server-side attachment installation
+RegisterNetEvent('qb-weapons:server:installAttachment', function(weaponHash, attachmentType)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    local attachmentConfig = Config.Attachments[attachmentType]
+    
+    if not player or not attachmentConfig then return end
+    
+    -- Remove attachment item from inventory
+    local attachmentItem = "weapon_" .. attachmentType
+    if player.Functions.RemoveItem(attachmentItem, 1) then
+        -- Apply attachment to weapon
+        local weaponSerial = GetPlayerWeaponSerial(src, weaponHash)
+        if weaponSerial then
+            -- Store attachment in database
+            MySQL.insert('INSERT INTO weapon_attachments (weapon_serial, attachment_type, attachment_component, installed_by) VALUES (?, ?, ?, ?)', {
+                weaponSerial,
+                attachmentType,
+                attachmentConfig.component,
+                player.PlayerData.citizenid
+            })
+            
+            -- Apply visual component
+            TriggerClientEvent('qb-weapons:client:applyAttachment', src, weaponHash, attachmentConfig.component)
+            
+            TriggerClientEvent('QBCore:Notify', src, attachmentConfig.label .. ' installed successfully!', 'success')
+        end
+    end
+end)
+```
+
+### License System
+
+```lua
+-- Weapon license application system
+RegisterNetEvent('qb-weapons:client:applyForLicense', function(licenseType)
+    local licenseConfig = Config.LicenseTypes[licenseType]
+    if not licenseConfig then return end
+    
+    -- Check prerequisites
+    QBCore.Functions.TriggerCallback('qb-weapons:server:checkPrerequisites', function(meetsRequirements, canAfford)
+        if not meetsRequirements then
+            QBCore.Functions.Notify("You don't meet the requirements for this license", "error")
+            return
+        end
+        
+        if not canAfford then
+            QBCore.Functions.Notify("Insufficient funds: $" .. licenseConfig.cost, "error")
+            return
+        end
+        
+        -- Background check process
+        if licenseConfig.background_check then
+            QBCore.Functions.Progressbar("background_check", "Processing background check...", 15000, false, true, {
+                disableMovement = true,
+                disableCarMovement = true,
+                disableMouse = false,
+                disableCombat = true,
+            }, {
+                animDict = "amb@world_human_clipboard@male@base",
+                anim = "base",
+            }, {}, {}, function()
+                -- Background check complete
+                if math.random() < 0.95 then -- 95% pass rate
+                    TriggerServerEvent('qb-weapons:server:issueLicense', licenseType)
+                else
+                    QBCore.Functions.Notify("Background check failed", "error")
+                end
+            end)
+        else
+            TriggerServerEvent('qb-weapons:server:issueLicense', licenseType)
+        end
+        
+    end, licenseType)
+end)
+
+-- Server-side license issuance
+RegisterNetEvent('qb-weapons:server:issueLicense', function(licenseType)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    local licenseConfig = Config.LicenseTypes[licenseType]
+    
+    if not player or not licenseConfig then return end
+    
+    -- Process payment
+    if player.Functions.RemoveMoney('bank', licenseConfig.cost, 'weapon-license') then
+        -- Calculate expiration date
+        local expirationDate = os.date("%Y-%m-%d %H:%M:%S", os.time() + (licenseConfig.duration * 24 * 60 * 60))
+        
+        -- Issue license
+        MySQL.insert('INSERT INTO weapon_licenses (citizenid, license_type, expires_date, issued_by) VALUES (?, ?, ?, ?) ON DUPLICATE KEY UPDATE license_type = ?, expires_date = ?', {
+            player.PlayerData.citizenid,
+            licenseType,
+            expirationDate,
+            'Los Santos Firearms Bureau',
+            licenseType,
+            expirationDate
+        })
+        
+        -- Give license item
+        player.Functions.AddItem('weapon_license', 1, false, {
+            type = licenseType,
+            expires = expirationDate,
+            holder = player.PlayerData.charinfo.firstname .. " " .. player.PlayerData.charinfo.lastname
+        })
+        
+        TriggerClientEvent('QBCore:Notify', src, 'Weapon license issued successfully!', 'success')
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'Payment failed', 'error')
+    end
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Attachments Not Working
+```lua
+-- Check weapon compatibility
+function CheckWeaponCompatibility(weaponHash, attachmentType)
+    local weaponName = GetWeaponNameFromHash(weaponHash)
+    local attachmentConfig = Config.Attachments[attachmentType]
+    
+    if not attachmentConfig then
+        print("Attachment config not found:", attachmentType)
+        return false
+    end
+    
+    for i = 1, #attachmentConfig.compatible_weapons do
+        if attachmentConfig.compatible_weapons[i] == weaponName then
+            return true
+        end
+    end
+    
+    print("Weapon not compatible:", weaponName, "with", attachmentType)
+    return false
+end
+```
+
+#### Degradation Issues
+- Verify weapon serial tracking system
+- Check degradation rate calculations
+- Ensure proper inventory integration
+
+#### License Verification Problems
+```lua
+-- Debug license checking
+RegisterCommand('checklicense', function()
+    QBCore.Functions.TriggerCallback('qb-weapons:server:getLicense', function(license)
+        if license then
+            print("License type:", license.license_type)
+            print("Expires:", license.expires_date)
+            print("Status:", license.status)
+        else
+            print("No weapon license found")
+        end
+    end)
+end)
+```
+
+### Debug Commands
+
+```lua
+-- Give weapon attachment
+/giveattachment [player_id] [attachment_type]
+
+-- Repair weapon
+/repairweapon [player_id] [weapon_serial]
+
+-- Check weapon durability
+/checkdurability [weapon_serial]
+
+-- Issue weapon license
+/issuelicense [player_id] [license_type]
+```
+
+<Callout type="warning">
+  Test weapon mechanics thoroughly to ensure proper balance between realism and gameplay enjoyment.
+</Callout>

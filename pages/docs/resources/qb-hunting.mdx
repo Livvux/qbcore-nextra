@@ -1,0 +1,712 @@
+# QB-Hunting - Wildlife Hunting System
+
+import { Callout } from 'nextra/components'
+
+The **qb-hunting** resource provides a comprehensive hunting system for QBCore servers, featuring wildlife spawning, hunting licenses, weapon management, and meat processing operations.
+
+## Overview
+
+QB-Hunting creates a realistic hunting experience with animal tracking, seasonal hunting, weapon requirements, and meat processing. Players can hunt various wildlife, process their kills, and sell products to butchers and restaurants.
+
+### Key Features
+
+- **Wildlife System**: Dynamic animal spawning and behavior
+- **Hunting Licenses**: Legal hunting requirements and seasons
+- **Weapon Management**: Appropriate hunting weapons and ammunition
+- **Animal Tracking**: Footprints, sounds, and tracking mechanics
+- **Meat Processing**: Skinning, butchering, and product creation
+- **Seasonal Hunting**: Time-based hunting restrictions
+- **Trophy System**: Rare animals and trophy collection
+- **Butcher Sales**: Selling meat and hides to NPCs
+- **Conservation**: Wildlife protection and sustainable hunting
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for hunting menus)
+- qb-inventory (for hunting equipment)
+- qb-weapons (for hunting weapons)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-hunting.git
+```
+
+2. **Database Setup**
+```sql
+-- Hunting tables
+CREATE TABLE IF NOT EXISTS `hunting_licenses` (
+  `citizenid` varchar(50) NOT NULL,
+  `license_type` varchar(50) DEFAULT 'basic',
+  `issued_date` timestamp DEFAULT current_timestamp(),
+  `expires_date` timestamp DEFAULT NULL,
+  `status` varchar(50) DEFAULT 'active',
+  PRIMARY KEY (`citizenid`)
+);
+
+CREATE TABLE IF NOT EXISTS `hunting_logs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `animal_type` varchar(100) DEFAULT NULL,
+  `kill_location` varchar(255) DEFAULT NULL,
+  `weapon_used` varchar(100) DEFAULT NULL,
+  `weight` float DEFAULT 0,
+  `quality` varchar(50) DEFAULT 'normal',
+  `timestamp` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `hunting_areas` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) DEFAULT NULL,
+  `coords` varchar(255) DEFAULT NULL,
+  `radius` int(11) DEFAULT 500,
+  `animal_types` longtext DEFAULT NULL,
+  `season_restrictions` longtext DEFAULT NULL,
+  `license_required` varchar(50) DEFAULT 'basic',
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Hunting Equipment
+['hunting_rifle'] = {
+    ['name'] = 'hunting_rifle',
+    ['label'] = 'Hunting Rifle',
+    ['weight'] = 3000,
+    ['type'] = 'weapon',
+    ['ammotype'] = 'AMMO_RIFLE',
+    ['image'] = 'hunting_rifle.png',
+    ['unique'] = true,
+    ['useable'] = false,
+    ['description'] = 'High-powered rifle for hunting'
+},
+['hunting_knife'] = {
+    ['name'] = 'hunting_knife',
+    ['label'] = 'Hunting Knife',
+    ['weight'] = 300,
+    ['type'] = 'item',
+    ['image'] = 'hunting_knife.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Sharp knife for field dressing'
+},
+['binoculars'] = {
+    ['name'] = 'binoculars',
+    ['label'] = 'Binoculars',
+    ['weight'] = 200,
+    ['type'] = 'item',
+    ['image'] = 'binoculars.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'For spotting distant animals'
+},
+-- Animal Products
+['deer_meat'] = {
+    ['name'] = 'deer_meat',
+    ['label'] = 'Deer Meat',
+    ['weight'] = 500,
+    ['type'] = 'item',
+    ['image'] = 'deer_meat.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Fresh venison meat'
+},
+['deer_hide'] = {
+    ['name'] = 'deer_hide',
+    ['label'] = 'Deer Hide',
+    ['weight'] = 300,
+    ['type'] = 'item',
+    ['image'] = 'deer_hide.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Quality deer hide for leather'
+},
+['rabbit_meat'] = {
+    ['name'] = 'rabbit_meat',
+    ['label'] = 'Rabbit Meat',
+    ['weight'] = 200,
+    ['type'] = 'item',
+    ['image'] = 'rabbit_meat.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Lean rabbit meat'
+}
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-hunting
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.HuntingSeasons = true
+Config.LicenseRequired = true
+Config.AnimalRespawnTime = 300000 -- 5 minutes
+
+-- Hunting Zones
+Config.HuntingAreas = {
+    ["mount_chiliad"] = {
+        label = "Mount Chiliad Wilderness",
+        coords = vector3(501.84, 5604.37, 797.91),
+        radius = 1000,
+        animals = {
+            ["deer"] = {weight = 0.4, max_spawn = 8},
+            ["boar"] = {weight = 0.3, max_spawn = 5},
+            ["rabbit"] = {weight = 0.3, max_spawn = 12}
+        },
+        season_restrictions = {
+            deer = {"fall", "winter"},
+            boar = {"all"},
+            rabbit = {"spring", "summer", "fall"}
+        },
+        license_required = "basic"
+    },
+    ["great_ocean"] = {
+        label = "Great Ocean Highway Forest",
+        coords = vector3(-1521.85, 4937.85, 63.21),
+        radius = 800,
+        animals = {
+            ["deer"] = {weight = 0.5, max_spawn = 6},
+            ["coyote"] = {weight = 0.2, max_spawn = 3},
+            ["rabbit"] = {weight = 0.3, max_spawn = 10}
+        },
+        license_required = "basic"
+    },
+    ["raton_canyon"] = {
+        label = "Raton Canyon Reserve",
+        coords = vector3(-1206.85, 2644.21, 3.89),
+        radius = 1200,
+        animals = {
+            ["mountain_lion"] = {weight = 0.1, max_spawn = 2},
+            ["deer"] = {weight = 0.4, max_spawn = 10},
+            ["boar"] = {weight = 0.3, max_spawn = 6},
+            ["coyote"] = {weight = 0.2, max_spawn = 4}
+        },
+        license_required = "advanced",
+        dangerous_animals = true
+    }
+}
+
+-- Animal Configuration
+Config.Animals = {
+    ["deer"] = {
+        model = "a_c_deer",
+        health = 200,
+        meat_yield = {min = 3, max = 6},
+        hide_yield = {min = 1, max = 2},
+        base_value = 500,
+        required_weapon = {"hunting_rifle", "bow"},
+        flee_distance = 50,
+        spawn_time = {start = 6, end = 10, start2 = 18, end2 = 22} -- Early morning and evening
+    },
+    ["boar"] = {
+        model = "a_c_boar",
+        health = 300,
+        meat_yield = {min = 4, max = 8},
+        hide_yield = {min = 1, max = 3},
+        base_value = 400,
+        required_weapon = {"hunting_rifle"},
+        aggressive = true,
+        flee_distance = 30
+    },
+    ["rabbit"] = {
+        model = "a_c_rabbit_01",
+        health = 50,
+        meat_yield = {min = 1, max = 2},
+        hide_yield = {min = 0, max = 1},
+        base_value = 100,
+        required_weapon = {"hunting_rifle", "pistol"},
+        flee_distance = 20,
+        fast_movement = true
+    },
+    ["mountain_lion"] = {
+        model = "a_c_mtlion",
+        health = 500,
+        meat_yield = {min = 2, max = 4},
+        hide_yield = {min = 1, max = 2},
+        trophy_chance = 0.15,
+        base_value = 1500,
+        required_weapon = {"hunting_rifle"},
+        aggressive = true,
+        dangerous = true,
+        attack_range = 15
+    }
+}
+
+-- License Types
+Config.LicenseTypes = {
+    ["basic"] = {
+        label = "Basic Hunting License",
+        cost = 1500,
+        duration = 30, -- days
+        animals_allowed = {"deer", "rabbit", "boar"},
+        areas_allowed = {"mount_chiliad", "great_ocean"}
+    },
+    ["advanced"] = {
+        label = "Advanced Hunting License",
+        cost = 3500,
+        duration = 30,
+        prerequisites = {"basic"},
+        animals_allowed = {"deer", "rabbit", "boar", "coyote", "mountain_lion"},
+        areas_allowed = {"mount_chiliad", "great_ocean", "raton_canyon"}
+    },
+    ["trophy"] = {
+        label = "Trophy Hunting License",
+        cost = 7500,
+        duration = 15,
+        prerequisites = {"advanced"},
+        special_permissions = {"rare_animals", "trophy_collection"}
+    }
+}
+```
+
+### Weapon Requirements
+
+```lua
+-- Weapon effectiveness against different animals
+Config.WeaponEffectiveness = {
+    ["hunting_rifle"] = {
+        damage_multiplier = 1.0,
+        effective_against = {"deer", "boar", "mountain_lion", "coyote"},
+        range = 100
+    },
+    ["sniper_rifle"] = {
+        damage_multiplier = 1.2,
+        effective_against = {"deer", "mountain_lion"},
+        range = 200,
+        license_required = "advanced"
+    },
+    ["bow"] = {
+        damage_multiplier = 0.8,
+        effective_against = {"deer", "rabbit"},
+        range = 50,
+        silent = true
+    },
+    ["pistol"] = {
+        damage_multiplier = 0.4,
+        effective_against = {"rabbit"},
+        range = 20
+    }
+}
+
+-- Ammunition types
+Config.AmmunitionTypes = {
+    ["rifle_ammo"] = {
+        damage = 100,
+        penetration = 0.8,
+        cost = 5
+    },
+    ["bow_arrow"] = {
+        damage = 80,
+        penetration = 0.6,
+        cost = 2,
+        reusable = 0.7 -- 70% chance to recover arrow
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### StartHunting
+Begin hunting mode with equipment check.
+
+```lua
+-- Start hunting
+exports['qb-hunting']:StartHunting()
+
+-- Start hunting in specific area
+exports['qb-hunting']:StartHunting("mount_chiliad")
+
+-- Parameters:
+-- area (optional): Specific hunting area name
+```
+
+#### TrackAnimal
+Search for animal tracks in the area.
+
+```lua
+local tracks = exports['qb-hunting']:TrackAnimal(radius)
+
+-- Parameters:
+-- radius: Search radius in meters
+-- Returns: table of nearby animal tracks
+```
+
+#### ProcessAnimal
+Process a killed animal for meat and hide.
+
+```lua
+local success = exports['qb-hunting']:ProcessAnimal(animalEntity)
+
+-- Parameters:
+-- animalEntity: The animal entity to process
+-- Returns: boolean success status
+```
+
+### Server Exports
+
+#### SpawnAnimal
+Spawn an animal at specific location.
+
+```lua
+local animalId = exports['qb-hunting']:SpawnAnimal(animalType, coords, area)
+
+-- Parameters:
+-- animalType: Type of animal to spawn
+-- coords: Vector3 spawn coordinates
+-- area: Hunting area name
+```
+
+#### CheckHuntingLicense
+Verify player's hunting license.
+
+```lua
+local isValid = exports['qb-hunting']:CheckHuntingLicense(source, licenseType)
+
+-- Parameters:
+-- source: Player server ID
+-- licenseType: Required license level
+-- Returns: boolean license validity
+```
+
+#### LogKill
+Record animal kill in database.
+
+```lua
+exports['qb-hunting']:LogKill(source, animalData, weapon, location)
+
+-- Parameters:
+-- source: Player server ID
+-- animalData: Animal information
+-- weapon: Weapon used
+-- location: Kill location
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Animal spotted
+RegisterNetEvent('qb-hunting:client:animalSpotted', function(animalData)
+    -- Handle animal detection
+end)
+
+-- Successful kill
+RegisterNetEvent('qb-hunting:client:animalKilled', function(animalType, quality)
+    -- Handle successful hunt
+end)
+
+-- License expires warning
+RegisterNetEvent('qb-hunting:client:licenseWarning', function(daysLeft)
+    -- Handle license expiration warning
+end)
+```
+
+#### Server Events
+
+```lua
+-- Hunter enters area
+RegisterNetEvent('qb-hunting:server:enterHuntingArea', function(areaName)
+    -- Handle area entry
+end)
+
+-- Animal processed
+RegisterNetEvent('qb-hunting:server:animalProcessed', function(animalType, products)
+    -- Handle animal processing
+end)
+
+-- License purchased
+RegisterNetEvent('qb-hunting:server:licensePurchased', function(licenseType)
+    -- Handle license purchase
+end)
+```
+
+## Usage Examples
+
+### Animal Spawning System
+
+```lua
+-- Server-side animal spawning
+CreateThread(function()
+    while true do
+        Wait(60000) -- Check every minute
+        
+        for areaName, areaData in pairs(Config.HuntingAreas) do
+            -- Count active animals in area
+            local activeAnimals = GetAnimalsInArea(areaName)
+            
+            for animalType, spawnData in pairs(areaData.animals) do
+                local currentCount = CountAnimalType(activeAnimals, animalType)
+                
+                if currentCount < spawnData.max_spawn then
+                    -- Check season restrictions
+                    if IsAnimalInSeason(animalType, areaData.season_restrictions) then
+                        -- Spawn new animal
+                        local spawnCoords = GetRandomSpawnPoint(areaData.coords, areaData.radius)
+                        SpawnAnimal(animalType, spawnCoords, areaName)
+                    end
+                end
+            end
+        end
+    end
+end)
+
+function SpawnAnimal(animalType, coords, area)
+    local animalConfig = Config.Animals[animalType]
+    if not animalConfig then return end
+    
+    RequestModel(animalConfig.model)
+    while not HasModelLoaded(animalConfig.model) do
+        Wait(1)
+    end
+    
+    local animal = CreatePed(28, animalConfig.model, coords.x, coords.y, coords.z, 0.0, true, false)
+    
+    -- Set animal properties
+    SetEntityHealth(animal, animalConfig.health)
+    SetPedRandomComponentVariation(animal, false)
+    SetEntityAsNoLongerNeeded(animal)
+    
+    -- Add to tracking system
+    AddAnimalToSystem(animal, animalType, area)
+    
+    -- Set behavior patterns
+    if animalConfig.aggressive then
+        SetPedCombatAttributes(animal, 46, true) -- Always fight
+        SetPedFleeAttributes(animal, 0, false)
+    else
+        SetPedFleeAttributes(animal, 512, true) -- Flee from gunshots
+    end
+    
+    return animal
+end
+```
+
+### Hunting License System
+
+```lua
+-- License purchase and verification
+RegisterNetEvent('qb-hunting:client:buyLicense', function(licenseType)
+    local licenseConfig = Config.LicenseTypes[licenseType]
+    if not licenseConfig then return end
+    
+    -- Check prerequisites
+    QBCore.Functions.TriggerCallback('qb-hunting:server:checkPrerequisites', function(hasPrereqs, canAfford)
+        if not hasPrereqs then
+            QBCore.Functions.Notify("You don't meet the prerequisites for this license", "error")
+            return
+        end
+        
+        if not canAfford then
+            QBCore.Functions.Notify("Insufficient funds: $" .. licenseConfig.cost, "error")
+            return
+        end
+        
+        -- Process license purchase
+        QBCore.Functions.Progressbar("buying_license", "Processing hunting license...", 5000, false, true, {
+            disableMovement = true,
+            disableCarMovement = true,
+            disableMouse = false,
+            disableCombat = true,
+        }, {
+            animDict = "amb@world_human_clipboard@male@base",
+            anim = "base",
+        }, {}, {}, function()
+            TriggerServerEvent('qb-hunting:server:purchaseLicense', licenseType)
+        end)
+        
+    end, licenseType)
+end)
+
+-- Server-side license management
+RegisterNetEvent('qb-hunting:server:purchaseLicense', function(licenseType)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    local licenseConfig = Config.LicenseTypes[licenseType]
+    
+    if player.Functions.RemoveMoney('bank', licenseConfig.cost, 'hunting-license') then
+        -- Calculate expiration date
+        local expirationDate = os.date("%Y-%m-%d %H:%M:%S", os.time() + (licenseConfig.duration * 24 * 60 * 60))
+        
+        -- Insert or update license
+        MySQL.insert('INSERT INTO hunting_licenses (citizenid, license_type, expires_date) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE license_type = ?, expires_date = ?', {
+            player.PlayerData.citizenid,
+            licenseType,
+            expirationDate,
+            licenseType,
+            expirationDate
+        })
+        
+        TriggerClientEvent('QBCore:Notify', src, 'Hunting license purchased successfully!', 'success')
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'Transaction failed', 'error')
+    end
+end)
+```
+
+### Animal Processing System
+
+```lua
+-- Process killed animal for products
+RegisterNetEvent('qb-hunting:client:processAnimal', function(animalEntity)
+    local player = QBCore.Functions.GetPlayerData()
+    
+    -- Check if player has hunting knife
+    local hasKnife = QBCore.Functions.HasItem('hunting_knife')
+    if not hasKnife then
+        QBCore.Functions.Notify("You need a hunting knife to process animals", "error")
+        return
+    end
+    
+    -- Get animal type
+    local animalModel = GetEntityModel(animalEntity)
+    local animalType = GetAnimalTypeFromModel(animalModel)
+    
+    if not animalType then
+        QBCore.Functions.Notify("Unknown animal type", "error")
+        return
+    end
+    
+    QBCore.Functions.Progressbar("processing_animal", "Processing " .. animalType .. "...", 15000, false, true, {
+        disableMovement = true,
+        disableCarMovement = true,
+        disableMouse = false,
+        disableCombat = true,
+    }, {
+        animDict = "amb@world_human_gardener_plant@male@base",
+        anim = "base",
+    }, {}, {}, function()
+        -- Processing complete
+        TriggerServerEvent('qb-hunting:server:processAnimal', NetworkGetNetworkIdFromEntity(animalEntity), animalType)
+        DeleteEntity(animalEntity)
+    end, function()
+        QBCore.Functions.Notify("Processing cancelled", "error")
+    end)
+end)
+
+-- Server-side animal processing
+RegisterNetEvent('qb-hunting:server:processAnimal', function(netId, animalType)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    local animalConfig = Config.Animals[animalType]
+    
+    if not animalConfig then return end
+    
+    -- Calculate meat yield based on skill and quality
+    local meatAmount = math.random(animalConfig.meat_yield.min, animalConfig.meat_yield.max)
+    local hideAmount = math.random(animalConfig.hide_yield.min, animalConfig.hide_yield.max)
+    
+    -- Apply quality modifiers (headshot bonus, etc.)
+    local quality = "normal" -- This could be calculated based on shot placement
+    if quality == "perfect" then
+        meatAmount = math.ceil(meatAmount * 1.5)
+        hideAmount = math.ceil(hideAmount * 1.5)
+    end
+    
+    -- Give products to player
+    local meatItem = animalType .. "_meat"
+    local hideItem = animalType .. "_hide"
+    
+    if meatAmount > 0 then
+        player.Functions.AddItem(meatItem, meatAmount)
+        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[meatItem], "add", meatAmount)
+    end
+    
+    if hideAmount > 0 then
+        player.Functions.AddItem(hideItem, hideAmount)
+        TriggerClientEvent('inventory:client:ItemBox', src, QBCore.Shared.Items[hideItem], "add", hideAmount)
+    end
+    
+    -- Log the processing
+    MySQL.insert('INSERT INTO hunting_logs (citizenid, animal_type, kill_location, weight, quality) VALUES (?, ?, ?, ?, ?)', {
+        player.PlayerData.citizenid,
+        animalType,
+        json.encode(GetEntityCoords(GetPlayerPed(src))),
+        meatAmount + hideAmount,
+        quality
+    })
+    
+    TriggerClientEvent('QBCore:Notify', src, 'Processed ' .. animalType .. ' - Got ' .. meatAmount .. ' meat and ' .. hideAmount .. ' hide', 'success')
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Animals Not Spawning
+```lua
+-- Check spawning system
+RegisterCommand('debugspawn', function()
+    for areaName, areaData in pairs(Config.HuntingAreas) do
+        local count = GetAnimalsInArea(areaName)
+        print("Area:", areaName, "Animals:", #count)
+    end
+end)
+```
+
+#### License Verification Problems
+- Verify database table structure
+- Check license expiration calculations
+- Ensure proper prerequisite checking
+
+#### Weapon Effectiveness Issues
+```lua
+-- Debug weapon damage
+RegisterNetEvent('qb-hunting:debug:weaponDamage', function(weapon, animal)
+    local effectiveness = Config.WeaponEffectiveness[weapon]
+    if effectiveness then
+        print("Weapon:", weapon, "Damage:", effectiveness.damage_multiplier)
+        print("Effective against:", json.encode(effectiveness.effective_against))
+    end
+end)
+```
+
+### Debug Commands
+
+```lua
+-- Spawn animal for testing
+/spawnhuntanimal [type] [x] [y] [z]
+
+-- Give hunting license
+/givehuntlicense [player_id] [type]
+
+-- Check license status
+/checkhuntlicense [player_id]
+
+-- Clear area animals
+/clearhuntarea [area_name]
+```
+
+<Callout type="warning">
+  Test animal AI behavior and spawning rates carefully to maintain server performance and realistic gameplay.
+</Callout>

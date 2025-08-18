@@ -1,0 +1,29 @@
+const meta = {
+  "qb-core": "🏗️ QB-Core Framework",
+  "qb-multicharacter": "👥 Multi Character",
+  "qb-spawn": "🏁 Spawn System",
+  "qb-apartments": "🏢 Apartments",
+  "qb-garages": "🅿️ Garages",
+  "qb-fuel": "⛽ Fuel System",
+  "qb-banking": "🏦 Banking System",
+  "qb-phone": "📱 Phone System",
+  "qb-inventory": "🎒 Inventory Management",
+  "qb-shops": "🛒 Shopping System",
+  "qb-ambulancejob": "🚑 EMS/Medical System",
+  "qb-policejob": "👮 Police Department",
+  "qb-mechanicjob": "🔧 Mechanic Services",
+  "qb-taxi": "🚕 Taxi Service",
+  "qb-trucking": "🚛 Trucking Jobs",
+  "qb-diving": "🤿 Diving Activity",
+  "qb-hunting": "🦌 Hunting System",
+  "qb-fishing": "🎣 Fishing System",
+  "qb-racing": "🏁 Street Racing",
+  "qb-casino": "🎰 Casino Games",
+  "qb-drugs": "💊 Drug System",
+  "qb-weapons": "🔫 Weapon Management",
+  "qb-vehicleshop": "🚗 Vehicle Dealership",
+  "qb-houses": "🏠 Advanced Housing",
+  "qb-clothing": "👔 Clothing Stores"
+}
+
+export default meta

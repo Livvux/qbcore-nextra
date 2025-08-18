@@ -1,0 +1,373 @@
+# QB-Drugs - Substance System
+
+import { Callout } from 'nextra/components'
+
+The **qb-drugs** resource provides a controlled substance system for QBCore servers, featuring drug production, distribution networks, and law enforcement interactions.
+
+<Callout type="warning">
+  This resource simulates fictional drug mechanics for roleplay purposes only. Real-world drug use is dangerous and illegal.
+</Callout>
+
+## Overview
+
+QB-Drugs creates roleplay scenarios involving controlled substances with production chains, distribution networks, and law enforcement consequences. The system emphasizes roleplay over gameplay mechanics.
+
+### Key Features
+
+- **Production Systems**: Multi-stage manufacturing processes
+- **Distribution Networks**: Supply chain management
+- **Quality Systems**: Product purity and effects
+- **Law Enforcement**: Police investigations and seizures
+- **Health Effects**: Simulated consequences and addiction
+- **Economic Impact**: Market dynamics and pricing
+- **Territory Control**: Area-based operations
+- **Risk vs Reward**: Balanced risk/profit ratios
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for drug menus)
+- qb-inventory (for drug items)
+- qb-policejob (for law enforcement)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-drugs.git
+```
+
+2. **Database Setup**
+```sql
+-- Drug system tables
+CREATE TABLE IF NOT EXISTS `drug_labs` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `type` varchar(50) DEFAULT NULL,
+  `coords` varchar(255) DEFAULT NULL,
+  `owner` varchar(50) DEFAULT NULL,
+  `production_rate` float DEFAULT 1.0,
+  `last_production` timestamp DEFAULT current_timestamp(),
+  `security_level` int(11) DEFAULT 0,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `drug_seizures` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `officer` varchar(50) DEFAULT NULL,
+  `drugs_seized` longtext DEFAULT NULL,
+  `location` varchar(255) DEFAULT NULL,
+  `timestamp` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Raw Materials (Legal)
+['chemical_supplies'] = {
+    ['name'] = 'chemical_supplies',
+    ['label'] = 'Chemical Supplies',
+    ['weight'] = 500,
+    ['type'] = 'item',
+    ['image'] = 'chemical_supplies.png',
+    ['unique'] = false,
+    ['useable'] = false,
+    ['shouldClose'] = false,
+    ['combinable'] = nil,
+    ['description'] = 'Laboratory chemical supplies'
+},
+-- Processed Items (Illegal)
+['processed_product'] = {
+    ['name'] = 'processed_product',
+    ['label'] = 'Processed Product',
+    ['weight'] = 100,
+    ['type'] = 'item',
+    ['image'] = 'processed_product.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Processed chemical product'
+}
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-drugs
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.ProductionTime = 300000 -- 5 minutes
+Config.SeizureChance = 0.15 -- 15% chance during police interaction
+
+-- Production Locations
+Config.Labs = {
+    ["chemistry"] = {
+        label = "Chemistry Lab",
+        coords = vector3(3536.5, 3662.8, 28.1),
+        required_items = {"chemical_supplies", "lab_equipment"},
+        output_item = "processed_product",
+        production_time = 300, -- seconds
+        security_features = {"camera", "alarm", "reinforced_door"}
+    },
+    ["processing"] = {
+        label = "Processing Plant",
+        coords = vector3(2433.8, 4969.2, 42.3),
+        required_items = {"raw_materials", "processing_equipment"},
+        output_item = "refined_product",
+        production_time = 600,
+        capacity = 50
+    }
+}
+
+-- Market Economics
+Config.Economics = {
+    base_prices = {
+        ["processed_product"] = {min = 500, max = 800},
+        ["refined_product"] = {min = 1200, max = 1800}
+    },
+    demand_factors = {
+        time_of_day = true,
+        police_presence = true,
+        market_saturation = true
+    },
+    risk_multipliers = {
+        low_security = 1.0,
+        medium_security = 1.3,
+        high_security = 1.6
+    }
+}
+```
+
+### Law Enforcement Integration
+
+```lua
+-- Police Investigation System
+Config.Investigation = {
+    evidence_types = {
+        "chemical_residue",
+        "equipment_traces",
+        "financial_records",
+        "communication_logs"
+    },
+    investigation_time = 1800, -- 30 minutes
+    warrant_requirements = {
+        evidence_count = 3,
+        judge_approval = true,
+        probable_cause = true
+    }
+}
+
+-- Seizure and Penalties
+Config.Penalties = {
+    possession = {
+        fine_range = {5000, 15000},
+        jail_time = {300, 900}, -- 5-15 minutes
+        record_type = "misdemeanor"
+    },
+    distribution = {
+        fine_range = {15000, 50000},
+        jail_time = {1800, 3600}, -- 30-60 minutes
+        record_type = "felony"
+    },
+    manufacturing = {
+        fine_range = {50000, 150000},
+        jail_time = {3600, 7200}, -- 1-2 hours
+        record_type = "felony",
+        asset_forfeiture = true
+    }
+}
+```
+
+## API Reference
+
+### Server Exports
+
+#### StartProduction
+Begin production process at a lab.
+
+```lua
+local success = exports['qb-drugs']:StartProduction(source, labType, materials)
+
+-- Parameters:
+-- source: Player server ID
+-- labType: Type of production facility
+-- materials: Required materials table
+```
+
+#### ProcessSeizure
+Handle drug seizure by police.
+
+```lua
+exports['qb-drugs']:ProcessSeizure(suspectId, officerId, evidence)
+
+-- Parameters:
+-- suspectId: Suspect player ID
+-- officerId: Officer player ID  
+-- evidence: Seized items table
+```
+
+#### GetMarketPrice
+Calculate current market price for products.
+
+```lua
+local price = exports['qb-drugs']:GetMarketPrice(productType, quantity)
+
+-- Returns current market value
+```
+
+### Events
+
+#### Server Events
+
+```lua
+-- Production started
+RegisterNetEvent('qb-drugs:server:startProduction', function(labId, productType)
+    -- Handle production start
+end)
+
+-- Police raid initiated
+RegisterNetEvent('qb-drugs:server:policeRaid', function(location, warrantId)
+    -- Handle police raid
+end)
+
+-- Market transaction
+RegisterNetEvent('qb-drugs:server:marketTransaction', function(buyerId, sellerId, product, quantity)
+    -- Handle market sales
+end)
+```
+
+## Usage Examples
+
+### Production System Implementation
+
+```lua
+-- Production facility management
+RegisterNetEvent('qb-drugs:client:startProduction', function(labType)
+    local player = QBCore.Functions.GetPlayerData()
+    local labConfig = Config.Labs[labType]
+    
+    -- Check required materials
+    local hasMaterials = true
+    for i = 1, #labConfig.required_items do
+        local item = labConfig.required_items[i]
+        if not QBCore.Functions.HasItem(item) then
+            hasMaterials = false
+            break
+        end
+    end
+    
+    if not hasMaterials then
+        QBCore.Functions.Notify("Missing required materials", "error")
+        return
+    end
+    
+    -- Start production with progress bar
+    QBCore.Functions.Progressbar("drug_production", "Processing materials...", labConfig.production_time * 1000, false, true, {
+        disableMovement = true,
+        disableCarMovement = true,
+        disableMouse = false,
+        disableCombat = true,
+    }, {
+        animDict = "amb@world_human_clipboard@male@base",
+        anim = "base",
+    }, {}, {}, function()
+        -- Production completed
+        TriggerServerEvent('qb-drugs:server:completeProduction', labType)
+    end, function()
+        QBCore.Functions.Notify("Production cancelled", "error")
+    end)
+end)
+
+-- Server-side production completion
+RegisterNetEvent('qb-drugs:server:completeProduction', function(labType)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    local labConfig = Config.Labs[labType]
+    
+    if not player then return end
+    
+    -- Remove required materials
+    for i = 1, #labConfig.required_items do
+        local item = labConfig.required_items[i]
+        player.Functions.RemoveItem(item, 1)
+    end
+    
+    -- Calculate output based on quality factors
+    local baseOutput = 1
+    local qualityMultiplier = math.random(80, 120) / 100 -- 0.8 to 1.2
+    local finalOutput = math.floor(baseOutput * qualityMultiplier)
+    
+    -- Give product to player
+    player.Functions.AddItem(labConfig.output_item, finalOutput, false, {
+        quality = math.floor(qualityMultiplier * 100),
+        production_date = os.date("%Y-%m-%d %H:%M:%S"),
+        lab_type = labType
+    })
+    
+    TriggerClientEvent('QBCore:Notify', src, 'Production completed! Quality: ' .. math.floor(qualityMultiplier * 100) .. '%', 'success')
+    
+    -- Log production for investigations
+    LogProduction(player.PlayerData.citizenid, labType, finalOutput)
+end)
+```
+
+### Law Enforcement Investigation System
+
+```lua
+-- Police drug investigation tools
+RegisterNetEvent('qb-drugs:client:searchForEvidence', function()
+    local player = QBCore.Functions.GetPlayerData()
+    
+    if player.job.name ~= "police" then
+        QBCore.Functions.Notify("Police access only", "error")
+        return
+    end
+    
+    local coords = GetEntityCoords(PlayerPedId())
+    
+    QBCore.Functions.Progressbar("searching_evidence", "Searching for evidence...", 15000, false, true, {
+        disableMovement = true,
+        disableCarMovement = true,
+        disableMouse = false,
+        disableCombat = true,
+    }, {
+        animDict = "amb@world_human_gardener_plant@male@base",
+        anim = "base",
+    }, {}, {}, function()
+        TriggerServerEvent('qb-drugs:server:searchEvidence', coords)
+    end)
+end)
+
+-- Server-side evidence processing
+RegisterNetEvent('qb-drugs:server:searchEvidence', function(coords)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    
+    if player.PlayerData.job.name ~= "police" then return end
+    
+    -- Check for nearby drug activity evidence
+    local evidenceFound = false
+    local evidenceTypes = {}
+    
+    -- Search recent production logs near this location
+    local recentActivity = MySQL.query.await('SELECT * FROM drug_production_logs WHERE ABS(SUBSTRING_INDEX(coords, ",", 1) - ?) < 50 AND ABS(SUBSTRING_INDEX(SUBSTRING_INDEX(coords, ",", 2), ",", -1) - ?) < 50 AND timestamp > DATE_SUB(NOW(), INTERVAL 24 HOUR)', {
+        coords.x, coords.y
+    })
+    
+    if #recentActivity > 0 then
+        evidenceFound = true
+        table.insert(evidenceTypes, {\n            type = \"chemical_residue\",\n            description = \"Chemical residue detected in area\",\n            timestamp = os.date(\"%Y-%m-%d %H:%M:%S\")\n        })\n    end\n    \n    if evidenceFound then\n        -- Give evidence items to officer\n        for i = 1, #evidenceTypes do\n            player.Functions.AddItem('evidence_bag', 1, false, evidenceTypes[i])\n        end\n        \n        TriggerClientEvent('QBCore:Notify', src, 'Evidence found: ' .. #evidenceTypes .. ' items collected', 'success')\n    else\n        TriggerClientEvent('QBCore:Notify', src, 'No evidence found in this area', 'error')\n    end\nend)\n```\n\n### Market Economics System\n\n```lua\n-- Dynamic pricing based on market conditions\nfunction CalculateMarketPrice(productType, quantity)\n    local basePrice = Config.Economics.base_prices[productType]\n    if not basePrice then return 0 end\n    \n    local currentPrice = math.random(basePrice.min, basePrice.max)\n    \n    -- Apply demand factors\n    if Config.Economics.demand_factors.time_of_day then\n        local hour = tonumber(os.date(\"%H\"))\n        if hour >= 20 or hour <= 6 then -- Night time\n            currentPrice = currentPrice * 1.2 -- 20% premium\n        end\n    end\n    \n    if Config.Economics.demand_factors.police_presence then\n        local policeCount = GetActivePoliceCount()\n        if policeCount > 5 then\n            currentPrice = currentPrice * 1.4 -- High risk premium\n        elseif policeCount < 2 then\n            currentPrice = currentPrice * 0.9 -- Low risk discount\n        end\n    end\n    \n    -- Quantity discounts for bulk sales\n    if quantity > 10 then\n        currentPrice = currentPrice * 0.95 -- 5% bulk discount\n    elseif quantity > 50 then\n        currentPrice = currentPrice * 0.90 -- 10% bulk discount\n    end\n    \n    return math.floor(currentPrice)\nend\n\n-- Market transaction processing\nRegisterNetEvent('qb-drugs:server:sellProduct', function(productType, quantity, buyerType)\n    local src = source\n    local player = QBCore.Functions.GetPlayer(src)\n    \n    -- Check if player has the product\n    local hasProduct = player.Functions.GetItemByName(productType)\n    if not hasProduct or hasProduct.amount < quantity then\n        TriggerClientEvent('QBCore:Notify', src, 'Insufficient product', 'error')\n        return\n    end\n    \n    -- Calculate sale price\n    local unitPrice = CalculateMarketPrice(productType, quantity)\n    local totalPrice = unitPrice * quantity\n    \n    -- Risk assessment for transaction\n    local riskLevel = AssessTransactionRisk(src, productType, quantity)\n    \n    if riskLevel > 0.7 then -- High risk transaction\n        -- Chance of police notification\n        if math.random() < 0.3 then\n            NotifyPolice(src, \"Suspicious activity reported\", GetEntityCoords(GetPlayerPed(src)))\n        end\n    end\n    \n    -- Process transaction\n    player.Functions.RemoveItem(productType, quantity)\n    player.Functions.AddMoney('cash', totalPrice, 'drug-sale')\n    \n    TriggerClientEvent('QBCore:Notify', src, 'Sold ' .. quantity .. 'x ' .. productType .. ' for $' .. totalPrice, 'success')\n    \n    -- Log transaction for investigations\n    LogTransaction(player.PlayerData.citizenid, productType, quantity, totalPrice, buyerType)\nend)\n```\n\n## Troubleshooting\n\n### Common Issues\n\n#### Production Not Working\n```lua\n-- Debug production system\nRegisterCommand('debugproduction', function()\n    local coords = GetEntityCoords(PlayerPedId())\n    for labType, labData in pairs(Config.Labs) do\n        local distance = #(coords - labData.coords)\n        print(\"Lab:\", labType, \"Distance:\", distance)\n    end\nend)\n```\n\n#### Market Price Issues\n- Verify price calculation factors\n- Check police count integration\n- Ensure time-based modifiers work correctly\n\n#### Investigation System Problems\n```lua\n-- Debug evidence system\nRegisterCommand('debugevidence', function()\n    local evidenceCount = MySQL.scalar.await('SELECT COUNT(*) FROM drug_production_logs WHERE timestamp > DATE_SUB(NOW(), INTERVAL 24 HOUR)')\n    print(\"Recent production logs:\", evidenceCount)\nend)\n```\n\n### Security Considerations\n\n1. **Anti-Exploitation**: Implement proper validation for all transactions\n2. **Audit Trails**: Log all significant drug-related activities\n3. **Balance Monitoring**: Track economic impact on server economy\n4. **Roleplay Focus**: Ensure mechanics encourage roleplay over grinding\n\n<Callout type=\"warning\">\n  This system requires careful administration and clear roleplay guidelines. Monitor usage to prevent exploitation or inappropriate behavior.\n</Callout>

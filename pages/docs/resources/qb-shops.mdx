@@ -1,0 +1,654 @@
+# QB-Shops - General Shopping System
+
+import { Callout } from 'nextra/components'
+
+The **qb-shops** resource provides a comprehensive shopping system for QBCore servers, featuring configurable shops, dynamic pricing, stock management, and support for various shop types including 24/7 stores, hardware stores, and specialty retailers.
+
+## Overview
+
+QB-Shops creates an immersive shopping experience with realistic store mechanics, inventory management, and economic systems. Players can purchase items from various shops throughout the map, each with their own product catalogs and pricing structures.
+
+### Key Features
+
+- **Multiple Shop Types**: 24/7 stores, hardware shops, weapon stores, and custom retailers
+- **Dynamic Inventory**: Stock management with restocking timers
+- **Economic Integration**: Price fluctuations and regional pricing
+- **Job Restrictions**: Shop access based on player jobs or licenses
+- **Blip Management**: Automatic map markers for shop locations
+- **Receipt System**: Transaction logging and purchase receipts
+- **Admin Tools**: Shop management and inventory control
+- **Integration Ready**: Compatible with qb-inventory and banking systems
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-inventory (for item management)
+- qb-target (for shop interactions)
+- qb-menu (for shop interfaces)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-shops.git
+```
+
+2. **Database Setup**
+```sql
+-- Create shop tables
+CREATE TABLE IF NOT EXISTS `shop_items` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `shop` varchar(255) NOT NULL,
+  `item` varchar(50) NOT NULL,
+  `price` int(11) NOT NULL,
+  `amount` int(11) NOT NULL,
+  `info` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT '{}' CHECK (json_valid(`info`)),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `shop_receipts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) NOT NULL,
+  `shop` varchar(255) NOT NULL,
+  `item` varchar(50) NOT NULL,
+  `amount` int(11) NOT NULL,
+  `price` int(11) NOT NULL,
+  `date` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add to server.cfg**
+```cfg
+ensure qb-shops
+```
+
+4. **Restart Server**
+```bash
+restart qb-shops
+```
+
+<Callout type="info">
+  Ensure qb-shops loads after qb-core, qb-inventory, and qb-target for proper functionality
+</Callout>
+
+## Configuration
+
+### Basic Configuration
+
+The main configuration file is located at `config.lua`:
+
+```lua
+Config = {}
+
+-- General settings
+Config.UseTarget = true
+Config.MinimumShopDistance = 2.0
+Config.ShowBlips = true
+Config.RestockInterval = 60 -- minutes
+
+-- Shop types and locations
+Config.Shops = {
+    ["24/7"] = {
+        label = "24/7 Store",
+        coords = vector4(372.66, 325.95, 103.57, 255.73),
+        ped = 'mp_m_shopkeep_01',
+        scenario = 'WORLD_HUMAN_STAND_MOBILE',
+        radius = 1.5,
+        targetIcon = 'fas fa-shopping-basket',
+        targetLabel = 'Open Shop',
+        products = {
+            [1] = {name = 'sandwich', price = 4, amount = 50, info = {}, type = 'item', slot = 1},
+            [2] = {name = 'water_bottle', price = 2, amount = 50, info = {}, type = 'item', slot = 2},
+            [3] = {name = 'coffee', price = 3, amount = 25, info = {}, type = 'item', slot = 3},
+            [4] = {name = 'cigarette', price = 8, amount = 20, info = {}, type = 'item', slot = 4},
+            [5] = {name = 'phone', price = 850, amount = 5, info = {}, type = 'item', slot = 5}
+        },
+        showblip = true,
+        blipsprite = 52,
+        blipcolor = 0
+    },
+    
+    ["hardware"] = {
+        label = "Hardware Store",
+        coords = vector4(45.67, -1749.89, 29.61, 53.5),
+        ped = 'ig_terry_01',
+        scenario = 'WORLD_HUMAN_STAND_MOBILE',
+        radius = 1.5,
+        targetIcon = 'fas fa-hammer',
+        targetLabel = 'Browse Tools',
+        products = {
+            [1] = {name = 'lockpick', price = 20, amount = 25, info = {}, type = 'item', slot = 1},
+            [2] = {name = 'repairkit', price = 35, amount = 15, info = {}, type = 'item', slot = 2},
+            [3] = {name = 'screwdriverset', price = 85, amount = 10, info = {}, type = 'item', slot = 3},
+            [4] = {name = 'phone', price = 850, amount = 5, info = {}, type = 'item', slot = 4},
+            [5] = {name = 'radio', price = 250, amount = 10, info = {}, type = 'item', slot = 5}
+        },
+        showblip = true,
+        blipsprite = 402,
+        blipcolor = 47
+    }
+}
+
+-- Job restricted shops
+Config.JobShops = {
+    ["police_armory"] = {
+        label = "Police Armory",
+        coords = vector4(461.45, -979.69, 30.69, 0.0),
+        job = "police",
+        mingrade = 0,
+        products = {
+            [1] = {name = 'weapon_flashlight', price = 0, amount = 10, info = {}, type = 'weapon', slot = 1},
+            [2] = {name = 'weapon_nightstick', price = 0, amount = 10, info = {}, type = 'weapon', slot = 2},
+            [3] = {name = 'weapon_pistol', price = 0, amount = 5, info = {}, type = 'weapon', slot = 3}
+        }
+    }
+}
+
+-- Shop settings
+Config.ShopSettings = {
+    dynamicPricing = true,
+    priceFluctuation = 0.1, -- 10% price variation
+    restockEnabled = true,
+    restockAmount = {min = 10, max = 50},
+    receiptEnabled = true
+}
+```
+
+### Product Categories
+
+```lua
+Config.ProductCategories = {
+    ['food'] = {
+        label = 'Food & Beverages',
+        icon = 'fas fa-hamburger',
+        items = {'sandwich', 'water_bottle', 'coffee', 'taco'}
+    },
+    ['tools'] = {
+        label = 'Tools & Equipment',
+        icon = 'fas fa-wrench',
+        items = {'lockpick', 'repairkit', 'screwdriverset'}
+    },
+    ['electronics'] = {
+        label = 'Electronics',
+        icon = 'fas fa-mobile-alt',
+        items = {'phone', 'radio', 'laptop'}
+    },
+    ['clothing'] = {
+        label = 'Clothing',
+        icon = 'fas fa-tshirt',
+        items = {'mask', 'hat', 'shoes'}
+    }
+}
+```
+
+### Economic Settings
+
+```lua
+Config.Economy = {
+    taxRate = 0.08, -- 8% sales tax
+    shopkeeperCut = 0.02, -- 2% goes to shop owner
+    baseMarkup = 1.25, -- 25% markup from wholesale
+    demandMultiplier = {
+        high = 1.5,    -- High demand items cost 50% more
+        normal = 1.0,  -- Normal pricing
+        low = 0.8      -- Low demand items cost 20% less
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### OpenShop
+Opens a specific shop interface.
+
+```lua
+-- Open shop by name
+exports['qb-shops']:OpenShop('24/7')
+
+-- Open custom shop
+exports['qb-shops']:OpenShop('custom_shop', customProducts)
+```
+
+#### GetShopData
+Gets information about a shop.
+
+```lua
+-- Get shop data
+local shopData = exports['qb-shops']:GetShopData('24/7')
+print("Shop label: " .. shopData.label)
+```
+
+#### IsShopOpen
+Checks if a shop is currently open.
+
+```lua
+-- Check if shop is open (for shops with hours)
+local isOpen = exports['qb-shops']:IsShopOpen('24/7')
+```
+
+### Server Exports
+
+#### AddShop
+Adds a new shop dynamically.
+
+```lua
+-- Add custom shop
+exports['qb-shops']:AddShop('new_shop', {
+    label = 'New Shop',
+    coords = vector4(100.0, 200.0, 30.0, 0.0),
+    products = {
+        [1] = {name = 'water_bottle', price = 2, amount = 50, type = 'item', slot = 1}
+    }
+})
+```
+
+#### UpdateShopStock
+Updates the stock of shop items.
+
+```lua
+-- Update stock for specific item
+exports['qb-shops']:UpdateShopStock('24/7', 'water_bottle', 25)
+
+-- Restock entire shop
+exports['qb-shops']:RestockShop('24/7')
+```
+
+#### GetShopStock
+Gets current stock levels.
+
+```lua
+-- Get stock for specific item
+local stock = exports['qb-shops']:GetShopStock('24/7', 'water_bottle')
+
+-- Get all shop stock
+local allStock = exports['qb-shops']:GetAllShopStock('24/7')
+```
+
+#### SetItemPrice
+Sets the price of shop items.
+
+```lua
+-- Set item price
+exports['qb-shops']:SetItemPrice('24/7', 'water_bottle', 3)
+
+-- Set price with dynamic calculation
+exports['qb-shops']:SetDynamicPrice('24/7', 'water_bottle', 'high') -- high demand
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Shop interaction events
+RegisterNetEvent('qb-shops:client:openShop', function(shopName)
+    -- Handle shop opening
+end)
+
+RegisterNetEvent('qb-shops:client:purchaseComplete', function(receipt)
+    -- Handle successful purchase
+end)
+
+RegisterNetEvent('qb-shops:client:restockAlert', function(shopName, item)
+    -- Handle restock notifications
+end)
+```
+
+#### Server Events
+
+```lua
+-- Purchase handling
+RegisterNetEvent('qb-shops:server:purchaseItem', function(shopName, item, amount))
+RegisterNetEvent('qb-shops:server:sellItem', function(shopName, item, amount))
+
+-- Shop management
+RegisterNetEvent('qb-shops:server:updateStock', function(shopName, item, amount))
+RegisterNetEvent('qb-shops:server:setPrice', function(shopName, item, price))
+
+-- Receipt system
+RegisterNetEvent('qb-shops:server:generateReceipt', function(shopName, items, total))
+```
+
+## Usage Examples
+
+### Basic Shop Implementation
+
+```lua
+-- Create a simple food shop
+local foodShop = {
+    label = "Joe's Diner",
+    coords = vector4(123.45, -234.56, 30.0, 180.0),
+    ped = 'a_m_m_farmer_01',
+    products = {
+        [1] = {name = 'burger', price = 12, amount = 25, type = 'item', slot = 1},
+        [2] = {name = 'cola', price = 5, amount = 30, type = 'item', slot = 2},
+        [3] = {name = 'fries', price = 8, amount = 20, type = 'item', slot = 3}
+    },
+    showblip = true,
+    blipsprite = 93,
+    blipcolor = 2
+}
+
+exports['qb-shops']:AddShop('joes_diner', foodShop)
+```
+
+### Dynamic Pricing System
+
+```lua
+-- Implement demand-based pricing
+RegisterNetEvent('qb-shops:server:calculateDynamicPrice', function(shopName, itemName)
+    local basePrice = GetItemBasePrice(itemName)
+    local demand = CalculateItemDemand(itemName)
+    local supply = exports['qb-shops']:GetShopStock(shopName, itemName)
+    
+    local priceMultiplier = 1.0
+    
+    -- High demand, low supply = higher prices
+    if demand > 80 and supply < 10 then
+        priceMultiplier = 1.5
+    elseif demand < 20 and supply > 50 then
+        priceMultiplier = 0.8
+    end
+    
+    local newPrice = math.floor(basePrice * priceMultiplier)
+    exports['qb-shops']:SetItemPrice(shopName, itemName, newPrice)
+end)
+```
+
+### Job-Restricted Shop Access
+
+```lua
+-- Police equipment shop
+RegisterNetEvent('qb-shops:client:checkPoliceAccess', function()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    
+    if PlayerData.job.name == 'police' and PlayerData.job.grade.level >= 1 then
+        exports['qb-shops']:OpenShop('police_armory')
+    else
+        QBCore.Functions.Notify('Access denied - Police personnel only', 'error')
+    end
+end)
+```
+
+### Custom Shop Categories
+
+```lua
+-- Electronics shop with categories
+local electronicsShop = {
+    label = "Tech World",
+    coords = vector4(400.0, -500.0, 35.0, 90.0),
+    categories = {
+        ['phones'] = {
+            [1] = {name = 'phone', price = 850, amount = 10, type = 'item', slot = 1},
+            [2] = {name = 'phone_case', price = 25, amount = 20, type = 'item', slot = 2}
+        },
+        ['computers'] = {
+            [1] = {name = 'laptop', price = 2500, amount = 5, type = 'item', slot = 1},
+            [2] = {name = 'tablet', price = 1200, amount = 8, type = 'item', slot = 2}
+        }
+    }
+}
+```
+
+### Receipt and Transaction Logging
+
+```lua
+-- Advanced purchase handling with receipts
+RegisterNetEvent('qb-shops:server:advancedPurchase', function(shopName, items)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local totalCost = 0
+    local receipt = {
+        shop = shopName,
+        items = {},
+        timestamp = os.time(),
+        customer = Player.PlayerData.charinfo.firstname .. ' ' .. Player.PlayerData.charinfo.lastname
+    }
+    
+    -- Calculate total and validate stock
+    for _, item in pairs(items) do
+        local stock = exports['qb-shops']:GetShopStock(shopName, item.name)
+        if stock >= item.amount then
+            local itemCost = item.price * item.amount
+            totalCost = totalCost + itemCost
+            
+            table.insert(receipt.items, {
+                name = item.name,
+                amount = item.amount,
+                price = item.price,
+                total = itemCost
+            })
+        end
+    end
+    
+    -- Process payment
+    if Player.Functions.RemoveMoney('cash', totalCost) then
+        -- Give items and update stock
+        for _, item in pairs(items) do
+            exports['qb-inventory']:AddItem(src, item.name, item.amount)
+            exports['qb-shops']:UpdateShopStock(shopName, item.name, -item.amount)
+        end
+        
+        -- Generate receipt
+        receipt.total = totalCost
+        TriggerClientEvent('qb-shops:client:showReceipt', src, receipt)
+        
+        -- Log transaction
+        exports['qb-shops']:LogTransaction(Player.PlayerData.citizenid, receipt)
+    end
+end)
+```
+
+### Automatic Restocking System
+
+```lua
+-- Automated restocking with configurable intervals
+CreateThread(function()
+    while true do
+        Wait(Config.RestockInterval * 60000) -- Convert minutes to milliseconds
+        
+        for shopName, shopData in pairs(Config.Shops) do
+            for _, product in pairs(shopData.products) do
+                local currentStock = exports['qb-shops']:GetShopStock(shopName, product.name)
+                local maxStock = product.amount
+                
+                -- Restock if below 25% capacity
+                if currentStock < (maxStock * 0.25) then
+                    local restockAmount = maxStock - currentStock
+                    exports['qb-shops']:UpdateShopStock(shopName, product.name, restockAmount)
+                    
+                    print("Restocked " .. shopName .. " - " .. product.name .. " +" .. restockAmount)
+                end
+            end
+        end
+    end
+end)
+```
+
+## Administrative Commands
+
+### Player Commands
+
+- `/shops` - List nearby shops
+- `/receipt` - View last purchase receipt
+- `/shopinfo [shop]` - Get information about a shop
+
+### Admin Commands
+
+- `/addshop [name] [x] [y] [z]` - Create new shop at location
+- `/removeshop [name]` - Remove existing shop
+- `/restockshop [name]` - Manually restock shop
+- `/setshopprice [shop] [item] [price]` - Set item price
+- `/shopstock [shop] [item] [amount]` - Set item stock
+
+### Console Commands
+
+```bash
+# Restock all shops
+restockall
+
+# Set shop hours
+setshophours 24/7 0 24
+
+# Generate shop report
+shopreport
+```
+
+## Integration with Other Resources
+
+### qb-inventory Integration
+
+Advanced item handling and metadata:
+
+```lua
+-- Purchase with item metadata
+RegisterNetEvent('qb-shops:server:purchaseWeapon', function(shopName, weaponName)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local weaponData = {
+        durability = 100,
+        ammo = 0,
+        serial = GenerateSerial(),
+        registered = Player.PlayerData.citizenid
+    }
+    
+    exports['qb-inventory']:AddItem(src, weaponName, 1, false, weaponData)
+end)
+```
+
+### qb-banking Integration
+
+Shop payments through banking:
+
+```lua
+-- Credit card payments
+RegisterNetEvent('qb-shops:server:cardPayment', function(shopName, amount)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if exports['qb-banking']:RemoveMoney(Player.PlayerData.citizenid, 'bank', amount, 'Shop purchase - ' .. shopName) then
+        TriggerClientEvent('qb-shops:client:paymentSuccess', src)
+    else
+        TriggerClientEvent('qb-shops:client:paymentFailed', src)
+    end
+end)
+```
+
+### qb-phone Integration
+
+Shop delivery and ordering:
+
+```lua
+-- Phone app for shop orders
+RegisterNetEvent('qb-phone:server:shopOrder', function(shopName, items, deliveryAddress)
+    local src = source
+    local deliveryFee = CalculateDeliveryFee(deliveryAddress)
+    local totalCost = CalculateOrderTotal(items) + deliveryFee
+    
+    -- Process order and schedule delivery
+    if ProcessPayment(src, totalCost) then
+        ScheduleDelivery(src, shopName, items, deliveryAddress, 15) -- 15 minute delivery
+    end
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### Shop Not Appearing
+**Problem**: Shop doesn't show up or can't be interacted with.
+
+**Solutions**:
+1. Check coordinates and radius settings
+2. Verify qb-target configuration
+3. Check for conflicting resources
+
+```lua
+-- Debug shop detection
+RegisterCommand('debugshop', function()
+    local coords = GetEntityCoords(PlayerPedId())
+    local nearestShop = GetNearestShop(coords)
+    
+    if nearestShop then
+        print("Nearest shop: " .. nearestShop.label)
+        print("Distance: " .. #(coords - nearestShop.coords))
+    else
+        print("No shops found nearby")
+    end
+end, false)
+```
+
+#### Purchase Failures
+**Problem**: Items can't be purchased or transactions fail.
+
+**Solutions**:
+1. Check player funds
+2. Verify item existence in qb-inventory
+3. Check shop stock levels
+
+```lua
+-- Debug purchase process
+RegisterNetEvent('qb-shops:debug:purchase', function(shopName, itemName, amount)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local stock = exports['qb-shops']:GetShopStock(shopName, itemName)
+    local playerMoney = Player.PlayerData.money.cash
+    
+    print("Player: " .. Player.PlayerData.charinfo.firstname)
+    print("Item: " .. itemName .. " Amount: " .. amount)
+    print("Stock available: " .. stock)
+    print("Player cash: $" .. playerMoney)
+end)
+```
+
+#### Stock Issues
+**Problem**: Shop stock doesn't update or restocking fails.
+
+**Solution**:
+```lua
+-- Manual stock reset
+RegisterCommand('resetstock', function(source, args)
+    local shopName = args[1]
+    if shopName and Config.Shops[shopName] then
+        for _, product in pairs(Config.Shops[shopName].products) do
+            exports['qb-shops']:UpdateShopStock(shopName, product.name, product.amount, true) -- true = set absolute amount
+        end
+        print("Stock reset for " .. shopName)
+    end
+end, true)
+```
+
+### Performance Optimization
+
+```lua
+-- Optimize shop updates
+Config.UpdateFrequency = 30000 -- Update every 30 seconds
+Config.MaxShopDistance = 50.0 -- Only process shops within 50 units
+
+-- Disable features if not needed
+Config.DynamicPricing = false
+Config.RestockSystem = false
+Config.ReceiptSystem = false
+```
+
+## Related Resources
+
+- **[qb-core](/docs/resources/qb-core)** - Core framework functions
+- **[qb-inventory](/docs/resources/qb-inventory)** - Item management system
+- **[qb-banking](/docs/resources/qb-banking)** - Payment processing
+- **[qb-phone](/docs/resources/qb-phone)** - Mobile shopping apps
+- **qb-target** - Shop interaction system
+
+## Support
+
+For issues and feature requests:
+- **GitHub**: [qb-shops Repository](https://github.com/qbcore-framework/qb-shops)
+- **Discord**: [QBCore Community](https://discord.gg/qbcore)
+- **Documentation**: [QBCore Docs](https://docs.qbcore.org)

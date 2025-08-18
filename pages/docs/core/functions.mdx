@@ -1,0 +1,580 @@
+# QBCore Functions Library
+
+Complete reference guide for all QBCore framework functions, including player management, server utilities, and helper functions for script development.
+
+## Getting QBCore Object
+
+Before using any QBCore functions, you must get the QBCore object:
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+```
+
+## Player Functions
+
+### QBCore.Functions.GetPlayer(source)
+Gets a player object by their server source ID.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+if Player then
+    print('Player found:', Player.PlayerData.charinfo.firstname)
+else
+    print('Player not found')
+end
+```
+
+**Returns:** Player object or `nil` if not found
+
+### QBCore.Functions.GetPlayerByCitizenId(citizenid)
+Gets a player object by their citizen ID.
+
+```lua
+local Player = QBCore.Functions.GetPlayerByCitizenId('ABC12345')
+if Player then
+    print('Player online:', Player.PlayerData.charinfo.firstname)
+end
+```
+
+**Returns:** Player object or `nil` if player is offline
+
+### QBCore.Functions.GetOfflinePlayer(citizenid)
+Gets offline player data from the database.
+
+```lua
+QBCore.Functions.GetOfflinePlayer('ABC12345', function(player)
+    if player then
+        print('Offline player:', player.PlayerData.charinfo.firstname)
+    end
+end)
+```
+
+**Returns:** Calls callback with player data or `nil`
+
+### QBCore.Functions.GetPlayerByPhone(phone)
+Gets a player object by their phone number.
+
+```lua
+local Player = QBCore.Functions.GetPlayerByPhone('555-0123')
+if Player then
+    print('Player found with phone:', phone)
+end
+```
+
+**Returns:** Player object or `nil`
+
+### QBCore.Functions.GetQBPlayers()
+Gets all online players.
+
+```lua
+local players = QBCore.Functions.GetQBPlayers()
+for src, Player in pairs(players) do
+    print('Online player:', Player.PlayerData.charinfo.firstname)
+end
+```
+
+**Returns:** Table of all online Player objects
+
+### QBCore.Functions.CreateUseableItem(item, cb)
+Creates a useable item that triggers when used.
+
+```lua
+QBCore.Functions.CreateUseableItem('lockpick', function(source, item)
+    local Player = QBCore.Functions.GetPlayer(source)
+    
+    -- Handle item usage
+    if Player.Functions.GetItemByName('lockpick') then
+        TriggerClientEvent('lockpick:client:use', source)
+    end
+end)
+```
+
+**Parameters:**
+- `item`: Item name to make useable
+- `cb`: Callback function when item is used
+
+## Player Object Functions
+
+When you have a Player object, these functions are available:
+
+### Player.Functions.AddItem(item, amount, slot, info)
+Adds an item to the player's inventory.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local success = Player.Functions.AddItem('water_bottle', 1, false, {
+    quality = 100,
+    description = 'Fresh water'
+})
+
+if success then
+    TriggerClientEvent('inventory:client:ItemBox', source, QBCore.Shared.Items['water_bottle'], 'add')
+end
+```
+
+**Parameters:**
+- `item`: Item name
+- `amount`: Quantity to add
+- `slot`: Specific slot (optional)
+- `info`: Item metadata (optional)
+
+**Returns:** `true` if successful, `false` if failed
+
+### Player.Functions.RemoveItem(item, amount, slot)
+Removes an item from the player's inventory.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local success = Player.Functions.RemoveItem('lockpick', 1)
+
+if success then
+    TriggerClientEvent('inventory:client:ItemBox', source, QBCore.Shared.Items['lockpick'], 'remove')
+end
+```
+
+**Returns:** `true` if successful, `false` if failed
+
+### Player.Functions.GetItemByName(item)
+Gets an item from the player's inventory by name.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local item = Player.Functions.GetItemByName('phone')
+
+if item then
+    print('Player has phone in slot:', item.slot, 'with info:', json.encode(item.info))
+else
+    print('Player does not have a phone')
+end
+```
+
+**Returns:** Item object or `nil` if not found
+
+### Player.Functions.GetItemBySlot(slot)
+Gets an item from a specific inventory slot.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local item = Player.Functions.GetItemBySlot(1)
+
+if item then
+    print('Slot 1 contains:', item.name)
+end
+```
+
+**Returns:** Item object or `nil` if slot is empty
+
+### Player.Functions.GetItemsByName(item)
+Gets all instances of an item from inventory.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local items = Player.Functions.GetItemsByName('water_bottle')
+
+print('Player has', #items, 'water bottles')
+for i, item in pairs(items) do
+    print('Slot:', item.slot, 'Amount:', item.amount)
+end
+```
+
+**Returns:** Array of item objects
+
+## Money Functions
+
+### Player.Functions.AddMoney(moneytype, amount, reason)
+Adds money to the player.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local success = Player.Functions.AddMoney('cash', 1000, 'Job payment')
+
+if success then
+    TriggerClientEvent('QBCore:Notify', source, 'You received $1000 cash', 'success')
+end
+```
+
+**Money types:**
+- `'cash'`: Physical cash
+- `'bank'`: Bank account
+- `'crypto'`: Cryptocurrency
+
+**Returns:** `true` if successful
+
+### Player.Functions.RemoveMoney(moneytype, amount, reason)
+Removes money from the player.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local success = Player.Functions.RemoveMoney('bank', 500, 'Store purchase')
+
+if success then
+    TriggerClientEvent('QBCore:Notify', source, 'Paid $500 from bank', 'success')
+else
+    TriggerClientEvent('QBCore:Notify', source, 'Insufficient funds', 'error')
+end
+```
+
+**Returns:** `true` if successful, `false` if insufficient funds
+
+### Player.Functions.SetMoney(moneytype, amount, reason)
+Sets the player's money to a specific amount.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+Player.Functions.SetMoney('cash', 5000, 'Admin adjustment')
+```
+
+### Player.Functions.GetMoney(moneytype)
+Gets the player's current money amount.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local cash = Player.Functions.GetMoney('cash')
+local bank = Player.Functions.GetMoney('bank')
+
+print('Player has $' .. cash .. ' cash and $' .. bank .. ' in bank')
+```
+
+**Returns:** Current amount for the specified money type
+
+## Job Functions
+
+### Player.Functions.SetJob(job, grade)
+Sets the player's job.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+Player.Functions.SetJob('police', 0)
+
+TriggerClientEvent('QBCore:Notify', source, 'You are now a police officer', 'success')
+```
+
+**Parameters:**
+- `job`: Job name from `qb-core/shared/jobs.lua`
+- `grade`: Job grade level (0 = lowest)
+
+### Player.Functions.SetGang(gang, grade)
+Sets the player's gang.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+Player.Functions.SetGang('lostmc', 1)
+```
+
+### Player.Functions.SetJobDuty(onDuty)
+Sets the player's duty status.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+Player.Functions.SetJobDuty(true)
+
+-- Check if on duty
+local isOnDuty = Player.PlayerData.job.onduty
+```
+
+## Metadata Functions
+
+### Player.Functions.SetMetaData(meta, val)
+Sets player metadata.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+Player.Functions.SetMetaData('hunger', 75)
+Player.Functions.SetMetaData('thirst', 50)
+
+-- For stress (QBCore specific)
+Player.Functions.SetMetaData('stress', 25)
+```
+
+### Player.Functions.GetMetaData(meta)
+Gets player metadata.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local hunger = Player.Functions.GetMetaData('hunger')
+local stress = Player.Functions.GetMetaData('stress')
+
+print('Player hunger:', hunger, 'stress:', stress)
+```
+
+### Player.Functions.AddMetaData(meta, val)
+Adds to existing metadata value.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+Player.Functions.AddMetaData('stress', 10) -- Add 10 stress
+```
+
+## Character Functions
+
+### Player.Functions.UpdatePlayerData()
+Saves player data to database and syncs with client.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+
+-- After making changes to PlayerData
+Player.PlayerData.charinfo.phone = newPhoneNumber
+Player.Functions.UpdatePlayerData()
+```
+
+### Player.Functions.SetPlayerData(key, val)
+Sets specific player data.
+
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+Player.Functions.SetPlayerData('charinfo', {
+    firstname = 'John',
+    lastname = 'Doe',
+    birthdate = '1990-01-01',
+    gender = 0,
+    backstory = 'A mysterious person',
+    nationality = 'USA',
+    phone = '555-0123',
+    account = 'US00QBCore000000000'
+})
+```
+
+## Server Utility Functions
+
+### QBCore.Functions.GetCoords(entity)
+Gets entity coordinates in vector3 format.
+
+```lua
+local coords = QBCore.Functions.GetCoords(GetPlayerPed(source))
+print('Player coordinates:', coords.x, coords.y, coords.z)
+```
+
+**Returns:** `vector3` coordinates
+
+### QBCore.Functions.GetIdentifier(source, idtype)
+Gets player identifier by type.
+
+```lua
+local license = QBCore.Functions.GetIdentifier(source, 'license')
+local discord = QBCore.Functions.GetIdentifier(source, 'discord')
+local steam = QBCore.Functions.GetIdentifier(source, 'steam')
+
+print('Player license:', license)
+```
+
+**ID Types:**
+- `'license'`: FiveM license
+- `'discord'`: Discord ID
+- `'steam'`: Steam ID
+- `'ip'`: IP address
+
+### QBCore.Functions.GetSource(identifier)
+Gets player source by identifier.
+
+```lua
+local source = QBCore.Functions.GetSource('license:1234567890abcdef')
+if source then
+    print('Player is online with source:', source)
+end
+```
+
+**Returns:** Player source or `nil`
+
+### QBCore.Functions.GetPlayers()
+Gets all connected player sources.
+
+```lua
+local players = QBCore.Functions.GetPlayers()
+for i, source in pairs(players) do
+    print('Connected player:', source)
+end
+```
+
+**Returns:** Array of player sources
+
+### QBCore.Functions.CreateCallback(name, cb)
+Creates a server callback that can be triggered from client.
+
+```lua
+QBCore.Functions.CreateCallback('server:getPlayerMoney', function(source, cb, moneyType)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if Player then
+        cb(Player.Functions.GetMoney(moneyType))
+    else
+        cb(0)
+    end
+end)
+```
+
+**Usage from client:**
+```lua
+QBCore.Functions.TriggerCallback('server:getPlayerMoney', function(money)
+    print('Player has $' .. money .. ' cash')
+end, 'cash')
+```
+
+## Client Utility Functions
+
+### QBCore.Functions.GetPlayerData()
+Gets the local player's data (client-side only).
+
+```lua
+local PlayerData = QBCore.Functions.GetPlayerData()
+print('Local player:', PlayerData.charinfo.firstname)
+
+-- Access specific data
+local job = PlayerData.job
+local money = PlayerData.money
+local metadata = PlayerData.metadata
+```
+
+### QBCore.Functions.GetCoords(entity)
+Gets coordinates of an entity (client-side).
+
+```lua
+local playerPed = PlayerPedId()
+local coords = QBCore.Functions.GetCoords(playerPed)
+print('I am at:', coords.x, coords.y, coords.z)
+```
+
+### QBCore.Functions.SpawnVehicle(model, coords, warpPed)
+Spawns a vehicle (client-side).
+
+```lua
+QBCore.Functions.SpawnVehicle('adder', function(veh)
+    SetVehicleNumberPlateText(veh, 'QBCORE')
+    TaskWarpPedIntoVehicle(PlayerPedId(), veh, -1)
+    
+    -- Vehicle spawned successfully
+    print('Vehicle spawned:', veh)
+end, coords, true)
+```
+
+### QBCore.Functions.DeleteVehicle(vehicle)
+Deletes a vehicle (client-side).
+
+```lua
+local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+if vehicle ~= 0 then
+    QBCore.Functions.DeleteVehicle(vehicle)
+end
+```
+
+### QBCore.Functions.GetPlate(vehicle)
+Gets formatted license plate from vehicle.
+
+```lua
+local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+if vehicle ~= 0 then
+    local plate = QBCore.Functions.GetPlate(vehicle)
+    print('Vehicle plate:', plate)
+end
+```
+
+### QBCore.Functions.GetVehicleLabel(model)
+Gets display name for vehicle model.
+
+```lua
+local vehicle = GetVehiclePedIsIn(PlayerPedId(), false)
+if vehicle ~= 0 then
+    local model = GetEntityModel(vehicle)
+    local label = QBCore.Functions.GetVehicleLabel(model)
+    print('You are in a:', label)
+end
+```
+
+### QBCore.Functions.TriggerCallback(name, cb, ...)
+Triggers a server callback from client.
+
+```lua
+QBCore.Functions.TriggerCallback('server:getPlayerMoney', function(money)
+    print('Server returned money amount:', money)
+    
+    -- Use the callback result
+    if money >= 1000 then
+        -- Player has enough money
+        TriggerServerEvent('shop:server:purchaseItem', 'expensive_item')
+    end
+end, 'bank')
+```
+
+## Math and Utility Functions
+
+### QBCore.Shared.Round(value, numDecimalPlaces)
+Rounds a number to specified decimal places.
+
+```lua
+local rounded = QBCore.Shared.Round(123.456789, 2)
+print(rounded) -- Output: 123.46
+```
+
+### QBCore.Shared.Trim(value)
+Removes whitespace from string.
+
+```lua
+local trimmed = QBCore.Shared.Trim('  Hello World  ')
+print('"' .. trimmed .. '"') -- Output: "Hello World"
+```
+
+### QBCore.Functions.GetStreetLabel()
+Gets current street name (client-side).
+
+```lua
+local street = QBCore.Functions.GetStreetLabel()
+print('Current street:', street)
+```
+
+### QBCore.Functions.GetZoneLabel()
+Gets current zone name (client-side).
+
+```lua
+local zone = QBCore.Functions.GetZoneLabel()
+print('Current zone:', zone)
+```
+
+### QBCore.Functions.GetCardinalDirection()
+Gets cardinal direction player is facing.
+
+```lua
+local direction = QBCore.Functions.GetCardinalDirection()
+print('Facing:', direction) -- Output: North, South, East, West
+```
+
+## Command Functions
+
+### QBCore.Commands.Add(name, help, arguments, argsrequired, callback, permission)
+Creates a chat command.
+
+```lua
+QBCore.Commands.Add('giveitem', 'Give an item to a player', {
+    {name = 'id', help = 'Player ID'},
+    {name = 'item', help = 'Item name'},
+    {name = 'amount', help = 'Amount to give'}
+}, true, function(source, args)
+    local Player = QBCore.Functions.GetPlayer(source)
+    local target = QBCore.Functions.GetPlayer(tonumber(args[1]))
+    
+    if target then
+        target.Functions.AddItem(args[2], tonumber(args[3]))
+        TriggerClientEvent('QBCore:Notify', source, 'Item given successfully', 'success')
+    end
+end, 'admin')
+```
+
+### QBCore.Commands.Refresh(source)
+Refreshes commands for a player.
+
+```lua
+QBCore.Commands.Refresh(source)
+```
+
+## Debug and Development Functions
+
+### QBCore.Debug(resource)
+Prints debug information for development.
+
+```lua
+QBCore.Debug('My debug message from ' .. GetCurrentResourceName())
+```
+
+---
+
+**Master QBCore development!** These functions provide the foundation for creating powerful and integrated scripts within the QBCore framework ecosystem.
+
+For event handling, see our [QBCore Events](/docs/core/events) reference guide.

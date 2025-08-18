@@ -1,0 +1,584 @@
+# QBCore Inventory System
+
+The official QBCore inventory system with full documentation - a comprehensive, feature-rich inventory management solution designed specifically for QBCore framework servers.
+
+## Features
+
+### 📦 Advanced Inventory Management
+- **Slot-Based System**: Configurable inventory slots with weight management
+- **Item Stacking**: Smart item stacking with configurable stack limits
+- **Drag & Drop Interface**: Intuitive HTML/CSS/JS interface
+- **Multiple Inventories**: Player, vehicle, stash, shop, and custom inventories
+- **Real-time Updates**: Live inventory synchronization across all players
+
+### 🎒 Inventory Types
+- **Player Inventory**: Personal player inventory with hotbar slots
+- **Vehicle Storage**: Trunk and glovebox storage systems
+- **Property Storage**: House and business storage solutions
+- **Stash Systems**: Custom stash boxes and containers
+- **Shop Inventories**: Dynamic shop and vending systems
+- **Evidence Storage**: Police evidence management system
+
+### 🔧 Core Features
+- **Weapon Attachments**: Full weapon customization system
+- **Item Metadata**: Advanced item properties and custom data
+- **Crafting Integration**: Compatible with crafting systems
+- **Search Functionality**: Find items quickly in large inventories
+- **Item Images**: Visual item representation with custom images
+- **Notifications**: Smart notifications for inventory actions
+
+## Installation
+
+### Prerequisites
+- QBCore Framework (v1.0+)
+- oxmysql or mysql-async for database operations
+- Basic understanding of FiveM resource management
+
+### Standard Installation
+
+1. **Download QBCore Inventory**
+   ```bash
+   cd resources/[qb]
+   git clone https://github.com/qbcore-framework/qb-inventory.git
+   ```
+
+2. **Database Setup**
+   ```sql
+   -- Run these SQL commands in your database
+   
+   -- Update player_inventories table
+   ALTER TABLE `players` ADD COLUMN `inventory` LONGTEXT;
+   
+   -- Create stashes table
+   CREATE TABLE IF NOT EXISTS `stashitems` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `stash` varchar(255) NOT NULL,
+     `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+     PRIMARY KEY (`id`),
+     UNIQUE KEY `stash` (`stash`)
+   );
+   
+   -- Create trunk items table  
+   CREATE TABLE IF NOT EXISTS `trunkitems` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `plate` varchar(255) NOT NULL,
+     `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+     PRIMARY KEY (`id`),
+     UNIQUE KEY `plate` (`plate`)
+   );
+   
+   -- Create glovebox items table
+   CREATE TABLE IF NOT EXISTS `gloveboxitems` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `plate` varchar(255) NOT NULL,
+     `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+     PRIMARY KEY (`id`),
+     UNIQUE KEY `plate` (`plate`)
+   );
+   
+   -- Create shop items table
+   CREATE TABLE IF NOT EXISTS `shopitems` (
+     `id` int(11) NOT NULL AUTO_INCREMENT,
+     `shop` varchar(255) NOT NULL,
+     `items` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL,
+     PRIMARY KEY (`id`),
+     UNIQUE KEY `shop` (`shop`)
+   );
+   ```
+
+3. **Server Configuration**
+   ```cfg
+   # Add to server.cfg (ensure correct order)
+   ensure qb-core
+   ensure qb-inventory
+   
+   # Optional performance settings
+   setr inventory:MaxSlots "50"
+   setr inventory:MaxWeight "120000"
+   ```
+
+4. **Replace Default Inventory**
+   ```cfg
+   # Comment out or remove old inventory resource
+   # start qb-smallresources (if using built-in inventory)
+   
+   # Add new inventory
+   start qb-inventory
+   ```
+
+## Configuration
+
+### Main Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.MaxInventoryWeight = 120000      -- Maximum inventory weight in grams
+Config.MaxInventorySlots = 50           -- Maximum inventory slots
+
+-- Inventory Settings
+Config.UseItemDrop = true               -- Enable item dropping
+Config.ItemDropTime = 5 * 60            -- Time before dropped items despawn (seconds)
+Config.MaxDroppedItems = 50             -- Maximum dropped items on server
+
+-- Interface Settings  
+Config.AutoOpenInventory = true         -- Auto open inventory on F2
+Config.DragAndDrop = true              -- Enable drag and drop
+Config.ShowItemImages = true           -- Show item images
+Config.ShowTooltips = true             -- Show item tooltips
+
+-- Weight System
+Config.WeightSettings = {
+    enabled = true,
+    showWeight = true,              -- Show weight in inventory
+    maxWeightNotification = true,   -- Notify when near max weight
+    overweightEffects = true        -- Apply effects when overweight
+}
+
+-- Hotbar Settings
+Config.Hotbar = {
+    enabled = true,
+    slots = 5,                      -- Number of hotbar slots
+    keys = {                        -- Hotbar keybinds
+        [1] = {key = 157, pressed = false}, -- 1
+        [2] = {key = 158, pressed = false}, -- 2
+        [3] = {key = 160, pressed = false}, -- 3
+        [4] = {key = 164, pressed = false}, -- 4
+        [5] = {key = 165, pressed = false}  -- 5
+    }
+}
+
+-- Vehicle Storage
+Config.VehicleStorage = {
+    enabled = true,
+    trunkSpace = {              -- Vehicle-specific trunk space
+        ['adder'] = 30000,      -- Adder: 30kg trunk space
+        ['zentorno'] = 25000,   -- Zentorno: 25kg trunk space
+        -- Add more vehicles as needed
+    },
+    gloveboxSpace = 10000,      -- Default glovebox space (10kg)
+    
+    -- Vehicle classes and their default storage
+    classStorage = {
+        [0] = 40000,    -- Compacts: 40kg
+        [1] = 50000,    -- Sedans: 50kg
+        [2] = 60000,    -- SUVs: 60kg
+        [3] = 35000,    -- Coupes: 35kg
+        [4] = 30000,    -- Muscle: 30kg
+        [5] = 25000,    -- Sports Classics: 25kg
+        [6] = 20000,    -- Sports: 20kg
+        [7] = 15000,    -- Super: 15kg
+        [8] = 5000,     -- Motorcycles: 5kg
+        [9] = 180000,   -- Off-road: 180kg
+        [10] = 300000,  -- Industrial: 300kg
+        [11] = 70000,   -- Utility: 70kg
+        [12] = 200000,  -- Vans: 200kg
+        [13] = 0,       -- Cycles: 0kg
+        [14] = 0,       -- Boats: 0kg
+        [15] = 0,       -- Helicopters: 0kg
+        [16] = 0,       -- Planes: 0kg
+        [17] = 40000,   -- Service: 40kg
+        [18] = 40000,   -- Emergency: 40kg
+        [19] = 0,       -- Military: 0kg
+        [20] = 300000,  -- Commercial: 300kg
+    }
+}
+```
+
+### Items Configuration
+
+```lua
+-- config/items.lua
+Config.Items = {
+    -- Weapons
+    ['weapon_pistol'] = {
+        name = 'weapon_pistol',
+        label = 'Pistol',
+        weight = 1000,
+        type = 'weapon',
+        ammotype = 'AMMO_PISTOL',
+        image = 'weapon_pistol.png',
+        unique = true,
+        useable = true,
+        description = 'A standard pistol'
+    },
+    
+    -- Consumables
+    ['sandwich'] = {
+        name = 'sandwich',
+        label = 'Sandwich',
+        weight = 200,
+        type = 'item',
+        image = 'sandwich.png',
+        unique = false,
+        useable = true,
+        shouldClose = true,
+        combinable = nil,
+        description = 'A delicious sandwich'
+    },
+    
+    ['water_bottle'] = {
+        name = 'water_bottle',
+        label = 'Water Bottle',
+        weight = 500,
+        type = 'item',
+        image = 'water_bottle.png',
+        unique = false,
+        useable = true,
+        shouldClose = true,
+        combinable = nil,
+        description = 'Refreshing water'
+    },
+    
+    -- Tools
+    ['lockpick'] = {
+        name = 'lockpick',
+        label = 'Lockpick',
+        weight = 300,
+        type = 'item',
+        image = 'lockpick.png',
+        unique = false,
+        useable = true,
+        shouldClose = true,
+        combinable = nil,
+        description = 'Very useful... if you\'re a criminal'
+    },
+    
+    -- Vehicle Keys
+    ['vehiclekey'] = {
+        name = 'vehiclekey',
+        label = 'Vehicle Key',
+        weight = 80,
+        type = 'item',
+        image = 'vehiclekey.png',
+        unique = true,
+        useable = true,
+        shouldClose = true,
+        combinable = nil,
+        description = 'Key to a vehicle'
+    }
+}
+```
+
+### Shop Configuration
+
+```lua
+Config.Shops = {
+    -- 24/7 Store
+    ['24-7'] = {
+        name = '24/7 Store',
+        coords = {
+            vector3(25.7, -1347.3, 29.49),
+            vector3(-3038.71, 585.9, 7.9),
+            vector3(-3241.47, 1001.14, 12.83)
+            -- Add more locations
+        },
+        items = {
+            {name = 'sandwich', price = 4, amount = 50},
+            {name = 'water_bottle', price = 2, amount = 50},
+            {name = 'phone', price = 500, amount = 5}
+        }
+    },
+    
+    -- Ammunation
+    ['ammunation'] = {
+        name = 'Ammunation',
+        coords = {
+            vector3(-662.1, -935.3, 21.8),
+            vector3(810.2, -2157.3, 29.6),
+            vector3(1693.4, 3759.5, 34.7)
+        },
+        items = {
+            {name = 'weapon_pistol', price = 2500, amount = 5, requiresLicense = true},
+            {name = 'pistol_ammo', price = 15, amount = 150, requiresLicense = true}
+        },
+        job = nil -- No job restriction
+    },
+    
+    -- Police Armory (Job Restricted)
+    ['police'] = {
+        name = 'Police Armory', 
+        coords = {
+            vector3(451.51, -979.44, 30.68)
+        },
+        items = {
+            {name = 'weapon_nightstick', price = 0, amount = 1},
+            {name = 'weapon_pistol', price = 0, amount = 1},
+            {name = 'weapon_carbinerifle', price = 0, amount = 1},
+            {name = 'armor', price = 0, amount = 5}
+        },
+        job = 'police' -- Restricted to police
+    }
+}
+```
+
+## Commands and Usage
+
+### Player Commands
+
+```lua
+-- Inventory Management
+/inventory                  -- Open inventory (or F2)
+/hotbar                     -- Toggle hotbar visibility
+/giveitem [id] [item] [amount] -- Give item to player (admin)
+
+-- Item Management
+/useitem [item]            -- Use specific item
+/dropitem [item] [amount]  -- Drop item on ground
+/pickup                    -- Pick up nearby items
+
+-- Vehicle Storage
+/trunk                     -- Access vehicle trunk
+/glovebox                  -- Access vehicle glovebox
+
+-- Property Storage (if applicable)
+/stash                     -- Access property stash
+/closet                    -- Access clothing storage
+```
+
+### Admin Commands
+
+```lua
+-- Item Administration
+/giveitem [id] [item] [amount]     -- Give item to player
+/removeitem [id] [item] [amount]   -- Remove item from player
+/clearinv [id]                     -- Clear player inventory
+
+-- Inventory Management
+/setinvweight [id] [weight]        -- Set max inventory weight
+/setinvslots [id] [slots]          -- Set max inventory slots
+/checkinv [id]                     -- Check player inventory
+
+-- Shop Management
+/addshopitem [shop] [item] [price] [amount] -- Add item to shop
+/removeshopitem [shop] [item]      -- Remove item from shop
+/restockshop [shop]                -- Restock shop inventory
+
+-- Stash Management
+/createstash [name] [slots] [weight] -- Create custom stash
+/removestash [name]                -- Remove stash
+/clearstash [name]                 -- Clear stash contents
+```
+
+### Hotbar Usage
+
+```lua
+-- Default hotbar keys
+1, 2, 3, 4, 5 = Use hotbar slots 1-5
+
+-- Hotbar management
+ALT + 1-5 = Assign current item to hotbar slot
+SHIFT + 1-5 = Remove item from hotbar slot
+```
+
+## Advanced Features
+
+### Custom Stashes
+
+```lua
+-- Create a custom stash
+exports['qb-inventory']:CreateStash({
+    stashId = 'policeevidencelocker_'..citizenid,
+    label = 'Evidence Locker',
+    slots = 50,
+    weight = 250000,
+    coords = vector3(461.8, -998.3, 24.9)
+})
+
+-- Server-side stash creation
+RegisterNetEvent('inventory:server:createStash', function(data)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player then
+        -- Validate permissions
+        if Player.PlayerData.job.name == 'police' then
+            -- Create evidence locker
+            TriggerClientEvent('inventory:client:SetCurrentStash', src, data.stashId)
+        end
+    end
+end)
+```
+
+### Weapon Attachments
+
+```lua
+-- Weapon attachment system
+Config.WeaponAttachments = {
+    ['weapon_pistol'] = {
+        ['flashlight'] = {
+            component = 'COMPONENT_AT_PI_FLSH',
+            item = 'pistol_flashlight',
+            label = 'Pistol Flashlight'
+        },
+        ['suppressor'] = {
+            component = 'COMPONENT_AT_PI_SUPP_02',
+            item = 'pistol_suppressor',
+            label = 'Pistol Suppressor'
+        }
+    },
+    
+    ['weapon_carbinerifle'] = {
+        ['scope'] = {
+            component = 'COMPONENT_AT_SCOPE_MEDIUM',
+            item = 'rifle_scope',
+            label = 'Rifle Scope'
+        },
+        ['grip'] = {
+            component = 'COMPONENT_AT_AR_AFGRIP',
+            item = 'rifle_grip',
+            label = 'Angled Foregrip'
+        }
+    }
+}
+
+-- Install attachment
+exports['qb-inventory']:InstallAttachment(playerId, weaponName, attachmentName)
+
+-- Remove attachment  
+exports['qb-inventory']:RemoveAttachment(playerId, weaponName, attachmentName)
+```
+
+### Item Metadata System
+
+```lua
+-- Server-side: Create item with metadata
+local itemInfo = {
+    name = 'phone',
+    amount = 1,
+    slot = 1,
+    info = {
+        phoneNumber = generatePhoneNumber(),
+        battery = 100,
+        customization = {
+            case_color = 'black',
+            wallpaper = 'default'
+        }
+    }
+}
+
+Player.Functions.AddItem('phone', 1, false, itemInfo.info)
+
+-- Client-side: Access item metadata
+RegisterNetEvent('inventory:client:ItemBox', function(itemData, type)
+    if itemData.name == 'phone' then
+        local phoneNumber = itemData.info.phoneNumber
+        local battery = itemData.info.battery
+        
+        -- Use metadata for phone functionality
+        TriggerEvent('phone:client:updateBattery', battery)
+    end
+end)
+```
+
+### Crafting Integration
+
+```lua
+-- Crafting recipes using inventory items
+Config.CraftingRecipes = {
+    ['lockpick'] = {
+        materials = {
+            ['metalscrap'] = 22,
+            ['plastic'] = 32
+        },
+        amount = 1,
+        crafttime = 15000, -- 15 seconds
+        requiredJob = nil
+    },
+    
+    ['armor'] = {
+        materials = {
+            ['kevlar'] = 5,
+            ['plastic'] = 10,
+            ['metalscrap'] = 15
+        },
+        amount = 1,
+        crafttime = 30000, -- 30 seconds
+        requiredJob = nil
+    }
+}
+
+-- Server-side crafting function
+RegisterNetEvent('inventory:server:craftItem', function(itemName)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local recipe = Config.CraftingRecipes[itemName]
+    
+    if recipe then
+        -- Check if player has required materials
+        local hasItems = true
+        for material, amount in pairs(recipe.materials) do
+            if not Player.Functions.GetItemByName(material) or 
+               Player.Functions.GetItemByName(material).amount < amount then
+                hasItems = false
+                break
+            end
+        end
+        
+        if hasItems then
+            -- Remove materials
+            for material, amount in pairs(recipe.materials) do
+                Player.Functions.RemoveItem(material, amount)
+            end
+            
+            -- Add crafted item
+            Player.Functions.AddItem(itemName, recipe.amount)
+            
+            TriggerClientEvent('QBCore:Notify', src, 'Successfully crafted ' .. itemName, 'success')
+        else
+            TriggerClientEvent('QBCore:Notify', src, 'You don\'t have the required materials', 'error')
+        end
+    end
+end)
+```
+
+## API Reference
+
+### Client Exports
+
+```lua
+-- Open specific inventory
+exports['qb-inventory']:OpenInventory('player')
+exports['qb-inventory']:OpenInventory('trunk', {plate = 'ABC123'})
+exports['qb-inventory']:OpenInventory('stash', {stashId = 'personalstash_123'})
+
+-- Item management
+local hasItem = exports['qb-inventory']:HasItem('lockpick', 1)
+exports['qb-inventory']:SetInventoryDisabled(true/false)
+
+-- Get inventory data
+local inventory = exports['qb-inventory']:GetPlayerInventory()
+local item = exports['qb-inventory']:GetItemBySlot(slotNumber)
+
+-- Inventory state
+local isOpen = exports['qb-inventory']:IsInventoryOpen()
+exports['qb-inventory']:CloseInventory()
+```
+
+### Server Exports
+
+```lua
+-- Item management
+exports['qb-inventory']:AddItem(playerId, 'item_name', amount, slot, info)
+exports['qb-inventory']:RemoveItem(playerId, 'item_name', amount, slot)
+
+-- Inventory operations
+exports['qb-inventory']:ClearInventory(playerId)
+exports['qb-inventory']:SetInventoryWeight(playerId, weight)
+exports['qb-inventory']:GetInventoryWeight(playerId)
+
+-- Stash management
+exports['qb-inventory']:RegisterStash(stashId, label, slots, weight)
+exports['qb-inventory']:CreateTempStash(stashId, data)
+
+-- Shop management
+exports['qb-inventory']:AddShopItem(shopName, item, price, amount)
+exports['qb-inventory']:RemoveShopItem(shopName, item)
+```
+
+---
+
+**Master your server's economy!** The QBCore Inventory system provides comprehensive item management with advanced features that enhance roleplay while maintaining optimal performance.
+
+Explore our other [script options](/scripts) or get [support](/support) for customization help.

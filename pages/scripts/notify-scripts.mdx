@@ -1,0 +1,498 @@
+# Notify Scripts
+
+Lightweight notification system built with Tailwind CSS, providing beautiful and customizable notifications for your QBCore server with modern design patterns and smooth animations.
+
+## Features
+
+### 🎨 Modern Design
+- **Tailwind CSS**: Built with utility-first CSS framework
+- **Beautiful Animations**: Smooth fade-in/out and slide transitions
+- **Responsive Design**: Works perfectly on all screen sizes
+- **Theme Support**: Light, dark, and custom theme options
+- **Icon Integration**: FontAwesome and custom icon support
+
+### 🚀 Performance
+- **Lightweight**: Minimal resource usage and fast rendering
+- **Queue System**: Smart notification queuing and stacking
+- **Auto-cleanup**: Automatic removal of expired notifications
+- **Batch Updates**: Efficient batch processing for multiple notifications
+
+### 🔧 Customization
+- **Position Control**: Top, bottom, left, right positioning options
+- **Duration Settings**: Configurable display duration per notification
+- **Type Variants**: Success, error, warning, info, and custom types
+- **Sound Effects**: Optional sound notifications
+- **Progress Bars**: Visual countdown indicators
+
+## Installation
+
+### Quick Setup
+
+1. **Download Notify Scripts**
+   ```bash
+   cd resources/[qb]
+   git clone https://github.com/example/notify-scripts.git
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   cd notify-scripts
+   npm install        # If using build process
+   ```
+
+3. **Server Configuration**
+   ```cfg
+   # Add to server.cfg
+   start notify-scripts
+   
+   # Optional: Replace default QBCore notifications
+   setr qb-core:useNotifyScript "notify-scripts"
+   ```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.Framework = 'qb-core'
+Config.MaxNotifications = 5
+Config.DefaultDuration = 5000
+Config.Position = 'top-right'
+
+-- Animation Settings
+Config.Animations = {
+    enabled = true,
+    duration = 300,
+    easing = 'ease-in-out',
+    slideDistance = '20px'
+}
+
+-- Notification Types
+Config.Types = {
+    success = {
+        icon = 'fas fa-check-circle',
+        color = '#10B981',
+        borderColor = '#059669',
+        backgroundColor = '#D1FAE5',
+        textColor = '#065F46',
+        sound = 'success_notification'
+    },
+    
+    error = {
+        icon = 'fas fa-times-circle',
+        color = '#EF4444',
+        borderColor = '#DC2626',
+        backgroundColor = '#FEE2E2',
+        textColor = '#991B1B',
+        sound = 'error_notification'
+    },
+    
+    warning = {
+        icon = 'fas fa-exclamation-triangle',
+        color = '#F59E0B',
+        borderColor = '#D97706',
+        backgroundColor = '#FEF3C7',
+        textColor = '#92400E',
+        sound = 'warning_notification'
+    },
+    
+    info = {
+        icon = 'fas fa-info-circle',
+        color = '#3B82F6',
+        borderColor = '#2563EB',
+        backgroundColor = '#DBEAFE',
+        textColor = '#1E40AF',
+        sound = false
+    }
+}
+
+-- Sound Settings
+Config.Sounds = {
+    enabled = true,
+    volume = 0.5,
+    sounds = {
+        success_notification = 'sounds/success.ogg',
+        error_notification = 'sounds/error.ogg',
+        warning_notification = 'sounds/warning.ogg'
+    }
+}
+```
+
+### Advanced Configuration
+
+```lua
+-- Theme Configuration
+Config.Themes = {
+    light = {
+        containerBg = 'rgba(255, 255, 255, 0.95)',
+        shadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        backdrop = 'blur(8px)'
+    },
+    
+    dark = {
+        containerBg = 'rgba(17, 24, 39, 0.95)',
+        shadow = '0 10px 15px -3px rgba(0, 0, 0, 0.3)',
+        backdrop = 'blur(8px)'
+    },
+    
+    glassmorphism = {
+        containerBg = 'rgba(255, 255, 255, 0.1)',
+        shadow = '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+        backdrop = 'blur(12px)',
+        border = '1px solid rgba(255, 255, 255, 0.18)'
+    }
+}
+
+-- Position Presets
+Config.Positions = {
+    ['top-right'] = {
+        top = '20px',
+        right = '20px',
+        left = 'auto',
+        bottom = 'auto'
+    },
+    
+    ['top-left'] = {
+        top = '20px',
+        left = '20px',
+        right = 'auto',
+        bottom = 'auto'
+    },
+    
+    ['bottom-right'] = {
+        bottom = '20px',
+        right = '20px',
+        top = 'auto',
+        left = 'auto'
+    },
+    
+    ['bottom-left'] = {
+        bottom = '20px',
+        left = '20px',
+        top = 'auto',
+        right = 'auto'
+    },
+    
+    ['top-center'] = {
+        top = '20px',
+        left = '50%',
+        transform = 'translateX(-50%)',
+        right = 'auto',
+        bottom = 'auto'
+    }
+}
+```
+
+## Usage Examples
+
+### Basic Notifications
+
+```lua
+-- Client-side usage
+exports['notify-scripts']:Notify('Success!', 'Your action was completed successfully.', 'success', 5000)
+
+exports['notify-scripts']:Notify('Error!', 'Something went wrong.', 'error', 8000)
+
+exports['notify-scripts']:Notify('Warning!', 'Please check your input.', 'warning', 6000)
+
+exports['notify-scripts']:Notify('Info', 'This is an informational message.', 'info', 4000)
+
+-- Server-side usage
+TriggerClientEvent('notify-scripts:client:notify', playerId, {
+    title = 'Server Message',
+    message = 'Welcome to the server!',
+    type = 'success',
+    duration = 5000
+})
+```
+
+### Advanced Notifications
+
+```lua
+-- Notification with custom options
+exports['notify-scripts']:NotifyAdvanced({
+    title = 'Custom Notification',
+    message = 'This is a custom notification with extra options.',
+    type = 'success',
+    duration = 7000,
+    position = 'top-center',
+    showProgress = true,
+    pauseOnHover = true,
+    closeable = true,
+    actions = {
+        {
+            label = 'Accept',
+            action = 'accept_invite'
+        },
+        {
+            label = 'Decline', 
+            action = 'decline_invite'
+        }
+    }
+})
+
+-- Rich notification with HTML content
+exports['notify-scripts']:NotifyRich({
+    title = 'Player Joined',
+    content = '<div class="flex items-center"><img src="avatar.png" class="w-8 h-8 rounded-full mr-3"><span><strong>John Doe</strong> joined the server</span></div>',
+    type = 'info',
+    duration = 6000
+})
+```
+
+### QBCore Integration
+
+```lua
+-- Replace default QBCore notifications
+if GetResourceState('notify-scripts') == 'started' then
+    -- Override QBCore notify function
+    RegisterNetEvent('QBCore:Notify', function(text, type, length)
+        exports['notify-scripts']:Notify('Notification', text, type or 'info', length or 5000)
+    end)
+    
+    -- Override with advanced options
+    RegisterNetEvent('QBCore:NotifyAdvanced', function(data)
+        exports['notify-scripts']:NotifyAdvanced(data)
+    end)
+end
+
+-- Server-side integration
+local function QBNotify(source, text, type, length)
+    if GetResourceState('notify-scripts') == 'started' then
+        TriggerClientEvent('notify-scripts:client:notify', source, {
+            title = 'Server',
+            message = text,
+            type = type or 'info',
+            duration = length or 5000
+        })
+    else
+        TriggerClientEvent('QBCore:Notify', source, text, type, length)
+    end
+end
+
+-- Usage in other resources
+QBNotify(playerId, 'Welcome to the server!', 'success', 8000)
+```
+
+## API Reference
+
+### Client Exports
+
+```lua
+-- Basic notification
+exports['notify-scripts']:Notify(title, message, type, duration)
+
+-- Advanced notification with options
+exports['notify-scripts']:NotifyAdvanced(options)
+
+-- Rich HTML notification
+exports['notify-scripts']:NotifyRich(options)
+
+-- Clear notifications
+exports['notify-scripts']:ClearNotifications()
+exports['notify-scripts']:ClearNotification(notificationId)
+
+-- Update notification settings
+exports['notify-scripts']:SetPosition(position)
+exports['notify-scripts']:SetTheme(theme)
+exports['notify-scripts']:SetMaxNotifications(max)
+
+-- Get notification status
+local isActive = exports['notify-scripts']:HasActiveNotifications()
+local count = exports['notify-scripts']:GetActiveCount()
+```
+
+### JavaScript API (NUI)
+
+```javascript
+// Send notification from NUI
+window.postMessage({
+    action: 'notify',
+    data: {
+        title: 'NUI Notification',
+        message: 'Sent from NUI interface',
+        type: 'info',
+        duration: 5000
+    }
+}, '*');
+
+// Handle notification actions
+window.addEventListener('message', (event) => {
+    if (event.data.action === 'notificationAction') {
+        const { actionId, notificationId } = event.data;
+        
+        // Handle the action
+        fetch(`https://${GetParentResourceName()}/handleNotificationAction`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                action: actionId,
+                notificationId: notificationId
+            })
+        });
+    }
+});
+```
+
+### Event System
+
+```lua
+-- Client Events
+RegisterNetEvent('notify-scripts:client:notify', function(data)
+    exports['notify-scripts']:Notify(data.title, data.message, data.type, data.duration)
+end)
+
+RegisterNetEvent('notify-scripts:client:notifyAdvanced', function(data)
+    exports['notify-scripts']:NotifyAdvanced(data)
+end)
+
+RegisterNetEvent('notify-scripts:client:clear', function()
+    exports['notify-scripts']:ClearNotifications()
+end)
+
+-- Server Events  
+RegisterNetEvent('notify-scripts:server:notificationAction', function(data)
+    local src = source
+    
+    -- Handle notification actions
+    if data.action == 'accept_invite' then
+        -- Handle accept action
+        TriggerClientEvent('party:client:acceptInvite', src)
+    elseif data.action == 'decline_invite' then
+        -- Handle decline action
+        TriggerClientEvent('party:client:declineInvite', src)
+    end
+end)
+```
+
+## Customization
+
+### Custom Themes
+
+```css
+/* Custom theme CSS */
+.notification-container.theme-neon {
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid #00ff00;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+}
+
+.notification-container.theme-neon .notification-title {
+    color: #00ff00;
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+.notification-container.theme-neon .notification-message {
+    color: #ffffff;
+}
+
+.notification-container.theme-neon.type-success {
+    border-color: #00ff00;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+}
+
+.notification-container.theme-neon.type-error {
+    border-color: #ff0000;
+    box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+}
+```
+
+### Custom Animations
+
+```css
+/* Slide in from right */
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Bounce in */
+@keyframes bounceIn {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    70% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Apply animations */
+.notification-enter {
+    animation: slideInRight 0.3s ease-out;
+}
+
+.notification-enter-bounce {
+    animation: bounceIn 0.5s ease-out;
+}
+```
+
+## Performance Tips
+
+### Optimization
+
+```lua
+-- Limit notifications per second to prevent spam
+local notificationCooldown = {}
+
+function CanShowNotification(source)
+    local currentTime = GetGameTimer()
+    local lastNotification = notificationCooldown[source] or 0
+    
+    if currentTime - lastNotification > 500 then -- 500ms cooldown
+        notificationCooldown[source] = currentTime
+        return true
+    end
+    
+    return false
+end
+
+-- Batch notifications to reduce network calls
+local notificationBatch = {}
+
+CreateThread(function()
+    while true do
+        if next(notificationBatch) then
+            for playerId, notifications in pairs(notificationBatch) do
+                TriggerClientEvent('notify-scripts:client:batchNotify', playerId, notifications)
+            end
+            notificationBatch = {}
+        end
+        
+        Wait(100) -- Send batches every 100ms
+    end
+end)
+
+-- Add to batch instead of sending immediately
+function QueueNotification(playerId, notification)
+    if not notificationBatch[playerId] then
+        notificationBatch[playerId] = {}
+    end
+    
+    table.insert(notificationBatch[playerId], notification)
+end
+```
+
+---
+
+**Enhance your server's communication!** Notify Scripts provides beautiful, modern notifications that improve the user experience while maintaining excellent performance.
+
+Discover more [script options](/scripts) or get [support](/support) for customization assistance.

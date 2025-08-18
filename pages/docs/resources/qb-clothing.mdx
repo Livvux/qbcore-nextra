@@ -1,0 +1,483 @@
+# QB-Clothing - Clothing Store System
+
+import { Callout } from 'nextra/components'
+
+The **qb-clothing** resource provides a comprehensive clothing and appearance system for QBCore servers, featuring clothing stores, outfit management, barber shops, and fashion customization.
+
+## Overview
+
+QB-Clothing creates a realistic fashion and appearance system with clothing stores, barber shops, outfit saving, and complete character customization. Players can purchase clothing, save outfits, and manage their appearance.
+
+### Key Features
+
+- **Clothing Stores**: Multiple clothing shop locations
+- **Outfit Management**: Save and load custom outfits
+- **Barber Shops**: Hair styling and facial hair options
+- **Accessories**: Hats, glasses, jewelry, and more
+- **Seasonal Collections**: Limited-time clothing items
+- **Fashion Shows**: Organized clothing events
+- **Custom Clothing**: Player-created designs
+- **Outfit Sharing**: Share outfits with other players
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for clothing menus)
+- qb-inventory (for clothing items)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-clothing.git
+```
+
+2. **Database Setup**
+```sql
+-- Clothing system tables
+CREATE TABLE IF NOT EXISTS `player_outfits` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `outfitname` varchar(50) DEFAULT NULL,
+  `model` varchar(50) DEFAULT NULL,
+  `skin` longtext DEFAULT NULL,
+  `outfitId` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `citizenid` (`citizenid`),
+  KEY `outfitId` (`outfitId`)
+);
+
+CREATE TABLE IF NOT EXISTS `clothing_stores` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `store_name` varchar(100) DEFAULT NULL,
+  `inventory` longtext DEFAULT NULL,
+  `sales` int(11) DEFAULT 0,
+  `last_restock` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `clothing_purchases` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `item_type` varchar(50) DEFAULT NULL,
+  `item_id` int(11) DEFAULT NULL,
+  `price` int(11) DEFAULT 0,
+  `store` varchar(100) DEFAULT NULL,
+  `purchase_date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Clothing Items
+['clothing_shirt'] = {
+    ['name'] = 'clothing_shirt',
+    ['label'] = 'Shirt',
+    ['weight'] = 100,
+    ['type'] = 'item',
+    ['image'] = 'clothing_shirt.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Stylish shirt for everyday wear'
+},
+['clothing_pants'] = {
+    ['name'] = 'clothing_pants',
+    ['label'] = 'Pants',
+    ['weight'] = 150,
+    ['type'] = 'item',
+    ['image'] = 'clothing_pants.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Comfortable pants'
+},
+['clothing_shoes'] = {
+    ['name'] = 'clothing_shoes',
+    ['label'] = 'Shoes',
+    ['weight'] = 200,
+    ['type'] = 'item',
+    ['image'] = 'clothing_shoes.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Quality footwear'
+},
+['outfit_bag'] = {
+    ['name'] = 'outfit_bag',
+    ['label'] = 'Outfit Bag',
+    ['weight'] = 50,
+    ['type'] = 'item',
+    ['image'] = 'outfit_bag.png',
+    ['unique'] = true,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Contains a complete outfit'
+}
+```
+
+4. **Add to server.cfg**
+```cfg
+ensure qb-clothing
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.ClothingCost = 25 -- Base cost per clothing item
+Config.OutfitLimit = 25 -- Max outfits per player
+
+-- Clothing Store Locations
+Config.ClothingStores = {
+    ["suburban"] = {
+        label = "Suburban Clothing",
+        coords = vector3(72.3, -1399.1, 29.4),
+        blip = {
+            sprite = 73,
+            color = 47,
+            scale = 0.8
+        },
+        clothing_types = {"casual", "business", "formal"},
+        price_modifier = 1.0,
+        zones = {
+            counter = vector3(73.96, -1392.46, 29.38),
+            changing_room = vector3(75.95, -1387.79, 29.38)
+        }
+    },
+    ["ponsonbys"] = {
+        label = "Ponsonbys",
+        coords = vector3(-703.78, -152.3, 37.42),
+        clothing_types = {"luxury", "designer", "formal"},
+        price_modifier = 2.5,
+        zones = {
+            counter = vector3(-707.88, -153.27, 37.42),
+            changing_room = vector3(-710.15, -149.36, 37.42)
+        }
+    },
+    ["discount"] = {
+        label = "Discount Store",
+        coords = vector3(-821.91, -1073.25, 11.33),
+        clothing_types = {"casual", "basic"},
+        price_modifier = 0.6,
+        zones = {
+            counter = vector3(-823.08, -1072.36, 11.33),
+            changing_room = vector3(-819.02, -1078.95, 11.33)
+        }
+    }
+}
+
+-- Barber Shop Locations
+Config.BarberShops = {
+    ["herr_kutz"] = {
+        label = "Herr Kutz Barber",
+        coords = vector3(-814.3, -183.8, 37.6),
+        blip = {
+            sprite = 71,
+            color = 4,
+            scale = 0.8
+        },
+        services = {
+            haircut = {price = 150, label = "Haircut"},
+            beard_trim = {price = 75, label = "Beard Trim"},
+            full_service = {price = 200, label = "Full Service"}
+        }
+    },
+    ["beach_barber"] = {
+        label = "Beach Combover",
+        coords = vector3(-1282.6, -1116.8, 7.0),
+        services = {
+            haircut = {price = 120, label = "Haircut"},
+            beard_trim = {price = 60, label = "Beard Trim"}
+        }
+    }
+}
+
+-- Clothing Categories
+Config.ClothingCategories = {
+    ["casual"] = {
+        label = "Casual Wear",
+        items = {
+            tshirt = {min_price = 25, max_price = 75},
+            jeans = {min_price = 40, max_price = 120},
+            sneakers = {min_price = 60, max_price = 150}
+        }
+    },
+    ["business"] = {
+        label = "Business Attire",
+        items = {
+            dress_shirt = {min_price = 80, max_price = 200},
+            suit_pants = {min_price = 120, max_price = 300},
+            dress_shoes = {min_price = 150, max_price = 400}
+        }
+    },
+    ["formal"] = {
+        label = "Formal Wear",
+        items = {
+            suit_jacket = {min_price = 300, max_price = 800},
+            dress = {min_price = 200, max_price = 600},
+            formal_shoes = {min_price = 200, max_price = 500}
+        }
+    },
+    ["luxury"] = {
+        label = "Luxury Fashion",
+        items = {
+            designer_shirt = {min_price = 500, max_price = 1500},
+            designer_pants = {min_price = 800, max_price = 2000},
+            luxury_shoes = {min_price = 1000, max_price = 3000}
+        }
+    }
+}
+
+-- Outfit Presets
+Config.OutfitPresets = {
+    ["business_suit"] = {
+        label = "Business Suit",
+        male = {
+            ["arms"] = {item = 4, texture = 0},
+            ["t-shirt"] = {item = 31, texture = 0},
+            ["torso2"] = {item = 4, texture = 0},
+            ["pants"] = {item = 10, texture = 0},
+            ["shoes"] = {item = 10, texture = 0}
+        },
+        female = {
+            ["arms"] = {item = 3, texture = 0},
+            ["t-shirt"] = {item = 6, texture = 0},
+            ["torso2"] = {item = 7, texture = 0},
+            ["pants"] = {item = 6, texture = 0},
+            ["shoes"] = {item = 6, texture = 0}
+        },
+        price = 1500
+    },
+    ["casual_outfit"] = {
+        label = "Casual Outfit",
+        male = {
+            ["arms"] = {item = 0, texture = 0},
+            ["t-shirt"] = {item = 15, texture = 0},
+            ["torso2"] = {item = 0, texture = 0},
+            ["pants"] = {item = 1, texture = 0},
+            ["shoes"] = {item = 1, texture = 0}
+        },
+        female = {
+            ["arms"] = {item = 0, texture = 0},
+            ["t-shirt"] = {item = 2, texture = 0},
+            ["torso2"] = {item = 4, texture = 0},
+            ["pants"] = {item = 0, texture = 0},
+            ["shoes"] = {item = 0, texture = 0}
+        },
+        price = 350
+    }
+}
+```
+
+### Customization Options
+
+```lua
+-- Clothing Customization
+Config.ClothingComponents = {
+    ["male"] = {
+        ["face"] = {min = 0, max = 20, zone = "Head"},
+        ["skin"] = {min = 0, max = 11, zone = "Head"},
+        ["hair"] = {min = 0, max = 22, zone = "Head"},
+        ["hair_color"] = {min = 0, max = 63, zone = "Head"},
+        ["arms"] = {min = 0, max = 174, zone = "Arms"},
+        ["t-shirt"] = {min = 0, max = 168, zone = "Torso"},
+        ["torso2"] = {min = 0, max = 392, zone = "Torso"},
+        ["pants"] = {min = 0, max = 138, zone = "Legs"},
+        ["shoes"] = {min = 0, max = 98, zone = "Feet"},
+        ["chain"] = {min = 0, max = 121, zone = "Accessories"},
+        ["ears"] = {min = -1, max = 41, zone = "Accessories"},
+        ["glasses"] = {min = 0, max = 28, zone = "Accessories"},
+        ["hat"] = {min = -1, max = 154, zone = "Accessories"}
+    },
+    ["female"] = {
+        ["face"] = {min = 0, max = 20, zone = "Head"},
+        ["skin"] = {min = 0, max = 11, zone = "Head"},
+        ["hair"] = {min = 0, max = 23, zone = "Head"},
+        ["hair_color"] = {min = 0, max = 63, zone = "Head"},
+        ["arms"] = {min = 0, max = 161, zone = "Arms"},
+        ["t-shirt"] = {min = 0, max = 187, zone = "Torso"},
+        ["torso2"] = {min = 0, max = 370, zone = "Torso"},
+        ["pants"] = {min = 0, max = 149, zone = "Legs"},
+        ["shoes"] = {min = 0, max = 96, zone = "Feet"},
+        ["chain"] = {min = 0, max = 96, zone = "Accessories"},
+        ["ears"] = {min = -1, max = 41, zone = "Accessories"},
+        ["glasses"] = {min = 0, max = 28, zone = "Accessories"},
+        ["hat"] = {min = -1, max = 154, zone = "Accessories"}
+    }
+}
+
+-- Hair Styles
+Config.HairStyles = {
+    ["male"] = {
+        [0] = "Bald",
+        [1] = "Buzzcut",
+        [2] = "Faux Hawk",
+        [3] = "Hipster",
+        [4] = "Side Part",
+        [5] = "Pompadour",
+        [6] = "Long Hair",
+        [7] = "Curly",
+        [8] = "Military",
+        [9] = "Dreads"
+    },
+    ["female"] = {
+        [0] = "Bald",
+        [1] = "Short Pixie",
+        [2] = "Bob Cut",
+        [3] = "Long Straight",
+        [4] = "Beach Waves",
+        [5] = "Ponytail",
+        [6] = "Braids",
+        [7] = "Curly Updo",
+        [8] = "Side Bangs",
+        [9] = "Messy Bun"
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### OpenClothingMenu
+Open clothing store interface.
+
+```lua
+exports['qb-clothing']:OpenClothingMenu(storeId)
+
+-- Parameters:
+-- storeId: ID of clothing store
+```
+
+#### SaveOutfit
+Save current outfit.
+
+```lua
+local success = exports['qb-clothing']:SaveOutfit(outfitName)
+
+-- Parameters:
+-- outfitName: Name for the outfit
+-- Returns: boolean success status
+```
+
+#### LoadOutfit
+Load a saved outfit.
+
+```lua
+local success = exports['qb-clothing']:LoadOutfit(outfitId)
+
+-- Parameters:
+-- outfitId: ID of outfit to load
+-- Returns: boolean success status
+```
+
+### Server Exports
+
+#### GetPlayerOutfits
+Get player's saved outfits.
+
+```lua
+local outfits = exports['qb-clothing']:GetPlayerOutfits(citizenId)
+
+-- Parameters:
+-- citizenId: Player citizen ID
+-- Returns: table of saved outfits
+```
+
+#### CreateOutfitItem
+Create outfit item for inventory.
+
+```lua
+local itemData = exports['qb-clothing']:CreateOutfitItem(outfitData)
+
+-- Parameters:
+-- outfitData: Outfit configuration
+-- Returns: outfit item data
+```
+
+#### UpdateClothingStore
+Update store inventory.
+
+```lua
+exports['qb-clothing']:UpdateClothingStore(storeId, inventory)
+
+-- Parameters:
+-- storeId: Store identifier
+-- inventory: New inventory data
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Clothing purchased
+RegisterNetEvent('qb-clothing:client:clothingPurchased', function(itemData)
+    -- Handle clothing purchase
+end)
+
+-- Outfit saved
+RegisterNetEvent('qb-clothing:client:outfitSaved', function(outfitName, outfitId)
+    -- Handle outfit saving
+end)
+
+-- Appearance changed
+RegisterNetEvent('qb-clothing:client:appearanceChanged', function(componentData)
+    -- Handle appearance change
+end)
+```
+
+#### Server Events
+
+```lua
+-- Store sale recorded
+RegisterNetEvent('qb-clothing:server:saleRecorded', function(storeId, saleData)
+    -- Handle store sale
+end)
+
+-- Outfit created
+RegisterNetEvent('qb-clothing:server:outfitCreated', function(citizenId, outfitData)
+    -- Handle outfit creation
+end)
+
+-- Barber service completed
+RegisterNetEvent('qb-clothing:server:barberServiceCompleted', function(citizenId, serviceType, cost)
+    -- Handle barber service
+end)
+```
+
+## Usage Examples
+
+### Clothing Store System
+
+```lua
+-- Client-side clothing store interface
+RegisterNetEvent('qb-clothing:client:openStore', function(storeId)
+    local storeConfig = Config.ClothingStores[storeId]
+    if not storeConfig then
+        QBCore.Functions.Notify("Store not found", "error")
+        return
+    end
+    
+    -- Open clothing menu
+    local clothingMenu = {
+        {
+            header = storeConfig.label,
+            txt = "Browse our collection",
+            isMenuHeader = true
+        }\n    }\n    \n    -- Add clothing categories\n    for category, categoryData in pairs(Config.ClothingCategories) do\n        if HasStoreCategory(storeConfig.clothing_types, category) then\n            table.insert(clothingMenu, {\n                header = categoryData.label,\n                txt = \"Browse \" .. categoryData.label:lower(),\n                params = {\n                    event = \"qb-clothing:client:browseCategory\",\n                    args = {\n                        store = storeId,\n                        category = category\n                    }\n                }\n            })\n        end\n    end\n    \n    -- Add outfit presets\n    table.insert(clothingMenu, {\n        header = \"Complete Outfits\",\n        txt = \"Ready-to-wear outfit sets\",\n        params = {\n            event = \"qb-clothing:client:browseOutfits\",\n            args = {\n                store = storeId\n            }\n        }\n    })\n    \n    -- Add my outfits management\n    table.insert(clothingMenu, {\n        header = \"My Outfits\",\n        txt = \"Manage saved outfits\",\n        params = {\n            event = \"qb-clothing:client:manageOutfits\"\n        }\n    })\n    \n    exports['qb-menu']:openMenu(clothingMenu)\nend)\n\n-- Browse clothing category\nRegisterNetEvent('qb-clothing:client:browseCategory', function(data)\n    local storeConfig = Config.ClothingStores[data.store]\n    local categoryData = Config.ClothingCategories[data.category]\n    \n    -- Create category menu\n    local categoryMenu = {\n        {\n            header = categoryData.label,\n            txt = \"Price range varies by item\",\n            isMenuHeader = true\n        }\n    }\n    \n    -- Add clothing items\n    for itemType, itemData in pairs(categoryData.items) do\n        local basePrice = math.random(itemData.min_price, itemData.max_price)\n        local finalPrice = math.floor(basePrice * storeConfig.price_modifier)\n        \n        table.insert(categoryMenu, {\n            header = FormatItemName(itemType),\n            txt = \"$\" .. finalPrice .. \" - Try on and customize\",\n            params = {\n                event = \"qb-clothing:client:tryOnItem\",\n                args = {\n                    store = data.store,\n                    category = data.category,\n                    item_type = itemType,\n                    price = finalPrice\n                }\n            }\n        })\n    end\n    \n    exports['qb-menu']:openMenu(categoryMenu)\nend)\n\n-- Try on clothing item\nRegisterNetEvent('qb-clothing:client:tryOnItem', function(data)\n    local ped = PlayerPedId()\n    local currentClothing = GetCurrentClothing(ped)\n    \n    -- Enter clothing selection mode\n    local clothingData = GetClothingOptions(data.item_type, GetEntityModel(ped))\n    \n    if clothingData then\n        local selectionMenu = {\n            {\n                header = \"Customize \" .. FormatItemName(data.item_type),\n                txt = \"Use arrow keys to browse options\",\n                isMenuHeader = true\n            },\n            {\n                header = \"Purchase Item\",\n                txt = \"Buy for $\" .. data.price,\n                params = {\n                    event = \"qb-clothing:client:purchaseItem\",\n                    args = data\n                }\n            },\n            {\n                header = \"Cancel\",\n                txt = \"Return to browsing\",\n                params = {\n                    event = \"qb-clothing:client:cancelTryOn\",\n                    args = {original_clothing = currentClothing}\n                }\n            }\n        }\n        \n        exports['qb-menu']:openMenu(selectionMenu)\n        \n        -- Start clothing preview loop\n        StartClothingPreview(data.item_type, clothingData)\n    end\nend)\n\nfunction StartClothingPreview(itemType, clothingData)\n    local currentIndex = 1\n    local maxIndex = #clothingData\n    \n    CreateThread(function()\n        while previewMode do\n            Wait(1)\n            \n            -- Navigation controls\n            if IsControlJustPressed(0, 174) then -- Left arrow\n                currentIndex = currentIndex - 1\n                if currentIndex < 1 then currentIndex = maxIndex end\n                ApplyClothingItem(itemType, clothingData[currentIndex])\n            elseif IsControlJustPressed(0, 175) then -- Right arrow\n                currentIndex = currentIndex + 1\n                if currentIndex > maxIndex then currentIndex = 1 end\n                ApplyClothingItem(itemType, clothingData[currentIndex])\n            end\n        end\n    end)\nend\n```\n\n### Outfit Management System\n\n```lua\n-- Outfit saving and loading\nRegisterNetEvent('qb-clothing:client:saveOutfit', function()\n    local input = exports['qb-input']:ShowInput({\n        header = \"Save Current Outfit\",\n        submitText = \"Save Outfit\",\n        inputs = {\n            {\n                text = \"Outfit Name\",\n                name = \"outfit_name\",\n                type = \"text\",\n                isRequired = true,\n                default = \"\"\n            }\n        }\n    })\n    \n    if input and input.outfit_name then\n        local ped = PlayerPedId()\n        local currentSkin = GetCurrentSkin(ped)\n        local model = GetEntityModel(ped)\n        \n        TriggerServerEvent('qb-clothing:server:saveOutfit', {\n            name = input.outfit_name,\n            model = model,\n            skin = currentSkin\n        })\n    end\nend)\n\n-- Server-side outfit saving\nRegisterNetEvent('qb-clothing:server:saveOutfit', function(outfitData)\n    local src = source\n    local player = QBCore.Functions.GetPlayer(src)\n    \n    if not player then return end\n    \n    -- Check outfit limit\n    local currentOutfits = MySQL.scalar.await('SELECT COUNT(*) FROM player_outfits WHERE citizenid = ?', {\n        player.PlayerData.citizenid\n    })\n    \n    if currentOutfits >= Config.OutfitLimit then\n        TriggerClientEvent('QBCore:Notify', src, 'You have reached the maximum number of saved outfits', 'error')\n        return\n    end\n    \n    -- Generate unique outfit ID\n    local outfitId = GenerateUniqueId()\n    \n    -- Save outfit to database\n    MySQL.insert('INSERT INTO player_outfits (citizenid, outfitname, model, skin, outfitId) VALUES (?, ?, ?, ?, ?)', {\n        player.PlayerData.citizenid,\n        outfitData.name,\n        outfitData.model,\n        json.encode(outfitData.skin),\n        outfitId\n    })\n    \n    TriggerClientEvent('QBCore:Notify', src, 'Outfit \"' .. outfitData.name .. '\" saved successfully!', 'success')\nend)\n\n-- Load outfit\nRegisterNetEvent('qb-clothing:client:loadOutfit', function(outfitId)\n    QBCore.Functions.TriggerCallback('qb-clothing:server:getOutfit', function(outfitData)\n        if outfitData then\n            local ped = PlayerPedId()\n            local skinData = json.decode(outfitData.skin)\n            \n            -- Apply outfit\n            ApplyCompleteOutfit(ped, skinData)\n            \n            QBCore.Functions.Notify('Outfit \"' .. outfitData.outfitname .. '\" loaded!', 'success')\n        else\n            QBCore.Functions.Notify('Outfit not found', 'error')\n        end\n    end, outfitId)\nend)\n\nfunction ApplyCompleteOutfit(ped, skinData)\n    -- Apply each clothing component\n    for component, data in pairs(skinData) do\n        if component == \"face\" then\n            SetPedHeadBlendData(ped, data.item, data.item, 0, data.texture, data.texture, 0, 1.0, 1.0, 0.0, false)\n        elseif component == \"hair\" then\n            SetPedComponentVariation(ped, 2, data.item, data.texture, 0)\n        elseif component == \"hair_color\" then\n            SetPedHairColor(ped, data.item, data.texture)\n        else\n            local componentId = GetComponentId(component)\n            if componentId then\n                if componentId >= 0 and componentId <= 11 then\n                    SetPedComponentVariation(ped, componentId, data.item, data.texture, 0)\n                else\n                    SetPedPropIndex(ped, componentId - 12, data.item, data.texture, true)\n                end\n            end\n        end\n    end\nend\n```\n\n### Barber Shop System\n\n```lua\n-- Barber shop services\nRegisterNetEvent('qb-clothing:client:openBarberShop', function(shopId)\n    local shopConfig = Config.BarberShops[shopId]\n    if not shopConfig then\n        QBCore.Functions.Notify(\"Barber shop not found\", \"error\")\n        return\n    end\n    \n    local barberMenu = {\n        {\n            header = shopConfig.label,\n            txt = \"Professional grooming services\",\n            isMenuHeader = true\n        }\n    }\n    \n    -- Add services\n    for serviceType, serviceData in pairs(shopConfig.services) do\n        table.insert(barberMenu, {\n            header = serviceData.label,\n            txt = \"$\" .. serviceData.price,\n            params = {\n                event = \"qb-clothing:client:selectBarberService\",\n                args = {\n                    shop = shopId,\n                    service = serviceType,\n                    price = serviceData.price\n                }\n            }\n        })\n    end\n    \n    exports['qb-menu']:openMenu(barberMenu)\nend)\n\n-- Select barber service\nRegisterNetEvent('qb-clothing:client:selectBarberService', function(data)\n    if data.service == \"haircut\" then\n        OpenHairStylingMenu(data)\n    elseif data.service == \"beard_trim\" then\n        OpenBeardStylingMenu(data)\n    elseif data.service == \"full_service\" then\n        OpenFullGroomingMenu(data)\n    end\nend)\n\nfunction OpenHairStylingMenu(serviceData)\n    local ped = PlayerPedId()\n    local currentHair = GetPedDrawableVariation(ped, 2)\n    local currentColor = GetPedHairColor(ped)\n    local model = GetEntityModel(ped)\n    local gender = (model == GetHashKey(\"mp_m_freemode_01\")) and \"male\" or \"female\"\n    \n    local hairMenu = {\n        {\n            header = \"Hair Styling\",\n            txt = \"Choose your new look\",\n            isMenuHeader = true\n        }\n    }\n    \n    -- Add hair styles\n    for hairId, hairName in pairs(Config.HairStyles[gender]) do\n        table.insert(hairMenu, {\n            header = hairName,\n            txt = \"Preview this style\",\n            params = {\n                event = \"qb-clothing:client:previewHair\",\n                args = {\n                    hair_id = hairId,\n                    service_data = serviceData\n                }\n            }\n        })\n    end\n    \n    table.insert(hairMenu, {\n        header = \"Confirm & Pay\",\n        txt = \"$\" .. serviceData.price,\n        params = {\n            event = \"qb-clothing:client:payForService\",\n            args = serviceData\n        }\n    })\n    \n    exports['qb-menu']:openMenu(hairMenu)\nend\n```\n\n## Troubleshooting\n\n### Common Issues\n\n#### Clothing Not Applying\n```lua\n-- Check component validity\nfunction ValidateClothingComponent(ped, component, drawable, texture)\n    local maxDrawable = GetNumberOfPedDrawableVariations(ped, component) - 1\n    local maxTexture = GetNumberOfPedTextureVariations(ped, component, drawable) - 1\n    \n    if drawable < 0 or drawable > maxDrawable then\n        print(\"Invalid drawable for component:\", component, \"Drawable:\", drawable)\n        return false\n    end\n    \n    if texture < 0 or texture > maxTexture then\n        print(\"Invalid texture for component:\", component, \"Texture:\", texture)\n        return false\n    end\n    \n    return true\nend\n```\n\n#### Outfit Loading Issues\n- Verify outfit data structure in database\n- Check model compatibility between save and load\n- Ensure proper JSON encoding/decoding\n\n#### Store Menu Problems\n```lua\n-- Debug store configuration\nRegisterCommand('debugstore', function(source, args)\n    local storeId = args[1]\n    if storeId and Config.ClothingStores[storeId] then\n        local store = Config.ClothingStores[storeId]\n        print(\"Store:\", store.label)\n        print(\"Categories:\", json.encode(store.clothing_types))\n        print(\"Price modifier:\", store.price_modifier)\n    else\n        print(\"Store not found:\", storeId)\n    end\nend)\n```\n\n### Debug Commands\n\n```lua\n-- Give clothing item\n/giveclothing [player_id] [clothing_type]\n\n-- Reset player appearance\n/resetappearance [player_id]\n\n-- Load outfit by ID\n/loadoutfit [outfit_id]\n\n-- Check saved outfits\n/checkoutfits [player_id]\n```\n\n<Callout type=\"info\">\n  Regular updates to clothing catalogs and seasonal collections help maintain player engagement with the fashion system.\n</Callout>

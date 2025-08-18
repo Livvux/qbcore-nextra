@@ -1,0 +1,87 @@
+# Migration Guides
+
+Welcome to the QBCore migration documentation. This section provides comprehensive guides for upgrading your QBCore server, migrating from other frameworks, and keeping your resources up to date.
+
+## Quick Navigation
+
+<div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+  <div className="p-6 border rounded-lg hover:border-blue-500 transition-colors">
+    <h3 className="text-lg font-semibold mb-2">🔄 Version Upgrades</h3>
+    <p className="text-gray-600 dark:text-gray-400 mb-4">
+      Step-by-step guides for upgrading between major QBCore versions.
+    </p>
+    <a href="/docs/migration/v1-to-v2" className="text-blue-500 hover:text-blue-600">
+      View Upgrade Guides →
+    </a>
+  </div>
+
+  <div className="p-6 border rounded-lg hover:border-blue-500 transition-colors">
+    <h3 className="text-lg font-semibold mb-2">🛠️ Migration Tools</h3>
+    <p className="text-gray-600 dark:text-gray-400 mb-4">
+      Tools and scripts to help with your migration process.
+    </p>
+    <a href="/docs/migration/tools" className="text-blue-500 hover:text-blue-600">
+      View Tools →
+    </a>
+  </div>
+</div>
+
+## Migration Planning
+
+Before starting any migration, it's essential to plan properly:
+
+### 1. **Backup Everything**
+- Full server files backup
+- Complete database dump
+- Configuration files backup
+- Custom resource backup
+
+### 2. **Review Changes**
+- Read release notes thoroughly
+- Check breaking changes documentation
+- Review deprecated features
+- Plan for custom code updates
+
+### 3. **Test Environment**
+- Set up isolated test server
+- Test migration procedures
+- Validate functionality
+- Performance testing
+
+### 4. **Migration Execution**
+- Follow step-by-step guides
+- Monitor for errors
+- Test all functionality
+- Document any issues
+
+## Migration Tools
+
+We provide several tools to help with your migration:
+
+- **[Migration Scripts](/docs/migration/tools/migration-script)** - Automated migration utilities
+- **[Compatibility Checker](/docs/migration/tools/compatibility-checker)** - Verify resource compatibility
+- **[Backup & Restore](/docs/migration/tools/backup-restore)** - Backup and restore procedures
+
+## Getting Help
+
+If you encounter issues during migration:
+
+1. Check the [troubleshooting section](/docs/troubleshooting)
+2. Review the migration documentation
+3. Join our [Discord community](https://discord.gg/qbcore) for support
+4. Create an issue on [GitHub](https://github.com/qbcore-framework) if needed
+
+---
+
+<div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mt-8">
+  <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+    💡 Migration Best Practices
+  </h4>
+  <ul className="text-blue-800 dark:text-blue-200 space-y-2">
+    <li>• Always backup before making changes</li>
+    <li>• Test migrations in a development environment first</li>
+    <li>• Read all documentation before starting</li>
+    <li>• Plan for downtime during production migrations</li>
+    <li>• Keep rollback procedures ready</li>
+  </ul>
+</div>

@@ -1,0 +1,609 @@
+# TREW HUD for QBCore
+
+TREW HUD is the community favorite HUD system designed specifically for QBCore framework, offering the best GTA 5 RP experience with a perfect balance of functionality and aesthetic appeal.
+
+## Features
+
+### 🎮 Core Features
+- **QBCore Optimized**: Built specifically for QBCore framework
+- **Immersive Design**: Styled to blend seamlessly with GTA 5's interface
+- **Community Favorite**: Trusted by thousands of QBCore servers
+- **Smooth Animations**: Fluid transitions and responsive feedback
+- **Easy Configuration**: Simple setup with extensive customization options
+
+### 📱 HUD Elements
+- **Player Status**: Health, armor, hunger, thirst, and stress indicators
+- **Vehicle HUD**: Speedometer, fuel gauge, and engine health
+- **Minimap**: Enhanced minimap with custom styling
+- **Cash Display**: Money counter with bank/cash separation
+- **Job Information**: Current job and grade display
+- **Notifications**: Clean notification system
+- **Voice Indicator**: Push-to-talk status display
+- **Server Information**: Player count and server status
+
+## Installation
+
+### Prerequisites
+- QBCore Framework (v1.0 or higher)
+- Node.js (for building assets)
+- Basic FiveM server setup knowledge
+
+### Quick Installation
+
+1. **Download TREW HUD**
+   ```bash
+   cd resources/[qb]
+   git clone https://github.com/example/trew-hud.git
+   ```
+
+2. **Install Dependencies**
+   ```bash
+   cd trew-hud
+   npm install
+   npm run build
+   ```
+
+3. **Add to server.cfg**
+   ```cfg
+   # Add after qb-core
+   start trew-hud
+   ```
+
+4. **Configure QBCore**
+   ```cfg
+   # Disable default QBCore HUD
+   setr qb-hud:client:use_legacy_hud false
+   ```
+
+5. **Restart Server**
+   ```bash
+   restart [your-server]
+   ```
+
+### Manual Installation
+
+1. **Download Release**
+   - Download the latest release from GitHub
+   - Extract to `resources/[qb]/trew-hud/`
+
+2. **Set Permissions**
+   ```bash
+   chmod +x resources/[qb]/trew-hud/
+   ```
+
+3. **Verify Installation**
+   ```bash
+   # Check resource status
+   refresh
+   start trew-hud
+   ```
+
+## Configuration
+
+### Basic Configuration
+
+Edit `config.lua` to customize your HUD:
+
+```lua
+Config = {}
+
+-- General Settings
+Config.Framework = 'qb-core'  -- Framework detection
+Config.UpdateInterval = 200   -- Update frequency in ms
+Config.Debug = false          -- Enable debug mode
+
+-- HUD Elements
+Config.HUD = {
+    -- Show/hide elements
+    showHealth = true,
+    showArmor = true,
+    showHunger = true,
+    showThirst = true,
+    showStress = true,
+    showCash = true,
+    showBank = false,        -- Show bank balance on HUD
+    showJob = true,
+    showVoice = true,
+    showServerInfo = true,
+    
+    -- Element positions (from bottom-left corner)
+    healthPosition = {x = 120, y = 170},
+    armorPosition = {x = 120, y = 200},
+    hungerPosition = {x = 120, y = 230},
+    thirstPosition = {x = 120, y = 260},
+    stressPosition = {x = 120, y = 290},
+    
+    -- Colors
+    healthColor = '#2ECC71',
+    armorColor = '#3498DB', 
+    hungerColor = '#E67E22',
+    thirstColor = '#1ABC9C',
+    stressColor = '#E74C3C'
+}
+
+-- Vehicle HUD
+Config.Vehicle = {
+    enabled = true,
+    showSpeed = true,
+    showFuel = true,
+    showEngineHealth = true,
+    speedUnit = 'kmh',        -- 'kmh' or 'mph'
+    position = {x = -300, y = 150},
+    
+    -- Hide when not in vehicle
+    hideWhenOnFoot = true,
+    
+    -- Speedometer design
+    speedometer = {
+        style = 'circular',   -- 'circular', 'linear', 'digital'
+        size = 150,
+        showGear = true,
+        showRPM = false
+    }
+}
+
+-- Minimap
+Config.Minimap = {
+    enabled = true,
+    position = {x = -400, y = -400},
+    size = {width = 300, height = 200},
+    borderRadius = 15,
+    opacity = 0.8
+}
+```
+
+### Advanced Configuration
+
+#### Custom Styling
+
+```lua
+Config.Styling = {
+    -- Font settings
+    fonts = {
+        primary = 'Roboto',
+        secondary = 'Arial',
+        monospace = 'Courier New'
+    },
+    
+    -- Animation settings
+    animations = {
+        enabled = true,
+        duration = 300,       -- Animation duration in ms
+        easing = 'ease-out',  -- CSS easing function
+        
+        -- Specific animations
+        healthBarFill = 'ease-in-out',
+        notifications = 'bounce-in',
+        popups = 'fade-in'
+    },
+    
+    -- Theme colors
+    theme = {
+        primary = '#1abc9c',
+        secondary = '#34495e',
+        success = '#2ecc71',
+        warning = '#f39c12',
+        danger = '#e74c3c',
+        info = '#3498db',
+        dark = '#2c3e50',
+        light = '#ecf0f1'
+    }
+}
+```
+
+#### Notification System
+
+```lua
+Config.Notifications = {
+    enabled = true,
+    position = 'top-right',   -- 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+    maxVisible = 5,           -- Maximum notifications shown at once
+    defaultDuration = 5000,   -- Default duration in ms
+    
+    -- Notification types
+    types = {
+        success = {
+            icon = 'check-circle',
+            color = '#2ecc71',
+            sound = 'success_sound'
+        },
+        error = {
+            icon = 'times-circle',
+            color = '#e74c3c',
+            sound = 'error_sound'
+        },
+        warning = {
+            icon = 'exclamation-triangle',
+            color = '#f39c12',
+            sound = 'warning_sound'
+        },
+        info = {
+            icon = 'info-circle',
+            color = '#3498db',
+            sound = false
+        }
+    }
+}
+```
+
+#### Job-Specific Settings
+
+```lua
+Config.JobSettings = {
+    -- Police-specific settings
+    police = {
+        showBadgeNumber = true,
+        showUnit = true,
+        customColor = '#3498db',
+        additionalInfo = {
+            'calls_available',
+            'backup_requests'
+        }
+    },
+    
+    -- EMS-specific settings
+    ambulance = {
+        showPatientCount = true,
+        showAvailability = true,
+        customColor = '#e74c3c',
+        additionalInfo = {
+            'emergency_calls'
+        }
+    },
+    
+    -- Mechanic settings
+    mechanic = {
+        showVehicleHealth = true,
+        showRepairStatus = true,
+        customColor = '#f39c12'
+    }
+}
+```
+
+## Commands and Usage
+
+### Player Commands
+
+```lua
+-- HUD visibility
+/hud                 -- Toggle entire HUD
+/hud toggle          -- Same as /hud
+/hud show           -- Show HUD
+/hud hide           -- Hide HUD
+
+-- Individual elements
+/hud health         -- Toggle health bar
+/hud armor          -- Toggle armor bar
+/hud hunger         -- Toggle hunger bar
+/hud thirst         -- Toggle thirst bar
+/hud cash           -- Toggle cash display
+
+-- Settings
+/hud reset          -- Reset HUD to default settings
+/hud reload         -- Reload HUD configuration
+```
+
+### Admin Commands
+
+```lua
+-- Global HUD management
+/hudsettings        -- Open admin HUD settings panel
+/hudconfig [player] -- Open config for specific player
+/hudtheme [theme]   -- Set server-wide theme
+
+-- Debug commands
+/huddebug           -- Toggle debug mode
+/hudstatus          -- Show HUD system status
+/hudtest            -- Test all HUD elements
+```
+
+### Key Bindings
+
+```lua
+-- Default keybinds (can be changed in settings)
+F7 = Toggle HUD visibility
+HOME = Toggle minimap
+F6 = Admin menu (if admin resource present)
+```
+
+## Customization
+
+### Creating Custom Themes
+
+1. **Create Theme File**
+   ```javascript
+   // html/themes/mytheme.css
+   :root {
+       --primary-color: #your-color;
+       --secondary-color: #your-color;
+       --health-color: #your-color;
+       --armor-color: #your-color;
+       --hunger-color: #your-color;
+       --thirst-color: #your-color;
+       --stress-color: #your-color;
+   }
+   
+   .hud-container {
+       /* Your custom styles */
+   }
+   ```
+
+2. **Register Theme**
+   ```lua
+   -- In config.lua
+   Config.Themes = {
+       'default',
+       'dark',
+       'neon',
+       'mytheme'  -- Add your theme
+   }
+   ```
+
+### Modifying HUD Layout
+
+#### Custom Positioning
+
+```lua
+-- Position elements precisely
+Config.CustomPositions = {
+    health = {
+        anchor = 'bottom-left',  -- Anchor point
+        offset = {x = 120, y = 170},
+        responsive = {
+            mobile = {x = 60, y = 85},
+            tablet = {x = 90, y = 127},
+            desktop = {x = 120, y = 170}
+        }
+    }
+}
+```
+
+#### Adding Custom Elements
+
+```lua
+-- client/custom.lua
+RegisterNetEvent('trew-hud:client:addCustomElement', function(data)
+    local element = {
+        id = data.id,
+        type = data.type,
+        position = data.position,
+        value = data.value,
+        style = data.style or {}
+    }
+    
+    TriggerEvent('trew-hud:registerCustomElement', element)
+end)
+```
+
+### Integration with Other Scripts
+
+#### Stress System Integration
+
+```lua
+-- Integrate with qb-stress or custom stress systems
+RegisterNetEvent('hud:client:UpdateStress', function(stress)
+    TriggerEvent('trew-hud:client:updateStress', stress)
+end)
+
+-- Custom stress calculation
+function CalculateStressColor(stressLevel)
+    if stressLevel >= 80 then
+        return '#e74c3c'  -- Red for high stress
+    elseif stressLevel >= 50 then
+        return '#f39c12'  -- Orange for medium stress
+    else
+        return '#2ecc71'  -- Green for low stress
+    end
+end
+```
+
+#### Voice System Integration
+
+```lua
+-- pma-voice integration
+RegisterNetEvent('pma-voice:setTalkingMode', function(mode)
+    TriggerEvent('trew-hud:client:updateVoiceMode', mode)
+end)
+
+-- saltychat integration
+RegisterNetEvent('SaltyChat_OnTalkStateChange', function(isTalking)
+    TriggerEvent('trew-hud:client:updateTalkingState', isTalking)
+end)
+```
+
+## Performance Optimization
+
+### Optimizing Update Rates
+
+```lua
+-- Adjust update frequencies based on importance
+Config.UpdateRates = {
+    critical = 100,    -- Health, armor (fast updates)
+    normal = 500,      -- Hunger, thirst (medium updates)
+    slow = 1000,       -- Cash, job info (slow updates)
+    vehicle = 50       -- Vehicle stats (very fast when in vehicle)
+}
+
+-- Conditional updates
+Config.ConditionalUpdates = {
+    onlyWhenChanged = true,    -- Only update when values change
+    pauseWhenPaused = true,    -- Pause updates when game is paused
+    hideWhenDead = true        -- Hide HUD when player is dead
+}
+```
+
+### Resource Management
+
+```lua
+-- Cleanup resources properly
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+        -- Clean up HUD elements
+        SendNUIMessage({
+            action = 'cleanup',
+            data = {}
+        })
+    end
+end)
+
+-- Memory management
+CreateThread(function()
+    while true do
+        -- Garbage collection for HUD elements
+        collectgarbage()
+        Wait(30000) -- Every 30 seconds
+    end
+end)
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### HUD Elements Not Showing
+
+1. **Check Resource Order**
+   ```cfg
+   ensure qb-core
+   ensure trew-hud
+   ```
+
+2. **Verify QBCore Integration**
+   ```lua
+   -- Check if QBCore is loaded
+   if not QBCore then
+       print('[TREW-HUD] QBCore not found!')
+   end
+   ```
+
+3. **Clear Cache**
+   ```bash
+   # Clear FiveM cache
+   # Windows: %localappdata%/FiveM/FiveM.app/data/cache/
+   # Delete cache files
+   ```
+
+#### Performance Issues
+
+1. **Reduce Update Frequency**
+   ```lua
+   Config.UpdateInterval = 500  -- Increase from 200ms to 500ms
+   ```
+
+2. **Disable Unused Elements**
+   ```lua
+   Config.HUD.showBank = false
+   Config.HUD.showServerInfo = false
+   ```
+
+3. **Check for Conflicts**
+   - Disable other HUD resources
+   - Check for duplicate event handlers
+
+#### Configuration Not Applying
+
+1. **Restart Resource**
+   ```bash
+   restart trew-hud
+   ```
+
+2. **Check Config Syntax**
+   ```lua
+   -- Ensure proper Lua syntax in config.lua
+   -- No missing commas, quotes, or brackets
+   ```
+
+3. **Clear NUI Cache**
+   ```bash
+   # F8 console command
+   nui_restart trew-hud
+   ```
+
+### Debug Tools
+
+```lua
+-- Enable debug mode
+Config.Debug = true
+
+-- Debug commands (admin only)
+/trewhud debug          -- Toggle debug overlay
+/trewhud status         -- Show system status
+/trewhud performance    -- Show performance metrics
+/trewhud reload         -- Reload configuration
+```
+
+## API Reference
+
+### Client Events
+
+```lua
+-- Update HUD values
+TriggerEvent('trew-hud:client:updateHealth', health)
+TriggerEvent('trew-hud:client:updateArmor', armor)
+TriggerEvent('trew-hud:client:updateHunger', hunger)
+TriggerEvent('trew-hud:client:updateThirst', thirst)
+TriggerEvent('trew-hud:client:updateStress', stress)
+TriggerEvent('trew-hud:client:updateCash', cash)
+
+-- HUD control
+TriggerEvent('trew-hud:client:toggleHUD', visible)
+TriggerEvent('trew-hud:client:setTheme', themeName)
+TriggerEvent('trew-hud:client:resetPosition')
+
+-- Notifications
+TriggerEvent('trew-hud:client:notification', {
+    type = 'success',
+    title = 'Title',
+    message = 'Message',
+    duration = 5000
+})
+```
+
+### Exports
+
+```lua
+-- Check HUD status
+local hudVisible = exports['trew-hud']:IsHUDVisible()
+local currentTheme = exports['trew-hud']:GetCurrentTheme()
+
+-- Control HUD
+exports['trew-hud']:ShowHUD()
+exports['trew-hud']:HideHUD()
+exports['trew-hud']:ToggleHUD()
+
+-- Update specific elements
+exports['trew-hud']:UpdateElement('health', value)
+exports['trew-hud']:UpdateElement('armor', value)
+
+-- Notifications
+exports['trew-hud']:Notify(type, title, message, duration)
+```
+
+### NUI Callbacks
+
+```javascript
+// Send data to Lua
+$.post(`https://${GetParentResourceName()}/hudAction`, JSON.stringify({
+    action: 'updateValue',
+    element: 'health',
+    value: 100
+}));
+
+// Receive data from Lua
+window.addEventListener('message', function(event) {
+    const data = event.data;
+    
+    switch(data.action) {
+        case 'updateHealth':
+            updateHealthBar(data.value);
+            break;
+        case 'showNotification':
+            showNotification(data.notification);
+            break;
+    }
+});
+```
+
+---
+
+**Experience the best QBCore HUD!** TREW HUD delivers the perfect balance of functionality and immersion for your roleplay server. Check out our other [HUD options](/hud) or get [support](/support) if you need help with installation.

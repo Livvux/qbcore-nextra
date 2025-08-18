@@ -1,0 +1,417 @@
+# NoPixel HUD
+
+Immerse yourself in the FiveM roleplay experience with NoPixel HUD 3.0 - the iconic interface that brings the famous NoPixel server aesthetic to your own QBCore server.
+
+## Features
+
+### 🎭 Authentic NoPixel Experience
+- **Iconic Design**: Recreation of the famous NoPixel server interface
+- **Roleplay Focused**: Built specifically for serious roleplay environments
+- **Multi-Framework**: Works with QBCore, ESX, and standalone setups
+- **Streaming Friendly**: Clean, professional appearance for content creators
+
+### 📺 Interface Elements
+- **Player Status**: Health, armor, food, water, and stress indicators
+- **Vehicle Dashboard**: Speed, fuel, engine health, and gear display
+- **Money Counter**: Cash and bank balance with clean animations
+- **Job Badge**: Current job and grade with custom department styling
+- **Radio/Phone**: Communication device indicators
+- **Notifications**: Sleek notification system with priority levels
+
+## Installation
+
+### Prerequisites
+- QBCore Framework or ESX
+- Modern web browser support
+- FiveM server with proper permissions
+
+### Quick Setup
+
+1. **Download Resource**
+   ```bash
+   cd resources/[hud]
+   git clone https://github.com/example/nopixel-hud.git
+   ```
+
+2. **Install to Server**
+   ```cfg
+   # Add to server.cfg
+   start nopixel-hud
+   ```
+
+3. **Configuration**
+   ```lua
+   -- config.lua
+   Config.Framework = 'qb-core'  -- or 'esx'
+   Config.EnableAllFeatures = true
+   ```
+
+## Configuration
+
+### Basic Settings
+
+```lua
+Config = {}
+
+-- Framework Detection
+Config.Framework = 'qb-core'        -- 'qb-core', 'esx', 'standalone'
+Config.Debug = false                -- Enable debug mode
+
+-- HUD Elements
+Config.Elements = {
+    health = true,
+    armor = true,
+    food = true,
+    water = true,
+    stress = true,          -- QBCore only
+    stamina = false,        -- Optional
+    oxygen = true,          -- When underwater
+    
+    -- Vehicle elements
+    speedometer = true,
+    fuel = true,
+    engine = true,
+    seatbelt = true,
+    
+    -- UI elements
+    cash = true,
+    job = true,
+    time = true,
+    location = false        -- Street name display
+}
+
+-- Position Settings
+Config.Position = {
+    health = {x = 30, y = -220},
+    armor = {x = 30, y = -190},
+    food = {x = 30, y = -160},
+    water = {x = 30, y = -130},
+    cash = {x = 30, y = -50},
+    speedometer = {x = -350, y = -150}
+}
+```
+
+### Visual Customization
+
+```lua
+-- NoPixel authentic colors and styling
+Config.Colors = {
+    health = '#59a96a',         -- NoPixel green
+    armor = '#3498db',          -- Blue
+    food = '#f39c12',           -- Orange
+    water = '#00bcd4',          -- Cyan
+    stress = '#e74c3c',         -- Red
+    cash = '#2ecc71',           -- Money green
+    
+    -- Department colors
+    lspd = '#1a237e',          -- Police blue
+    ems = '#c62828',           -- EMS red
+    doj = '#4a148c',           -- DOJ purple
+    mechanic = '#ef6c00'       -- Mechanic orange
+}
+
+-- Typography (NoPixel style)
+Config.Fonts = {
+    primary = 'Roboto',
+    numbers = 'Roboto Mono',
+    ui = 'Roboto Condensed'
+}
+```
+
+## Department Integration
+
+### Police Department Setup
+
+```lua
+Config.Departments = {
+    police = {
+        name = 'Los Santos Police Department',
+        shortName = 'LSPD',
+        color = '#1a237e',
+        badge = true,
+        callsign = true,
+        
+        ranks = {
+            [0] = 'Cadet',
+            [1] = 'Officer I',
+            [2] = 'Officer II',
+            [3] = 'Officer III',
+            [4] = 'Senior Officer',
+            [5] = 'Corporal',
+            [6] = 'Sergeant',
+            [7] = 'Lieutenant',
+            [8] = 'Captain',
+            [9] = 'Deputy Chief',
+            [10] = 'Chief of Police'
+        }
+    }
+}
+```
+
+### EMS Department Setup
+
+```lua
+Config.Departments.ambulance = {
+    name = 'Los Santos Medical Center',
+    shortName = 'EMS',
+    color = '#c62828',
+    badge = true,
+    
+    ranks = {
+        [0] = 'Trainee',
+        [1] = 'EMT',
+        [2] = 'Paramedic',
+        [3] = 'Advanced Paramedic',
+        [4] = 'Supervisor',
+        [5] = 'Lieutenant',
+        [6] = 'Captain',
+        [7] = 'Deputy Chief',
+        [8] = 'Chief Medical Officer'
+    }
+}
+```
+
+## Commands & Usage
+
+### Player Commands
+
+```lua
+-- HUD Controls
+/hud                    -- Toggle HUD visibility
+/nphud                  -- NoPixel HUD specific toggle
+/hud position           -- Adjust element positions
+/hud reset              -- Reset to default positions
+
+-- Information Display
+/time                   -- Show current time
+/cash                   -- Display money (if enabled)
+/job                    -- Show current job info
+```
+
+### Admin Commands
+
+```lua
+-- HUD Administration
+/hudsettings            -- Open HUD configuration panel
+/sethudelements [player]-- Configure elements for player
+/hudreload              -- Reload HUD configuration
+
+-- Department Management
+/setbadge [id] [badge]  -- Set police badge number
+/setcallsign [id] [sign]-- Set radio callsign
+/setrank [id] [rank]    -- Set department rank
+```
+
+## Advanced Features
+
+### Radio Integration
+
+```lua
+-- Radio display when talking
+Config.Radio = {
+    enabled = true,
+    showFrequency = false,      -- Hide frequency for RP
+    showTalkingIndicator = true,
+    position = {x = -50, y = 50},
+    
+    -- Animation when talking
+    animation = {
+        enabled = true,
+        duration = 300,
+        style = 'pulse'
+    }
+}
+```
+
+### Phone Integration
+
+```lua
+-- Phone status display
+Config.Phone = {
+    enabled = true,
+    showBattery = false,        -- Hide battery for RP
+    showSignal = false,         -- Hide signal bars
+    showNotifications = true,
+    
+    -- Integration with phone resources
+    resources = {
+        'qb-phone',
+        'lb-phone',
+        'gks-phone'
+    }
+}
+```
+
+### Stress System (QBCore)
+
+```lua
+Config.Stress = {
+    enabled = true,
+    effects = {
+        shake = {
+            enabled = true,
+            threshold = 80,         -- Start shaking at 80% stress
+            intensity = 0.5
+        },
+        
+        blur = {
+            enabled = true,
+            threshold = 90,         -- Start blur at 90% stress
+            intensity = 0.3
+        }
+    },
+    
+    -- Stress relief activities
+    relief = {
+        smoking = -5,           -- Smoking reduces stress by 5
+        drinking = -3,          -- Alcohol reduces stress by 3
+        yoga = -10             -- Yoga reduces stress by 10
+    }
+}
+```
+
+## Customization Guide
+
+### Creating Custom Department Themes
+
+```css
+/* Custom department styling */
+.department-police {
+    background: linear-gradient(135deg, #1a237e, #3949ab);
+    border-left: 4px solid #1a237e;
+}
+
+.department-ems {
+    background: linear-gradient(135deg, #c62828, #f44336);
+    border-left: 4px solid #c62828;
+}
+
+.department-doj {
+    background: linear-gradient(135deg, #4a148c, #7b1fa2);
+    border-left: 4px solid #4a148c;
+}
+```
+
+### Custom Notification Styles
+
+```lua
+Config.Notifications = {
+    position = 'top-right',
+    maxVisible = 5,
+    
+    types = {
+        police = {
+            sound = 'police_notification',
+            color = '#1a237e',
+            icon = 'fas fa-shield-alt'
+        },
+        
+        medical = {
+            sound = 'medical_notification', 
+            color = '#c62828',
+            icon = 'fas fa-heartbeat'
+        },
+        
+        government = {
+            sound = 'government_notification',
+            color = '#4a148c',
+            icon = 'fas fa-landmark'
+        }
+    }
+}
+```
+
+## Performance & Compatibility
+
+### Optimization Settings
+
+```lua
+Config.Performance = {
+    updateInterval = 250,       -- Update every 250ms
+    vehicleUpdateInterval = 100,-- Vehicle updates every 100ms
+    
+    -- Only show relevant elements
+    contextual = {
+        vehicleHUD = 'onlyInVehicle',
+        oxygenBar = 'onlyUnderwater',
+        stressBar = 'onlyWhenStressed'
+    },
+    
+    -- Resource cleanup
+    cleanup = {
+        enabled = true,
+        interval = 300000       -- Clean up every 5 minutes
+    }
+}
+```
+
+### Multi-Framework Support
+
+```lua
+-- Framework detection and adaptation
+if Config.Framework == 'qb-core' then
+    QBCore = exports['qb-core']:GetCoreObject()
+    
+    -- QBCore specific events
+    RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+        TriggerEvent('nopixel-hud:client:initialize')
+    end)
+    
+elseif Config.Framework == 'esx' then
+    ESX = exports['es_extended']:getSharedObject()
+    
+    -- ESX specific events  
+    RegisterNetEvent('esx:playerLoaded', function()
+        TriggerEvent('nopixel-hud:client:initialize')
+    end)
+end
+```
+
+## API Reference
+
+### Client Events
+
+```lua
+-- Update player status
+TriggerEvent('nopixel-hud:client:updateHealth', health)
+TriggerEvent('nopixel-hud:client:updateArmor', armor)
+TriggerEvent('nopixel-hud:client:updateFood', food)
+TriggerEvent('nopixel-hud:client:updateWater', water)
+
+-- Department/Job updates
+TriggerEvent('nopixel-hud:client:updateJob', jobData)
+TriggerEvent('nopixel-hud:client:setBadge', badgeNumber)
+TriggerEvent('nopixel-hud:client:setCallsign', callsign)
+
+-- Vehicle updates
+TriggerEvent('nopixel-hud:client:updateSpeed', speed)
+TriggerEvent('nopixel-hud:client:updateFuel', fuel)
+TriggerEvent('nopixel-hud:client:updateEngine', health)
+```
+
+### Exports
+
+```lua
+-- Get HUD data
+local hudVisible = exports['nopixel-hud']:IsVisible()
+local currentJob = exports['nopixel-hud']:GetCurrentJob()
+
+-- Control HUD
+exports['nopixel-hud']:ShowElement('health', true)
+exports['nopixel-hud']:HideElement('armor', false)
+exports['nopixel-hud']:SetTheme('police')
+
+-- Notifications
+exports['nopixel-hud']:ShowNotification({
+    type = 'police',
+    title = 'LSPD Alert',
+    message = '10-54 in progress',
+    duration = 8000
+})
+```
+
+---
+
+**Experience authentic NoPixel roleplay!** This HUD brings the professional, immersive interface that made NoPixel famous to your own server. Perfect for serious roleplay communities looking for that authentic feel.
+
+Check out our other [HUD options](/hud) or get [support](/support) for installation help.

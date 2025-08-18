@@ -1,0 +1,220 @@
+# QBCore Installation Guide
+
+Complete installation guide for setting up QBCore Framework on Windows and Linux servers. Choose your platform below to get started with the most popular FiveM framework.
+
+## Quick Start Options
+
+import { Cards } from 'nextra/components'
+
+<Cards>
+  <Cards.Card 
+    title="Windows Installation" 
+    href="/docs/installation/windows"
+  >
+    Step-by-step guide for installing QBCore on Windows Server
+  </Cards.Card>
+  
+  <Cards.Card 
+    title="Linux Installation" 
+    href="/docs/installation/linux"
+  >
+    Complete Linux setup guide with automated scripts
+  </Cards.Card>
+</Cards>
+
+## Installation Overview
+
+QBCore Framework is designed to be easy to install while providing maximum flexibility for server customization. The installation process typically takes 30-60 minutes depending on your server specifications and internet connection.
+
+### What You'll Need
+
+#### Minimum Requirements
+- **Operating System**: Windows Server 2016+ or Ubuntu 18.04+
+- **RAM**: 8GB minimum (16GB recommended)
+- **Storage**: 50GB SSD space minimum
+- **Network**: Stable internet connection with good bandwidth
+- **FiveM License**: Valid FiveM server license key
+
+#### Recommended Specifications
+- **CPU**: Intel i7/AMD Ryzen 7 or better
+- **RAM**: 32GB for optimal performance
+- **Storage**: 100GB+ NVMe SSD
+- **Network**: Dedicated server with 1Gbps connection
+- **Backup**: Automated backup solution
+
+### Pre-Installation Checklist
+
+Before starting the installation, ensure you have:
+
+- [ ] **Server Access**: Administrative access to your server
+- [ ] **Database Ready**: MySQL/MariaDB server installed and configured
+- [ ] **FiveM License**: Valid server license from FiveM
+- [ ] **Port Configuration**: Ports 30120 (game) and 40120 (HTTP) open
+- [ ] **Dependencies**: Node.js, Git, and other required software
+- [ ] **Backup Plan**: Strategy for backing up server data
+
+## Installation Methods
+
+### Method 1: Manual Installation (Recommended for Learning)
+Perfect for users who want to understand the framework structure and have full control over the installation process.
+
+**Advantages:**
+- Complete control over configuration
+- Better understanding of framework structure
+- Easier troubleshooting and customization
+- Ability to modify installation for specific needs
+
+**Time Required:** 45-90 minutes
+
+### Method 2: Automated Script Installation
+Quick installation using our automated scripts for experienced users who want to get running fast.
+
+**Advantages:**
+- Faster installation process
+- Reduced chance of configuration errors
+- Includes performance optimizations
+- Automatic dependency installation
+
+**Time Required:** 15-30 minutes
+
+### Method 3: Docker Installation (Advanced)
+Containerized installation for users familiar with Docker and container orchestration.
+
+**Advantages:**
+- Isolated environment
+- Easy scaling and deployment
+- Consistent across different systems
+- Built-in backup and restore capabilities
+
+**Time Required:** 20-40 minutes
+
+### Method 4: Pre-configured Server Templates
+For users who want a ready-to-run server with optimized configurations, consider using [pre-built QBCore server packs](https://fivemx.com/qbcore-server-packs/) that include all essential resources and configurations.
+
+**Advantages:**
+- Skip configuration complexity
+- Battle-tested resource combinations
+- Optimized performance settings
+- Ready-to-deploy server configurations
+- Includes popular scripts and features
+
+**Time Required:** 10-20 minutes
+
+## Platform-Specific Guides
+
+### Windows Server Installation
+
+Our Windows guide covers:
+- Installing dependencies (MySQL, Node.js, Git)
+- Setting up the FiveM server
+- Configuring QBCore framework
+- Database setup and migration
+- Performance optimization for Windows
+- Security configuration
+- Automatic startup configuration
+
+**[Start Windows Installation →](/docs/installation/windows)**
+
+### Linux Server Installation
+
+Our Linux guide includes:
+- Dependency installation via package managers
+- Automated installation scripts
+- Service configuration with systemd
+- Database setup and optimization
+- Security hardening
+- Performance tuning
+- Log management setup
+
+**[Start Linux Installation →](/docs/installation/linux)**
+
+## Post-Installation Steps
+
+After completing the basic installation, you'll want to:
+
+### 1. **Configure Core Settings**
+- Set server name and description
+- Configure economy settings
+- Adjust gameplay parameters
+- Set up admin permissions
+
+### 2. **Install Essential Resources**
+- Inventory system (qb-inventory)
+- Phone system (qb-phone)
+- Housing system (qb-houses)
+- Vehicle system (qb-vehicleshop)
+- Job systems (qb-policejob, qb-ambulancejob)
+
+### 3. **Set Up Admin Tools**
+- Admin menu (qb-admin)
+- Player management tools
+- Server monitoring
+- Performance monitoring
+
+### 4. **Configure Database**
+- Optimize MySQL settings
+- Set up automated backups
+- Configure user permissions
+- Index optimization
+
+### 5. **Security Configuration**
+- Set up firewall rules
+- Configure SSL/TLS certificates
+- Implement access controls
+- Enable logging and monitoring
+
+## Common Installation Issues
+
+### Database Connection Problems
+**Symptoms:** Server fails to start, database connection errors
+**Solutions:**
+- Verify MySQL service is running
+- Check database credentials in configuration
+- Ensure database user has proper permissions
+- Verify firewall settings aren't blocking connections
+
+### Resource Loading Errors
+**Symptoms:** Missing features, script errors in console
+**Solutions:**
+- Check resource dependencies
+- Verify file permissions
+- Ensure all resources are properly configured
+- Check for conflicting resources
+
+### Performance Issues
+**Symptoms:** High server latency, player connection issues
+**Solutions:**
+- Optimize MySQL configuration
+- Increase server RAM allocation
+- Configure SSD storage properly
+- Optimize network settings
+
+### Port Configuration Problems
+**Symptoms:** Players can't connect to server
+**Solutions:**
+- Open required ports in firewall
+- Configure port forwarding if behind NAT
+- Check for port conflicts with other services
+- Verify network adapter configuration
+
+## Getting Help
+
+If you encounter issues during installation:
+
+1. **Check Our Documentation**: Most common issues are covered in our guides
+2. **Community Support**: Visit our [support page](/support) for community help
+3. **GitHub Issues**: Report bugs and technical issues on GitHub
+4. **Discord Community**: Get real-time help from other developers
+
+## Next Steps
+
+After successful installation:
+
+- **[Configuration Guide](/docs/core)**: Learn about QBCore configuration
+- **[Development Guide](/tutorials/scripting)**: Start developing custom resources
+- **[Performance Guide](/docs/performance)**: Optimize your server performance
+- **[Security Guide](/docs/security)**: Secure your server properly
+
+---
+
+**Ready to install QBCore?** Choose your platform above and follow our detailed step-by-step guides to get your server running in no time!

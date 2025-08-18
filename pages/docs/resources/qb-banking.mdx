@@ -1,0 +1,529 @@
+# QB-Banking - Advanced Banking System
+
+import { Callout } from 'nextra/components'
+
+The **qb-banking** resource provides a comprehensive banking system for QBCore servers, featuring ATMs, bank locations, account management, transactions, and society banking functionality.
+
+## Overview
+
+QB-Banking replaces the basic money system with a realistic banking experience that includes physical bank locations, ATM networks, account management, and transaction history. Players can manage their finances through various banking interfaces and conduct secure transactions.
+
+### Key Features
+
+- **Bank Locations**: Physical bank buildings with full interior access
+- **ATM Network**: Strategically placed ATMs across the map
+- **Account Management**: Personal and business account support
+- **Transaction History**: Detailed transaction logs and statements
+- **Society Banking**: Organization and business account management
+- **Card System**: Debit cards with PIN protection
+- **Wire Transfers**: Player-to-player money transfers
+- **Loan System**: Bank loans with interest and payment schedules
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for banking menus)
+- qb-input (for PIN and form inputs)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-banking.git
+```
+
+2. **Database Setup**
+```sql
+-- Add banking tables to your database
+CREATE TABLE IF NOT EXISTS `bank_accounts` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `business` varchar(50) DEFAULT NULL,
+  `businessid` int(11) DEFAULT NULL,
+  `gangid` varchar(50) DEFAULT NULL,
+  `account_name` varchar(50) NOT NULL,
+  `account_balance` int(11) NOT NULL DEFAULT 0,
+  `account_type` enum('personal','business','gang') NOT NULL DEFAULT 'personal',
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `bank_cards` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `cardNumber` varchar(50) DEFAULT NULL,
+  `cardPin` varchar(50) DEFAULT NULL,
+  `cardActive` tinyint(4) DEFAULT 1,
+  `cardLocked` tinyint(4) DEFAULT 0,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `bank_statements` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `account` varchar(50) DEFAULT NULL,
+  `amount` int(11) DEFAULT NULL,
+  `reason` varchar(255) DEFAULT NULL,
+  `statement_type` enum('deposit','withdraw','transfer') DEFAULT NULL,
+  `date` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add to server.cfg**
+```cfg
+ensure qb-banking
+```
+
+4. **Restart Server**
+```bash
+restart qb-banking
+```
+
+<Callout type="info">
+  Ensure qb-banking loads after qb-core, qb-target, and qb-menu in your server.cfg
+</Callout>
+
+## Configuration
+
+### Basic Configuration
+
+The main configuration file is located at `config.lua`:
+
+```lua
+Config = {}
+
+-- General settings
+Config.UseTarget = true
+Config.MinimumBalance = 25
+Config.MaximumTransfer = 100000
+Config.DailyTransferLimit = 500000
+
+-- ATM and Bank locations
+Config.BankLocations = {
+    {
+        name = "Fleeca Bank",
+        coords = vector3(149.9, -1040.46, 29.37),
+        length = 6.0,
+        width = 8.0,
+        heading = 340,
+        minZ = 28.37,
+        maxZ = 32.37
+    },
+    {
+        name = "Fleeca Bank",
+        coords = vector3(314.23, -278.83, 54.17),
+        length = 6.0,
+        width = 8.0,
+        heading = 340,
+        minZ = 53.17,
+        maxZ = 57.17
+    }
+}
+
+Config.ATMLocations = {
+    {coords = vector3(158.8, -1015.21, 29.34), heading = 0.0},
+    {coords = vector3(-386.733, 6046.08, 31.5), heading = 0.0},
+    {coords = vector3(-284.037, 6224.385, 31.187), heading = 0.0},
+    -- Add more ATM locations
+}
+
+-- Society banking settings
+Config.Societies = {
+    ['police'] = {
+        label = 'Los Santos Police Department',
+        grades = {
+            [0] = {access = false}, -- Cadet
+            [1] = {access = true},  -- Officer
+            [2] = {access = true},  -- Sergeant
+            [3] = {access = true},  -- Lieutenant
+            [4] = {access = true}   -- Chief
+        }
+    },
+    ['ambulance'] = {
+        label = 'Los Santos Medical Services',
+        grades = {
+            [0] = {access = false},
+            [1] = {access = true},
+            [2] = {access = true},
+            [3] = {access = true}
+        }
+    }
+}
+```
+
+### Card System Configuration
+
+```lua
+Config.Cards = {
+    ['bankcard'] = {
+        item = 'bankcard',
+        label = 'Bank Card',
+        useable = true,
+        image = 'bank_card.png'
+    }
+}
+
+-- PIN Configuration
+Config.PinAttempts = 3
+Config.PinTimeout = 300000 -- 5 minutes
+```
+
+## API Reference
+
+### Client Exports
+
+#### OpenBankingMenu
+Opens the main banking interface.
+
+```lua
+-- Open banking menu at current location
+exports['qb-banking']:OpenBankingMenu()
+
+-- Open specific account
+exports['qb-banking']:OpenBankingMenu('personal')
+```
+
+#### GetAccountBalance
+Gets the balance of a specific account.
+
+```lua
+-- Get personal account balance
+local balance = exports['qb-banking']:GetAccountBalance('personal')
+print("Account balance: $" .. balance)
+```
+
+#### HasAccessToAccount
+Checks if player has access to a specific account.
+
+```lua
+-- Check society account access
+local hasAccess = exports['qb-banking']:HasAccessToAccount('police')
+```
+
+### Server Exports
+
+#### CreateAccount
+Creates a new bank account.
+
+```lua
+-- Create personal account
+exports['qb-banking']:CreateAccount(citizenid, 'personal', 'Primary Account', 0)
+
+-- Create business account
+exports['qb-banking']:CreateAccount(citizenid, 'business', 'My Business', 10000, businessid)
+```
+
+#### AddMoney
+Adds money to an account.
+
+```lua
+-- Add money to personal account
+exports['qb-banking']:AddMoney(citizenid, 'personal', 1000, 'Salary payment')
+
+-- Add money to society account
+exports['qb-banking']:AddMoney(nil, 'police', 5000, 'Government funding')
+```
+
+#### RemoveMoney
+Removes money from an account.
+
+```lua
+-- Remove money from account
+local success = exports['qb-banking']:RemoveMoney(citizenid, 'personal', 500, 'ATM withdrawal')
+```
+
+#### TransferMoney
+Transfers money between accounts.
+
+```lua
+-- Transfer money between players
+exports['qb-banking']:TransferMoney(senderCitizenId, receiverCitizenId, amount, reason)
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- Banking menu events
+RegisterNetEvent('qb-banking:client:openATM', function()
+    -- Open ATM interface
+end)
+
+RegisterNetEvent('qb-banking:client:openBank', function()
+    -- Open bank interface
+end)
+
+-- Transaction events
+RegisterNetEvent('qb-banking:client:updateBalance', function(account, newBalance)
+    -- Handle balance update
+end)
+```
+
+#### Server Events
+
+```lua
+-- Account management
+RegisterNetEvent('qb-banking:server:depositMoney', function(account, amount))
+RegisterNetEvent('qb-banking:server:withdrawMoney', function(account, amount))
+RegisterNetEvent('qb-banking:server:transferMoney', function(targetCitizenId, amount, reason))
+
+-- Card management
+RegisterNetEvent('qb-banking:server:createCard', function())
+RegisterNetEvent('qb-banking:server:changePin', function(newPin))
+```
+
+## Usage Examples
+
+### Basic Banking Operations
+
+```lua
+-- Deposit money into personal account
+RegisterNetEvent('qb-banking:server:depositMoney', function(account, amount)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player.Functions.RemoveMoney('cash', amount, 'bank-deposit') then
+        exports['qb-banking']:AddMoney(Player.PlayerData.citizenid, account, amount, 'Cash deposit')
+        TriggerClientEvent('QBCore:Notify', src, 'Deposited $' .. amount, 'success')
+    end
+end)
+```
+
+### Society Banking Integration
+
+```lua
+-- Police department payroll system
+RegisterNetEvent('qb-banking:server:policePayroll', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if Player.PlayerData.job.name == 'police' and Player.PlayerData.job.grade.level >= 3 then
+        local policeBalance = exports['qb-banking']:GetAccountBalance('police')
+        local officers = QBCore.Functions.GetPlayers()
+        local payAmount = 1000
+        
+        for _, playerId in pairs(officers) do
+            local Officer = QBCore.Functions.GetPlayer(playerId)
+            if Officer.PlayerData.job.name == 'police' then
+                if policeBalance >= payAmount then
+                    exports['qb-banking']:RemoveMoney(nil, 'police', payAmount, 'Payroll - ' .. Officer.PlayerData.charinfo.firstname)
+                    exports['qb-banking']:AddMoney(Officer.PlayerData.citizenid, 'personal', payAmount, 'Police salary')
+                end
+            end
+        end
+    end
+end)
+```
+
+### Card System Implementation
+
+```lua
+-- Create bank card item
+QBCore.Functions.CreateUseableItem('bankcard', function(source, item)
+    local Player = QBCore.Functions.GetPlayer(source)
+    local cardData = json.decode(item.info)
+    
+    if cardData and cardData.citizenid == Player.PlayerData.citizenid then
+        TriggerClientEvent('qb-banking:client:openCardMenu', source, cardData)
+    else
+        TriggerClientEvent('QBCore:Notify', source, 'This card doesn\'t belong to you', 'error')
+    end
+end)
+```
+
+### Loan System Integration
+
+```lua
+-- Loan application system
+RegisterNetEvent('qb-banking:server:applyLoan', function(amount, purpose)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local creditScore = CalculateCreditScore(Player.PlayerData.citizenid)
+    
+    local maxLoan = math.floor(creditScore * 10000)
+    local interestRate = CalculateInterestRate(creditScore)
+    
+    if amount <= maxLoan then
+        exports['qb-banking']:AddMoney(Player.PlayerData.citizenid, 'personal', amount, 'Bank loan')
+        CreateLoanRecord(Player.PlayerData.citizenid, amount, interestRate, purpose)
+        TriggerClientEvent('QBCore:Notify', src, 'Loan approved: $' .. amount, 'success')
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'Loan denied: Amount too high', 'error')
+    end
+end)
+```
+
+## Administrative Commands
+
+### Player Commands
+
+- `/balance` - Check personal account balance
+- `/transfer [id] [amount]` - Transfer money to another player
+- `/statement` - View transaction history
+- `/card` - Manage bank card (create, change PIN, etc.)
+
+### Admin Commands
+
+- `/setbalance [id] [account] [amount]` - Set account balance
+- `/addmoney [id] [account] [amount]` - Add money to account
+- `/removemoney [id] [account] [amount]` - Remove money from account
+- `/createaccount [id] [type] [name]` - Create new account
+
+### Console Commands
+
+```bash
+# Set account balance
+setbalance 1 personal 50000
+
+# Create society account
+createsociety police "LSPD" 100000
+
+# View all accounts for player
+viewaccounts ABC12345
+```
+
+## Integration with Other Resources
+
+### qb-bossmenu Integration
+
+Society banking integration with boss menus:
+
+```lua
+-- In qb-bossmenu/client/client.lua
+RegisterNetEvent('qb-bossmenu:client:openBanking', function()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    local society = PlayerData.job.name
+    
+    if exports['qb-banking']:HasAccessToAccount(society) then
+        exports['qb-banking']:OpenBankingMenu(society)
+    end
+end)
+```
+
+### qb-phone Integration
+
+Banking app for the phone:
+
+```lua
+-- Phone banking app
+RegisterNetEvent('qb-phone:client:openBankingApp', function()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    local balance = exports['qb-banking']:GetAccountBalance('personal')
+    local transactions = exports['qb-banking']:GetRecentTransactions(10)
+    
+    SendNUIMessage({
+        action = 'openBankingApp',
+        balance = balance,
+        transactions = transactions
+    })
+end)
+```
+
+### qb-inventory Integration
+
+Bank cards in inventory:
+
+```lua
+-- In qb-inventory/shared/items.lua
+['bankcard'] = {
+    ['name'] = 'bankcard',
+    ['label'] = 'Bank Card',
+    ['weight'] = 0,
+    ['type'] = 'item',
+    ['image'] = 'bank_card.png',
+    ['unique'] = true,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'A bank card for account access'
+},
+```
+
+## Troubleshooting
+
+### Common Issues
+
+#### ATM/Bank Not Responding
+**Problem**: Cannot interact with ATMs or banks.
+
+**Solutions**:
+1. Check qb-target configuration
+2. Verify resource load order
+3. Check for conflicting resources
+
+```lua
+-- Debug ATM interactions
+RegisterCommand('debugatm', function()
+    local coords = GetEntityCoords(PlayerPedId())
+    local nearestATM = GetClosestATM(coords)
+    print("Nearest ATM distance: " .. #(coords - nearestATM))
+end, false)
+```
+
+#### Society Banking Access Issues
+**Problem**: Players can't access society accounts.
+
+**Solution**:
+```lua
+-- Check society access
+RegisterCommand('checksociety', function()
+    local PlayerData = QBCore.Functions.GetPlayerData()
+    local hasAccess = exports['qb-banking']:HasAccessToAccount(PlayerData.job.name)
+    print("Society access: " .. tostring(hasAccess))
+    print("Job: " .. PlayerData.job.name .. " Grade: " .. PlayerData.job.grade.level)
+end, false)
+```
+
+#### Transaction Failures
+**Problem**: Money transfers fail without clear reason.
+
+**Solutions**:
+1. Check account balances
+2. Verify transfer limits
+3. Check for sufficient funds
+
+```lua
+-- Debug transaction
+local function DebugTransaction(sender, receiver, amount)
+    local senderBalance = exports['qb-banking']:GetAccountBalance(sender)
+    local dailyLimit = exports['qb-banking']:GetDailyTransferAmount(sender)
+    
+    print("Sender balance: " .. senderBalance)
+    print("Transfer amount: " .. amount)
+    print("Daily limit used: " .. dailyLimit)
+    print("Can transfer: " .. tostring(senderBalance >= amount and dailyLimit + amount <= Config.DailyTransferLimit))
+end
+```
+
+### Database Issues
+
+```lua
+-- Fix corrupted account data
+RegisterCommand('fixaccounts', function()
+    MySQL.query('SELECT citizenid FROM players WHERE NOT EXISTS (SELECT 1 FROM bank_accounts WHERE citizenid = players.citizenid AND account_type = "personal")', {}, function(result)
+        for _, player in pairs(result) do
+            exports['qb-banking']:CreateAccount(player.citizenid, 'personal', 'Primary Account', Config.MinimumBalance)
+        end
+    end)
+end, true)
+```
+
+## Related Resources
+
+- **[qb-core](/docs/resources/qb-core)** - Core framework functions
+- **[qb-phone](/docs/resources/qb-phone)** - Phone banking app integration
+- **qb-bossmenu** - Society management system
+- **qb-target** - Interaction system for banks/ATMs
+- **qb-menu** - Banking menu interfaces
+
+## Support
+
+For issues and feature requests:
+- **GitHub**: [qb-banking Repository](https://github.com/qbcore-framework/qb-banking)
+- **Discord**: [QBCore Community](https://discord.gg/qbcore)
+- **Documentation**: [QBCore Docs](https://docs.qbcore.org)

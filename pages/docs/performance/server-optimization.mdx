@@ -1,0 +1,461 @@
+# 🖥️ Server Optimization
+
+Comprehensive guide to optimizing FiveM server configuration, operating system settings, and hardware utilization for maximum QBCore performance.
+
+import { Callout } from 'nextra/components'
+
+## FiveM Server Configuration
+
+### Core Server Settings
+
+Edit your `server.cfg` file with optimized settings:
+
+```cfg
+# Server Information
+sv_hostname "Optimized QBCore Server"
+sv_maxclients 128
+sv_endpointprivacy true
+
+# Performance Settings
+sv_enforceGameBuild 2944    # Latest stable build
+sv_scriptHookAllowed 0      # Disable for security/performance
+
+# Network Optimization
+netLibrary.multiplexDebug true
+net_maxPackets 1000
+net_maxPacketSize 1300
+net_threadsPerStream 8
+
+# Resource Management
+ensure mapmanager
+ensure chat
+ensure spawnmanager
+ensure sessionmanager
+ensure basic-gamemode
+ensure hardcap
+ensure baseevents
+
+# QBCore Resources (load order matters)
+ensure qb-core
+ensure qb-multicharacter
+ensure qb-spawn
+# ... additional resources in dependency order
+
+# Performance Commands
+add_ace resource.console command.resmon allow
+add_ace resource.console command.status allow
+
+# Security Settings
+rcon_password "your_secure_password"
+sv_master1 ""  # Disable server listing if needed
+```
+
+### Advanced Server Configuration
+
+```cfg
+# Memory Management
+set mysql_connection_string "server=localhost;database=qbcore;userid=username;password=password;charset=utf8mb4;SslMode=None;AllowUserVariables=True;DefaultCommandTimeout=300"
+
+# Debug Settings (disable in production)
+set sv_debugqueue false
+set sv_debugnative false
+
+# Logging Configuration
+set sv_logFile "server.log"
+set sv_logLevel "info"
+
+# OneSync Settings (for 64+ players)
+set onesync on
+set onesync_enableInfinity 1
+set onesync_enableBeyond 1
+set onesync_population 0
+
+# Steam Web API (for Steam authentication)
+set steam_webApiKey "your_steam_api_key"
+
+# License Key (for server listing)
+sv_licenseKey "your_cfx_license_key"
+```
+
+## Operating System Optimization
+
+### Linux Server Optimization
+
+#### System Configuration
+
+```bash
+# /etc/sysctl.conf optimizations
+vm.swappiness=10
+vm.dirty_ratio=15
+vm.dirty_background_ratio=5
+vm.overcommit_memory=1
+net.core.rmem_max=134217728
+net.core.wmem_max=134217728
+net.ipv4.tcp_rmem=4096 87380 134217728
+net.ipv4.tcp_wmem=4096 65536 134217728
+net.ipv4.tcp_congestion_control=bbr
+net.core.netdev_max_backlog=5000
+
+# Apply changes
+sudo sysctl -p
+```
+
+#### Process Limits
+
+```bash
+# /etc/security/limits.conf
+fivem soft nofile 65536
+fivem hard nofile 65536
+fivem soft nproc 32768
+fivem hard nproc 32768
+
+# For systemd services, create override
+sudo mkdir -p /etc/systemd/system/fivem.service.d
+sudo tee /etc/systemd/system/fivem.service.d/override.conf << EOF
+[Service]
+LimitNOFILE=65536
+LimitNPROC=32768
+EOF
+```
+
+#### CPU Governor
+
+```bash
+# Set CPU governor to performance
+sudo cpupower frequency-set -g performance
+
+# Or for balanced performance
+sudo cpupower frequency-set -g ondemand
+```
+
+### Windows Server Optimization
+
+#### Power Settings
+
+```powershell
+# Set high performance power plan
+powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c
+
+# Disable power throttling
+powercfg /powerthrottling disable /path /processname FXServer.exe
+```
+
+#### Process Priority
+
+```batch
+# Set FiveM server to high priority
+wmic process where name="FXServer.exe" CALL setpriority "high priority"
+
+# Or use Task Manager to set priority permanently
+```
+
+## Database Server Optimization
+
+### MySQL/MariaDB Configuration
+
+```ini
+# /etc/mysql/my.cnf or /etc/mysql/mariadb.conf.d/50-server.cnf
+
+[mysqld]
+# Basic Settings
+user = mysql
+pid-file = /var/run/mysqld/mysqld.pid
+socket = /var/run/mysqld/mysqld.sock
+port = 3306
+basedir = /usr
+datadir = /var/lib/mysql
+tmpdir = /tmp
+
+# Performance Settings
+innodb_buffer_pool_size = 4G  # 70-80% of available RAM
+innodb_log_file_size = 512M
+innodb_log_buffer_size = 64M
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+
+# Connection Settings
+max_connections = 500
+max_connect_errors = 1000
+connect_timeout = 10
+wait_timeout = 28800
+interactive_timeout = 28800
+
+# Query Cache (disable for MySQL 5.7+)
+query_cache_type = 0
+query_cache_size = 0
+
+# Logging
+slow_query_log = 1
+slow_query_log_file = /var/log/mysql/slow.log
+long_query_time = 2
+log_queries_not_using_indexes = 1
+
+# Character Set
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+[mysql]
+default-character-set = utf8mb4
+
+[client]
+default-character-set = utf8mb4
+```
+
+### Database Connection Optimization
+
+```lua
+-- oxmysql configuration in resource manifest
+dependency 'oxmysql'
+
+-- Connection settings
+set mysql_connection_string "server=localhost;port=3306;database=qbcore;userid=qbuser;password=secure_password;charset=utf8mb4;SslMode=None;AllowUserVariables=True;DefaultCommandTimeout=300;ConnectionTimeout=60;Pooling=true;MinimumPoolSize=5;MaximumPoolSize=100"
+
+-- Connection pooling settings
+set mysql_slow_query_warning 150
+set mysql_debug false
+```
+
+## Hardware Optimization
+
+### CPU Optimization
+
+```bash
+# Check CPU information
+lscpu
+cat /proc/cpuinfo
+
+# Monitor CPU usage
+htop
+vmstat 1
+
+# Check for CPU throttling
+cat /proc/cpuinfo | grep MHz
+watch -n1 "cat /proc/cpuinfo | grep MHz"
+```
+
+### Memory Optimization
+
+```bash
+# Check memory usage
+free -h
+cat /proc/meminfo
+
+# Monitor memory in real-time
+watch -n1 free -h
+
+# Check for memory leaks
+valgrind --tool=memcheck --leak-check=full ./FXServer +exec server.cfg
+```
+
+### Storage Optimization
+
+```bash
+# Check disk I/O
+iostat -x 1
+
+# Optimize SSD settings
+echo noop > /sys/block/sda/queue/scheduler  # For SSDs
+echo deadline > /sys/block/sda/queue/scheduler  # For HDDs
+
+# Check file system
+df -h
+lsblk
+```
+
+## Process Management
+
+### Systemd Service Configuration
+
+```ini
+# /etc/systemd/system/fivem.service
+[Unit]
+Description=FiveM QBCore Server
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=fivem
+Group=fivem
+WorkingDirectory=/home/fivem/server
+ExecStart=/home/fivem/server/FXServer +exec server.cfg
+Restart=always
+RestartSec=5
+LimitNOFILE=65536
+LimitNPROC=32768
+
+# Performance settings
+Nice=-10
+IOSchedulingClass=1
+IOSchedulingPriority=4
+
+# Environment variables
+Environment=TERM=xterm
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Process Monitoring
+
+```bash
+# Monitor FiveM process
+ps aux | grep FXServer
+top -p $(pgrep FXServer)
+
+# Monitor with detailed stats
+pidstat -p $(pgrep FXServer) 1
+
+# Memory usage details
+pmap -d $(pgrep FXServer)
+```
+
+## Network Optimization
+
+### Firewall Configuration
+
+```bash
+# UFW (Ubuntu Firewall) rules
+sudo ufw allow 30120/tcp  # FiveM server port
+sudo ufw allow 30120/udp
+sudo ufw allow 22/tcp     # SSH
+sudo ufw allow 3306/tcp   # MySQL (if external access needed)
+
+# iptables rules for advanced configuration
+iptables -A INPUT -p tcp --dport 30120 -j ACCEPT
+iptables -A INPUT -p udp --dport 30120 -j ACCEPT
+```
+
+### Network Interface Tuning
+
+```bash
+# Check network interfaces
+ip addr show
+ethtool eth0
+
+# Optimize network buffers
+echo 'net.core.rmem_max = 134217728' >> /etc/sysctl.conf
+echo 'net.core.wmem_max = 134217728' >> /etc/sysctl.conf
+echo 'net.ipv4.tcp_rmem = 4096 87380 134217728' >> /etc/sysctl.conf
+echo 'net.ipv4.tcp_wmem = 4096 65536 134217728' >> /etc/sysctl.conf
+
+sudo sysctl -p
+```
+
+## Performance Monitoring Scripts
+
+### Automated Performance Check
+
+```bash
+#!/bin/bash
+# performance-check.sh
+
+echo "=== FiveM Server Performance Check ==="
+echo "Date: $(date)"
+echo
+
+# CPU Usage
+echo "CPU Usage:"
+top -bn1 | grep "Cpu(s)" | sed "s/.*, *\([0-9.]*\)%* id.*/\1/" | awk '{print 100 - $1"%"}'
+
+# Memory Usage
+echo "Memory Usage:"
+free -h | grep Mem | awk '{print $3 "/" $2 " (" $3/$2*100 "%)"}'
+
+# Disk Usage
+echo "Disk Usage:"
+df -h / | tail -1 | awk '{print $3 "/" $2 " (" $5 ")"}'
+
+# FiveM Process
+echo "FiveM Process:"
+ps aux | grep FXServer | grep -v grep | awk '{print "PID: " $2 ", CPU: " $3 "%, MEM: " $4 "%"}'
+
+# Network Connections
+echo "Network Connections:"
+netstat -an | grep :30120 | wc -l | awk '{print $1 " active connections"}'
+
+echo "=== End Performance Check ==="
+```
+
+### Resource Usage Monitor
+
+```lua
+-- performance-monitor resource
+local performanceData = {}
+
+CreateThread(function()
+    while true do
+        Wait(60000) -- Check every minute
+        
+        local memUsage = collectgarbage("count")
+        local timestamp = os.time()
+        
+        table.insert(performanceData, {
+            timestamp = timestamp,
+            memory = memUsage,
+            players = #GetPlayers()
+        })
+        
+        -- Keep only last 24 hours of data
+        if #performanceData > 1440 then
+            table.remove(performanceData, 1)
+        end
+        
+        -- Alert on high usage
+        if memUsage > 102400 then -- 100MB
+            print("^1[ALERT]^7 High memory usage: " .. math.floor(memUsage/1024) .. "MB")
+        end
+    end
+end)
+
+-- Export performance data
+RegisterNetEvent('performance:getData', function()
+    local src = source
+    TriggerClientEvent('performance:receiveData', src, performanceData)
+end)
+```
+
+## Optimization Checklist
+
+### Daily Tasks
+- ✅ Check server logs for errors
+- ✅ Monitor resource usage
+- ✅ Verify database performance
+- ✅ Check player feedback
+
+### Weekly Tasks
+- ✅ Review performance metrics
+- ✅ Update system packages
+- ✅ Analyze slow query logs
+- ✅ Clean temporary files
+
+### Monthly Tasks
+- ✅ Full system performance audit
+- ✅ Database optimization
+- ✅ Security updates
+- ✅ Capacity planning review
+
+<Callout type="warning">
+  Always test optimization changes in a development environment before applying to production servers.
+</Callout>
+
+## Troubleshooting Common Issues
+
+### High CPU Usage
+1. Check for infinite loops in resources
+2. Monitor thread usage with resmon
+3. Review database query performance
+4. Check for resource conflicts
+
+### Memory Leaks
+1. Monitor memory usage over time
+2. Identify resources with growing memory usage
+3. Check for uncleaned objects and variables
+4. Review garbage collection patterns
+
+### Network Issues
+1. Monitor bandwidth usage
+2. Check for packet loss
+3. Verify firewall configuration
+4. Test connection stability
+
+This server optimization guide provides the foundation for running high-performance QBCore servers. Regular monitoring and maintenance are essential for sustained optimal performance.

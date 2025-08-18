@@ -1,0 +1,625 @@
+# Server Functions
+
+QBCore provides a comprehensive set of server-side functions for player management, item handling, vehicle operations, and more. This reference covers all available server functions.
+
+## Player Management Functions
+
+### QBCore.Functions.GetPlayer(source)
+
+Retrieves a player object by their server ID.
+
+**Parameters:**
+- `source` (number): The player's server ID
+
+**Returns:**
+- Player object or `nil` if not found
+
+**Example:**
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+if Player then
+    print("Player found: " .. Player.PlayerData.charinfo.firstname)
+else
+    print("Player not found")
+end
+```
+
+### QBCore.Functions.GetPlayerByCitizenId(citizenid)
+
+Retrieves a player object by their citizen ID.
+
+**Parameters:**
+- `citizenid` (string): The player's citizen ID
+
+**Returns:**
+- Player object or `nil` if not found
+
+**Example:**
+```lua
+local Player = QBCore.Functions.GetPlayerByCitizenId("ABC12345")
+if Player then
+    print("Found player: " .. Player.PlayerData.charinfo.firstname)
+end
+```
+
+### QBCore.Functions.GetPlayerByPhone(number)
+
+Retrieves a player object by their phone number.
+
+**Parameters:**
+- `number` (string): The player's phone number
+
+**Returns:**
+- Player object or `nil` if not found
+
+**Example:**
+```lua
+local Player = QBCore.Functions.GetPlayerByPhone("555-0123")
+if Player then
+    print("Phone owner: " .. Player.PlayerData.charinfo.firstname)
+end
+```
+
+### QBCore.Functions.GetPlayers()
+
+Returns a table of all connected player IDs.
+
+**Returns:**
+- Table of player IDs
+
+**Example:**
+```lua
+local players = QBCore.Functions.GetPlayers()
+print("Online players: " .. #players)
+
+for _, playerId in pairs(players) do
+    local Player = QBCore.Functions.GetPlayer(playerId)
+    if Player then
+        print("Player: " .. Player.PlayerData.charinfo.firstname)
+    end
+end
+```
+
+### QBCore.Functions.GetQBPlayers()
+
+Returns the complete players table with all player objects.
+
+**Returns:**
+- Table of player objects indexed by source
+
+**Example:**
+```lua
+local allPlayers = QBCore.Functions.GetQBPlayers()
+for source, Player in pairs(allPlayers) do
+    print("Source: " .. source .. ", Name: " .. Player.PlayerData.charinfo.firstname)
+end
+```
+
+## Utility Functions
+
+### QBCore.Functions.GetCoords(entity)
+
+Returns the coordinates of an entity.
+
+**Parameters:**
+- `entity` (number): Entity handle
+
+**Returns:**
+- Vector4 with x, y, z, w coordinates
+
+**Example:**
+```lua
+local ped = GetPlayerPed(source)
+local coords = QBCore.Functions.GetCoords(ped)
+print("Player coords: " .. coords.x .. ", " .. coords.y .. ", " .. coords.z)
+```
+
+### QBCore.Functions.GetIdentifier(source, idtype)
+
+Retrieves a specific identifier for a player.
+
+**Parameters:**
+- `source` (number): Player's server ID
+- `idtype` (string): Type of identifier ("steam", "license", "discord", etc.)
+
+**Returns:**
+- Identifier string or `nil`
+
+**Example:**
+```lua
+local steamId = QBCore.Functions.GetIdentifier(source, "steam")
+local license = QBCore.Functions.GetIdentifier(source, "license")
+local discord = QBCore.Functions.GetIdentifier(source, "discord")
+```
+
+### QBCore.Functions.GetSource(identifier)
+
+Finds a player's source by their identifier.
+
+**Parameters:**
+- `identifier` (string): Player identifier
+
+**Returns:**
+- Source ID or `nil`
+
+**Example:**
+```lua
+local source = QBCore.Functions.GetSource("license:abc123")
+if source then
+    print("Player found with source: " .. source)
+end
+```
+
+### QBCore.Functions.HasPermission(source, permission)
+
+Checks if a player has a specific permission.
+
+**Parameters:**
+- `source` (number): Player's server ID
+- `permission` (string): Permission level ("user", "admin", "god")
+
+**Returns:**
+- Boolean
+
+**Example:**
+```lua
+if QBCore.Functions.HasPermission(source, "admin") then
+    print("Player has admin permissions")
+else
+    print("Player does not have admin permissions")
+end
+```
+
+### QBCore.Functions.IsOptin(source)
+
+Checks if a player has opted into beta features.
+
+**Parameters:**
+- `source` (number): Player's server ID
+
+**Returns:**
+- Boolean
+
+### QBCore.Functions.IsPlayerBanned(source)
+
+Checks if a player is banned.
+
+**Parameters:**
+- `source` (number): Player's server ID
+
+**Returns:**
+- Boolean
+
+**Example:**
+```lua
+if QBCore.Functions.IsPlayerBanned(source) then
+    DropPlayer(source, "You are banned from this server")
+end
+```
+
+## Item Functions
+
+### QBCore.Functions.GetItems()
+
+Returns the items table from shared data.
+
+**Returns:**
+- Table of all items
+
+**Example:**
+```lua
+local items = QBCore.Functions.GetItems()
+for itemName, itemData in pairs(items) do
+    print("Item: " .. itemName .. " - Label: " .. itemData.label)
+end
+```
+
+### QBCore.Functions.UseItem(source, item)
+
+Triggers the use of an item for a player.
+
+**Parameters:**
+- `source` (number): Player's server ID
+- `item` (table): Item data
+
+**Example:**
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local waterBottle = Player.Functions.GetItemByName("water_bottle")
+
+if waterBottle then
+    QBCore.Functions.UseItem(source, waterBottle)
+end
+```
+
+### QBCore.Functions.CanUseItem(source, item)
+
+Checks if a player can use a specific item.
+
+**Parameters:**
+- `source` (number): Player's server ID
+- `item` (string): Item name
+
+**Returns:**
+- Boolean
+
+## Vehicle Functions
+
+### QBCore.Functions.SpawnVehicle(source, model, coords, warp)
+
+Spawns a vehicle for a player.
+
+**Parameters:**
+- `source` (number): Player's server ID
+- `model` (string): Vehicle model name
+- `coords` (vector4): Spawn coordinates
+- `warp` (boolean): Whether to warp player into vehicle
+
+**Returns:**
+- Vehicle network ID
+
+**Example:**
+```lua
+local coords = GetEntityCoords(GetPlayerPed(source))
+local vehicle = QBCore.Functions.SpawnVehicle(source, "adder", coords, true)
+print("Spawned vehicle with ID: " .. vehicle)
+```
+
+### QBCore.Functions.DeleteVehicle(vehicle)
+
+Deletes a vehicle entity.
+
+**Parameters:**
+- `vehicle` (number): Vehicle entity handle
+
+**Example:**
+```lua
+local ped = GetPlayerPed(source)
+local vehicle = GetVehiclePedIsIn(ped, false)
+
+if vehicle ~= 0 then
+    QBCore.Functions.DeleteVehicle(vehicle)
+end
+```
+
+### QBCore.Functions.GetVehicles()
+
+Returns the vehicles table from shared data.
+
+**Returns:**
+- Table of all vehicles
+
+**Example:**
+```lua
+local vehicles = QBCore.Functions.GetVehicles()
+for model, data in pairs(vehicles) do
+    print("Vehicle: " .. data.name .. " - Brand: " .. data.brand)
+end
+```
+
+### QBCore.Functions.GetVehiclesByName()
+
+Returns vehicles indexed by their names instead of spawn codes.
+
+**Returns:**
+- Table of vehicles indexed by name
+
+## Job & Gang Functions
+
+### QBCore.Functions.GetJobs()
+
+Returns the jobs table from shared data.
+
+**Returns:**
+- Table of all jobs
+
+**Example:**
+```lua
+local jobs = QBCore.Functions.GetJobs()
+for jobName, jobData in pairs(jobs) do
+    print("Job: " .. jobData.label)
+end
+```
+
+### QBCore.Functions.GetJob(jobname)
+
+Returns data for a specific job.
+
+**Parameters:**
+- `jobname` (string): Name of the job
+
+**Returns:**
+- Job data table or `nil`
+
+**Example:**
+```lua
+local policeJob = QBCore.Functions.GetJob("police")
+if policeJob then
+    print("Police job label: " .. policeJob.label)
+end
+```
+
+### QBCore.Functions.GetGangs()
+
+Returns the gangs table from shared data.
+
+**Returns:**
+- Table of all gangs
+
+## Database Functions
+
+### QBCore.Functions.ExecuteSql(wait, query, cb)
+
+Executes a SQL query (deprecated - use MySQL-Async directly).
+
+**Parameters:**
+- `wait` (boolean): Whether to wait for result
+- `query` (string): SQL query
+- `cb` (function): Callback function
+
+**Note:** This function is deprecated. Use MySQL-Async directly instead.
+
+## String & Math Utilities
+
+### QBCore.Functions.RandomStr(length)
+
+Generates a random string of specified length.
+
+**Parameters:**
+- `length` (number): Length of string to generate
+
+**Returns:**
+- Random string
+
+**Example:**
+```lua
+local randomId = QBCore.Functions.RandomStr(8)
+print("Random ID: " .. randomId)
+```
+
+### QBCore.Functions.RandomInt(length)
+
+Generates a random number with specified digit length.
+
+**Parameters:**
+- `length` (number): Number of digits
+
+**Returns:**
+- Random number
+
+**Example:**
+```lua
+local randomNumber = QBCore.Functions.RandomInt(6)
+print("Random 6-digit number: " .. randomNumber)
+```
+
+### QBCore.Functions.SplitStr(str, delimiter)
+
+Splits a string by delimiter.
+
+**Parameters:**
+- `str` (string): String to split
+- `delimiter` (string): Delimiter character
+
+**Returns:**
+- Table of string parts
+
+**Example:**
+```lua
+local parts = QBCore.Functions.SplitStr("hello,world,test", ",")
+-- Result: {"hello", "world", "test"}
+```
+
+### QBCore.Functions.Trim(value)
+
+Trims whitespace from a string.
+
+**Parameters:**
+- `value` (string): String to trim
+
+**Returns:**
+- Trimmed string
+
+**Example:**
+```lua
+local trimmed = QBCore.Functions.Trim("  hello world  ")
+-- Result: "hello world"
+```
+
+### QBCore.Functions.Round(value, numDecimalPlaces)
+
+Rounds a number to specified decimal places.
+
+**Parameters:**
+- `value` (number): Number to round
+- `numDecimalPlaces` (number): Decimal places
+
+**Returns:**
+- Rounded number
+
+**Example:**
+```lua
+local rounded = QBCore.Functions.Round(3.14159, 2)
+-- Result: 3.14
+```
+
+## Notification Functions
+
+### QBCore.Functions.Notify(source, text, type, length)
+
+Sends a notification to a player.
+
+**Parameters:**
+- `source` (number): Player's server ID
+- `text` (string): Notification text
+- `type` (string): Notification type ("primary", "success", "error", "info")
+- `length` (number): Duration in milliseconds
+
+**Example:**
+```lua
+QBCore.Functions.Notify(source, "Welcome to the server!", "success", 5000)
+QBCore.Functions.Notify(source, "Invalid action", "error", 3000)
+```
+
+## Kick & Ban Functions
+
+### QBCore.Functions.Kick(source, reason, setKickReason, deferrals)
+
+Kicks a player from the server.
+
+**Parameters:**
+- `source` (number): Player's server ID
+- `reason` (string): Kick reason
+- `setKickReason` (function): Optional function to set custom kick reason
+- `deferrals` (object): Optional deferrals object
+
+**Example:**
+```lua
+QBCore.Functions.Kick(source, "Violating server rules", nil, nil)
+```
+
+### QBCore.Functions.IsWhitelisted(source)
+
+Checks if a player is whitelisted.
+
+**Parameters:**
+- `source` (number): Player's server ID
+
+**Returns:**
+- Boolean
+
+**Example:**
+```lua
+if not QBCore.Functions.IsWhitelisted(source) then
+    QBCore.Functions.Kick(source, "You are not whitelisted")
+end
+```
+
+## Player Object Functions
+
+These functions are called on Player objects returned by `GetPlayer()` functions.
+
+### Player.Functions.UpdatePlayerData()
+
+Saves the player's data to the database.
+
+**Example:**
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+Player.Functions.UpdatePlayerData()
+```
+
+### Player.Functions.SetJob(job, grade)
+
+Sets the player's job.
+
+**Parameters:**
+- `job` (string): Job name
+- `grade` (number): Job grade level
+
+**Example:**
+```lua
+Player.Functions.SetJob("police", 2)
+```
+
+### Player.Functions.SetGang(gang, grade)
+
+Sets the player's gang.
+
+**Parameters:**
+- `gang` (string): Gang name
+- `grade` (number): Gang grade level
+
+**Example:**
+```lua
+Player.Functions.SetGang("ballas", 1)
+```
+
+### Player.Functions.SetJobDuty(onDuty)
+
+Sets the player's job duty status.
+
+**Parameters:**
+- `onDuty` (boolean): Duty status
+
+**Example:**
+```lua
+Player.Functions.SetJobDuty(true) -- Go on duty
+Player.Functions.SetJobDuty(false) -- Go off duty
+```
+
+### Player.Functions.AddMoney(moneytype, amount, reason)
+
+Adds money to the player.
+
+**Parameters:**
+- `moneytype` (string): Type of money ("cash", "bank", "crypto")
+- `amount` (number): Amount to add
+- `reason` (string): Reason for transaction
+
+**Example:**
+```lua
+Player.Functions.AddMoney("cash", 500, "job-reward")
+Player.Functions.AddMoney("bank", 1000, "salary")
+```
+
+### Player.Functions.RemoveMoney(moneytype, amount, reason)
+
+Removes money from the player.
+
+**Parameters:**
+- `moneytype` (string): Type of money ("cash", "bank", "crypto")
+- `amount` (number): Amount to remove
+- `reason` (string): Reason for transaction
+
+**Returns:**
+- Boolean indicating success
+
+**Example:**
+```lua
+if Player.Functions.RemoveMoney("cash", 100, "purchase") then
+    print("Purchase successful")
+else
+    print("Insufficient funds")
+end
+```
+
+### Player.Functions.SetMoney(moneytype, amount, reason)
+
+Sets the player's money to a specific amount.
+
+**Parameters:**
+- `moneytype` (string): Type of money ("cash", "bank", "crypto")
+- `amount` (number): Amount to set
+- `reason` (string): Reason for transaction
+
+**Example:**
+```lua
+Player.Functions.SetMoney("bank", 5000, "admin-set")
+```
+
+### Player.Functions.GetMoney(moneytype)
+
+Gets the player's money amount.
+
+**Parameters:**
+- `moneytype` (string): Type of money ("cash", "bank", "crypto")
+
+**Returns:**
+- Money amount
+
+**Example:**
+```lua
+local cash = Player.Functions.GetMoney("cash")
+local bank = Player.Functions.GetMoney("bank")
+print("Cash: $" .. cash .. ", Bank: $" .. bank)
+```
+
+## Related Documentation
+
+- [Client Functions](/docs/api/client-functions) - Client-side function reference
+- [Player Data](/docs/core/player-data) - Player data structure
+- [Core Object](/docs/core/core-object) - Core framework overview
+- [Server Events](/docs/api/server-events) - Server event reference
+
+This comprehensive function reference should cover most server-side operations you'll need when developing with QBCore.

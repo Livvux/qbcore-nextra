@@ -1,0 +1,338 @@
+# QBCore v1 to v2 Migration Guide
+
+This guide will help you migrate your QBCore server from version 1.x to version 2.x. This is a major version upgrade with significant changes and improvements.
+
+## Pre-Migration Checklist
+
+Before starting the migration, ensure you have:
+
+- [ ] **Complete server backup** (files, database, configurations)
+- [ ] **List of all custom resources** and their versions
+- [ ] **Database backup** with verified restore capability
+- [ ] **Test server environment** for migration testing
+- [ ] **Scheduled maintenance window** for production migration
+- [ ] **Rollback plan** documented and tested
+
+## Major Changes in v2
+
+### Framework Architecture Changes
+
+<div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4 mb-6">
+  <h4 className="text-amber-900 dark:text-amber-100 font-semibold mb-2">⚠️ Breaking Changes</h4>
+  <p className="text-amber-800 dark:text-amber-200">
+    QBCore v2 introduces several breaking changes. Custom resources will likely need updates.
+  </p>
+</div>
+
+#### 1. **Player Object Restructure**
+
+**Before (v1):**
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local playerData = Player.PlayerData
+local job = playerData.job.name
+local money = playerData.money['cash']
+```
+
+**After (v2):**
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local citizenId = Player.PlayerData.citizenid
+local job = Player.PlayerData.job.name
+local money = Player.Functions.GetMoney('cash')
+```
+
+#### 2. **Event System Updates**
+
+**Before (v1):**
+```lua
+-- Old event names
+TriggerEvent('QBCore:Server:PlayerLoaded', source)
+TriggerClientEvent('QBCore:Client:OnPlayerLoaded', source)
+```
+
+**After (v2):**
+```lua
+-- New event names with better organization
+TriggerEvent('QBCore:Server:OnPlayerLoaded', source)
+TriggerClientEvent('QBCore:Client:OnPlayerLoaded', source)
+```
+
+#### 3. **Database Schema Changes**
+
+New required columns in `players` table:
+- `phone_number` VARCHAR(20)
+- `last_updated` TIMESTAMP
+- `metadata` LONGTEXT (JSON format)
+
+### Resource Structure Changes
+
+#### New File Organization
+```
+resources/[qb]/
+├── qb-core/
+│   ├── client/
+│   ├── server/
+│   ├── shared/
+│   └── config/
+├── qb-multicharacter/
+└── [other resources]/
+```
+
+## Step-by-Step Migration Process
+
+### Phase 1: Preparation
+
+#### 1. **Backup Current Installation**
+```bash
+# Create backup directory
+mkdir -p /backups/qbcore-v1-backup-$(date +%Y%m%d)
+
+# Backup server files
+cp -r /path/to/server /backups/qbcore-v1-backup-$(date +%Y%m%d)/
+
+# Backup database
+mysqldump -u username -p database_name > /backups/qbcore-v1-backup-$(date +%Y%m%d)/database.sql
+```
+
+#### 2. **Document Current Setup**
+Create an inventory of:
+- All installed resources
+- Custom modifications
+- Database customizations
+- Server configuration
+
+### Phase 2: Test Environment Setup
+
+#### 1. **Clone Production Environment**
+```bash
+# Set up test server
+cp -r /production/server /test/server
+mysql -u username -p test_database < production_backup.sql
+```
+
+#### 2. **Install QBCore v2**
+```bash
+# Remove old qb-core
+rm -rf resources/[qb]/qb-core
+
+# Clone QBCore v2
+git clone -b v2.0 https://github.com/qbcore-framework/qb-core.git resources/[qb]/qb-core
+```
+
+### Phase 3: Database Migration
+
+#### 1. **Run Database Update Scripts**
+
+```sql
+-- Add new columns to players table
+ALTER TABLE `players` 
+ADD COLUMN `phone_number` VARCHAR(20) DEFAULT NULL,
+ADD COLUMN `last_updated` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ADD COLUMN `metadata` LONGTEXT DEFAULT NULL;
+
+-- Update existing data
+UPDATE `players` SET `metadata` = '{}' WHERE `metadata` IS NULL;
+
+-- Create new indexes for performance
+CREATE INDEX `idx_phone_number` ON `players` (`phone_number`);
+CREATE INDEX `idx_last_updated` ON `players` (`last_updated`);
+```
+
+#### 2. **Migrate Player Data**
+
+```sql
+-- Convert old money format to new format
+UPDATE `players` SET 
+`money` = JSON_SET(
+  COALESCE(`money`, '{}'),
+  '$.cash', COALESCE(JSON_EXTRACT(`money`, '$.cash'), 0),
+  '$.bank', COALESCE(JSON_EXTRACT(`money`, '$.bank'), 0),
+  '$.crypto', COALESCE(JSON_EXTRACT(`money`, '$.crypto'), 0)
+);
+```
+
+### Phase 4: Resource Updates
+
+#### 1. **Update Core Resources**
+
+Essential resources that need updating:
+- `qb-multicharacter` → v2.0+
+- `qb-spawn` → v2.0+
+- `qb-apartments` → v2.0+
+- `qb-garages` → v2.0+
+- `qb-inventory` → v2.0+
+
+#### 2. **Update Custom Resources**
+
+For each custom resource, check for:
+
+**Player Data Access:**
+```lua
+-- Update calls to player data
+-- Old way
+local money = Player.PlayerData.money['cash']
+
+-- New way  
+local money = Player.Functions.GetMoney('cash')
+```
+
+**Event Names:**
+```lua
+-- Update event registrations
+-- Old
+RegisterNetEvent('QBCore:PlayerLoaded')
+
+-- New
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded')
+```
+
+### Phase 5: Configuration Updates
+
+#### 1. **Update `qb-core/config/config.lua`**
+
+Key configuration changes:
+```lua
+Config = {
+    MaxPlayers = 64, -- Updated default
+    DefaultSpawn = vector4(-1035.71, -2731.87, 12.86, 0.0), -- New spawn system
+    UpdateInterval = 5, -- New setting for data updates
+    -- New features
+    UseDebug = false,
+    ServerCallbacks = {},
+    ServerTimezone = 'UTC'
+}
+```
+
+#### 2. **Update `server.cfg`**
+
+Add new convars:
+```cfg
+# QBCore v2 specific settings
+set qb_locale "en"
+set qb_debug "false"
+set qb_update_interval "5000"
+
+# New resource order
+ensure qb-core
+ensure qb-multicharacter
+ensure qb-spawn
+```
+
+### Phase 6: Testing
+
+#### 1. **Functionality Testing**
+- [ ] Player login/character creation
+- [ ] Money transactions
+- [ ] Job system functionality
+- [ ] Inventory system
+- [ ] Vehicle spawning/garages
+- [ ] Housing system
+- [ ] All custom resources
+
+#### 2. **Performance Testing**
+- [ ] Server startup time
+- [ ] Player count stress test
+- [ ] Memory usage monitoring
+- [ ] Database performance
+
+#### 3. **Integration Testing**
+- [ ] Resource interdependencies
+- [ ] Event system flow
+- [ ] API functionality
+- [ ] Third-party integrations
+
+## Common Migration Issues
+
+### Issue 1: Player Data Not Loading
+
+**Symptoms:** Players lose character data or cannot login
+
+**Solution:**
+```sql
+-- Check for data format issues
+SELECT citizenid, charinfo, money FROM players WHERE JSON_VALID(charinfo) = 0;
+
+-- Fix invalid JSON data
+UPDATE players SET charinfo = '{}' WHERE JSON_VALID(charinfo) = 0;
+```
+
+### Issue 2: Resource Compatibility Errors
+
+**Symptoms:** Resources throwing errors about missing functions
+
+**Solution:**
+1. Update all QBCore resources to v2 compatible versions
+2. Check custom resources for deprecated function calls
+3. Update event names to new format
+
+### Issue 3: Database Performance Issues
+
+**Symptoms:** Slow queries, high database load
+
+**Solution:**
+```sql
+-- Add missing indexes
+CREATE INDEX idx_citizenid ON players (citizenid);
+CREATE INDEX idx_license ON players (license);
+CREATE INDEX idx_job ON players ((JSON_EXTRACT(job, '$.name')));
+```
+
+## Rollback Procedure
+
+If migration fails, follow these steps:
+
+#### 1. **Stop Server**
+```bash
+# Stop FiveM server
+pkill -f FXServer
+```
+
+#### 2. **Restore Files**
+```bash
+# Restore server files
+rm -rf /path/to/server
+cp -r /backups/qbcore-v1-backup-*/server /path/to/
+```
+
+#### 3. **Restore Database**
+```bash
+# Restore database
+mysql -u username -p database_name < /backups/qbcore-v1-backup-*/database.sql
+```
+
+#### 4. **Restart Server**
+```bash
+# Start server with original configuration
+./run.sh
+```
+
+## Post-Migration Checklist
+
+After successful migration:
+
+- [ ] **Performance monitoring** - Monitor server performance for 24-48 hours
+- [ ] **Player feedback** - Collect feedback from players about any issues
+- [ ] **Error logging** - Monitor server logs for any unexpected errors
+- [ ] **Backup verification** - Ensure new backup system is working
+- [ ] **Documentation update** - Update internal documentation
+- [ ] **Resource updates** - Plan regular resource update schedule
+
+## Additional Resources
+
+- [Breaking Changes Reference](/docs/migration/breaking-changes)
+- [Database Migration Tools](/docs/migration/tools/migration-script)
+- [Resource Update Guide](/docs/migration/resource-updates)
+- [Troubleshooting](/docs/troubleshooting)
+
+---
+
+<div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 mt-8">
+  <h4 className="text-green-900 dark:text-green-100 font-semibold mb-2">
+    ✅ Migration Complete
+  </h4>
+  <p className="text-green-800 dark:text-green-200">
+    Once you've completed all steps and verified functionality, your QBCore v2 migration is complete! 
+    Remember to update your documentation and inform your community about any new features.
+  </p>
+</div>

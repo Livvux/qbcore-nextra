@@ -1,0 +1,510 @@
+# LGF HUD for QBCore
+
+LGF HUD is a modern, customizable HUD system with broad framework compatibility and powerful features. Built with performance in mind, it offers extensive customization options while maintaining a clean, professional interface.
+
+## Features
+
+### ✨ Core Features
+- **Multi-Framework Support**: Compatible with QBCore, ESX, and other frameworks
+- **Highly Customizable**: Extensive configuration options for colors, positions, and animations
+- **Performance Optimized**: Minimal resource usage with smooth animations
+- **Modern Design**: Clean, contemporary interface with smooth transitions
+- **Responsive Layout**: Adapts to different screen sizes and resolutions
+
+### 📊 HUD Elements
+- **Health Bar**: Visual health indicator with smooth transitions
+- **Armor Bar**: Armor level display with customizable styling
+- **Hunger/Thirst**: Player needs tracking with icon indicators
+- **Stress System**: Stress level monitoring (QBCore specific)
+- **Speedometer**: Vehicle speed display with gear indicator
+- **Fuel Gauge**: Vehicle fuel level monitoring
+- **Minimap Enhancement**: Improved minimap styling and positioning
+- **Status Icons**: Various status indicators and notifications
+
+## Installation
+
+### Prerequisites
+- QBCore Framework (latest version)
+- Basic understanding of FiveM resource management
+
+### Download & Setup
+
+1. **Download the Resource**
+   ```bash
+   # Download from GitHub releases or trusted source
+   cd resources/[standalone]
+   git clone https://github.com/example/lgf-hud.git
+   ```
+
+2. **Add to server.cfg**
+   ```cfg
+   # Add after qb-core
+   start lgf-hud
+   ```
+
+3. **Restart Server**
+   ```bash
+   restart [server-name]
+   # or
+   refresh && start lgf-hud
+   ```
+
+### Dependencies
+- `qb-core` - QBCore framework
+- `qb-fuel` - For fuel gauge functionality (optional)
+- `qb-stress` - For stress system integration (optional)
+
+## Configuration
+
+### Basic Configuration
+
+The main configuration file is located at `config.lua`:
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UpdateInterval = 100  -- Update frequency in ms
+Config.EnableDebug = false   -- Enable debug mode
+
+-- HUD Elements
+Config.HUD = {
+    -- Health Bar
+    health = {
+        enabled = true,
+        position = { x = 120, y = 50 },
+        size = { width = 200, height = 20 },
+        color = '#ff4757',
+        backgroundColor = 'rgba(0, 0, 0, 0.3)'
+    },
+    
+    -- Armor Bar  
+    armor = {
+        enabled = true,
+        position = { x = 120, y = 80 },
+        size = { width = 200, height = 20 },
+        color = '#3742fa',
+        backgroundColor = 'rgba(0, 0, 0, 0.3)'
+    },
+    
+    -- Hunger Bar
+    hunger = {
+        enabled = true,
+        position = { x = 120, y = 110 },
+        size = { width = 200, height = 20 },
+        color = '#ff6b35',
+        backgroundColor = 'rgba(0, 0, 0, 0.3)'
+    },
+    
+    -- Thirst Bar
+    thirst = {
+        enabled = true,
+        position = { x = 120, y = 140 },
+        size = { width = 200, height = 20 },
+        color = '#00d2d3',
+        backgroundColor = 'rgba(0, 0, 0, 0.3)'
+    }
+}
+
+-- Speedometer
+Config.Speedometer = {
+    enabled = true,
+    unit = 'kmh', -- 'kmh' or 'mph'
+    position = { x = -200, y = -100 },
+    showGear = true,
+    showFuel = true
+}
+
+-- Notifications
+Config.Notifications = {
+    position = 'top-right', -- 'top-right', 'top-left', 'bottom-right', 'bottom-left'
+    duration = 5000, -- Duration in ms
+    animations = true
+}
+```
+
+### Advanced Customization
+
+#### Custom Colors and Themes
+
+```lua
+-- Custom color schemes
+Config.Themes = {
+    default = {
+        health = '#ff4757',
+        armor = '#3742fa', 
+        hunger = '#ff6b35',
+        thirst = '#00d2d3',
+        stress = '#ff3838'
+    },
+    
+    dark = {
+        health = '#c44569',
+        armor = '#40407a',
+        hunger = '#f8b500',
+        thirst = '#00a8cc',
+        stress = '#e55039'
+    },
+    
+    neon = {
+        health = '#00ff00',
+        armor = '#00ffff',
+        hunger = '#ffff00', 
+        thirst = '#0080ff',
+        stress = '#ff0080'
+    }
+}
+
+-- Set active theme
+Config.ActiveTheme = 'default'
+```
+
+#### Animation Settings
+
+```lua
+Config.Animations = {
+    enabled = true,
+    
+    -- Bar animations
+    bars = {
+        transition = 'ease-out',
+        duration = 300 -- ms
+    },
+    
+    -- Notification animations
+    notifications = {
+        fadeIn = 250,
+        fadeOut = 250,
+        slideDistance = 50
+    },
+    
+    -- Speedometer animations
+    speedometer = {
+        smoothing = true,
+        updateRate = 50
+    }
+}
+```
+
+### Framework Integration
+
+#### QBCore Integration
+
+```lua
+-- QBCore specific settings
+Config.QBCore = {
+    -- Player data mapping
+    playerData = {
+        hunger = 'hunger',
+        thirst = 'thirst', 
+        stress = 'stress'
+    },
+    
+    -- Job-specific HUD elements
+    jobSpecific = {
+        police = {
+            showBadge = true,
+            customColor = '#1e3799'
+        },
+        ambulance = {
+            showMedical = true,
+            customColor = '#ff3838'
+        }
+    },
+    
+    -- Gang integration
+    gangs = {
+        enabled = true,
+        showGangInfo = true
+    }
+}
+```
+
+#### Event Handlers
+
+```lua
+-- Register QBCore events
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    TriggerEvent('lgf-hud:client:updatePlayerData')
+end)
+
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(val)
+    -- Update HUD with new player data
+    local playerData = val
+    TriggerEvent('lgf-hud:client:updateHUD', {
+        health = GetEntityHealth(PlayerPedId()),
+        armor = GetPedArmour(PlayerPedId()),
+        hunger = playerData.metadata.hunger,
+        thirst = playerData.metadata.thirst,
+        stress = playerData.metadata.stress
+    })
+end)
+```
+
+## Commands and Usage
+
+### Admin Commands
+
+```lua
+-- Toggle HUD visibility
+/hud         -- Toggle entire HUD
+/hud health  -- Toggle health bar only
+/hud armor   -- Toggle armor bar only
+
+-- Reset HUD position
+/hudreset    -- Reset all elements to default positions
+
+-- HUD configuration
+/hudconfig   -- Open configuration menu (admin only)
+```
+
+### Player Commands
+
+```lua
+-- Personal HUD settings
+/hudtoggle   -- Toggle personal HUD visibility
+/hudsize     -- Adjust HUD scale (0.5 - 2.0)
+/hudmove     -- Enter position adjustment mode
+```
+
+### Key Bindings
+
+Default key bindings (can be customized):
+
+```lua
+Config.Keybinds = {
+    toggleHUD = 'F7',        -- Toggle HUD visibility
+    toggleMinimap = 'HOME',  -- Toggle minimap
+    openSettings = 'F8'      -- Open HUD settings (if enabled)
+}
+```
+
+## Customization Guide
+
+### Creating Custom Themes
+
+1. **Create Theme File**
+   ```lua
+   -- themes/mytheme.lua
+   return {
+       name = 'My Custom Theme',
+       colors = {
+           health = '#custom-color',
+           armor = '#custom-color',
+           -- ... other colors
+       },
+       fonts = {
+           primary = 'Arial',
+           secondary = 'Helvetica'
+       }
+   }
+   ```
+
+2. **Register Theme**
+   ```lua
+   -- In config.lua
+   Config.CustomThemes = {
+       'themes/mytheme.lua'
+   }
+   ```
+
+### Modifying HUD Elements
+
+#### Adding Custom Elements
+
+```lua
+-- client/custom_elements.lua
+RegisterNetEvent('lgf-hud:client:addCustomElement', function(elementData)
+    -- Add custom element to HUD
+    local element = {
+        id = elementData.id,
+        position = elementData.position,
+        value = elementData.value,
+        style = elementData.style
+    }
+    
+    -- Register element with HUD system
+    TriggerEvent('lgf-hud:registerElement', element)
+end)
+```
+
+#### Custom Status Indicators
+
+```lua
+-- Add custom status (e.g., addiction level)
+Config.CustomStatuses = {
+    addiction = {
+        enabled = true,
+        position = { x = 120, y = 170 },
+        icon = 'fas fa-pills',
+        color = '#8e44ad',
+        updateEvent = 'addiction:client:updateLevel'
+    }
+}
+```
+
+### Responsive Design
+
+```lua
+Config.Responsive = {
+    enabled = true,
+    
+    breakpoints = {
+        mobile = 768,
+        tablet = 1024,
+        desktop = 1920
+    },
+    
+    -- Different layouts for different screen sizes
+    layouts = {
+        mobile = {
+            scale = 0.8,
+            position = 'bottom-left'
+        },
+        tablet = {
+            scale = 0.9,
+            position = 'bottom-left'
+        },
+        desktop = {
+            scale = 1.0,
+            position = 'bottom-left'
+        }
+    }
+}
+```
+
+## Performance Optimization
+
+### Best Practices
+
+1. **Update Intervals**: Adjust update frequencies based on importance
+   ```lua
+   Config.UpdateIntervals = {
+       health = 100,    -- Critical - fast updates
+       hunger = 1000,   -- Less critical - slower updates
+       speedometer = 50 -- Vehicle-dependent - very fast
+   }
+   ```
+
+2. **Conditional Rendering**: Only show relevant elements
+   ```lua
+   Config.ConditionalDisplay = {
+       speedometer = {
+           onlyInVehicle = true,
+           hideOnFoot = true
+       },
+       stress = {
+           hideWhenLow = true,
+           threshold = 10
+       }
+   }
+   ```
+
+3. **Resource Cleanup**: Properly clean up resources
+   ```lua
+   AddEventHandler('onResourceStop', function(resourceName)
+       if resourceName == GetCurrentResourceName() then
+           -- Cleanup HUD elements
+           TriggerEvent('lgf-hud:client:cleanup')
+       end
+   end)
+   ```
+
+## Troubleshooting
+
+### Common Issues
+
+#### HUD Not Displaying
+
+1. **Check Dependencies**: Ensure QBCore is running
+   ```bash
+   ensure qb-core
+   ensure lgf-hud
+   ```
+
+2. **Verify Resource Order**: Make sure lgf-hud starts after qb-core
+   ```cfg
+   start qb-core
+   start lgf-hud
+   ```
+
+3. **Check Console Errors**: Look for JavaScript/Lua errors
+   ```bash
+   # In server console
+   con_filter_text "lgf-hud"
+   ```
+
+#### Performance Issues
+
+1. **Reduce Update Frequency**: Increase update intervals
+2. **Disable Unnecessary Elements**: Turn off unused HUD components
+3. **Check for Conflicts**: Ensure no other HUD resources are conflicting
+
+#### Configuration Not Saving
+
+1. **Check File Permissions**: Ensure config files are writable
+2. **Verify JSON Format**: Check for syntax errors in configuration
+3. **Restart Resource**: Restart lgf-hud after configuration changes
+
+### Debug Mode
+
+Enable debug mode for troubleshooting:
+
+```lua
+Config.EnableDebug = true
+
+-- Debug commands
+/hudstatus   -- Show HUD status information
+/huddebug    -- Toggle debug overlay
+/hudtest     -- Test all HUD elements
+```
+
+## API Reference
+
+### Client Events
+
+```lua
+-- Update HUD values
+TriggerEvent('lgf-hud:client:updateHealth', health)
+TriggerEvent('lgf-hud:client:updateArmor', armor)
+TriggerEvent('lgf-hud:client:updateHunger', hunger)
+TriggerEvent('lgf-hud:client:updateThirst', thirst)
+
+-- Toggle HUD elements
+TriggerEvent('lgf-hud:client:toggleHUD', visible)
+TriggerEvent('lgf-hud:client:toggleElement', elementName, visible)
+
+-- Configuration
+TriggerEvent('lgf-hud:client:setTheme', themeName)
+TriggerEvent('lgf-hud:client:setPosition', elementName, position)
+```
+
+### Server Events
+
+```lua
+-- Global HUD updates (admin only)
+TriggerEvent('lgf-hud:server:updateGlobalConfig', config)
+TriggerEvent('lgf-hud:server:broadcastUpdate', data)
+
+-- Player-specific updates
+TriggerClientEvent('lgf-hud:client:personalUpdate', source, data)
+```
+
+### Exports
+
+```lua
+-- Get HUD status
+local isVisible = exports['lgf-hud']:IsHUDVisible()
+
+-- Update specific elements
+exports['lgf-hud']:UpdateHealth(newHealth)
+exports['lgf-hud']:UpdateElement(elementName, value)
+
+-- Configuration
+exports['lgf-hud']:SetTheme(themeName)
+exports['lgf-hud']:GetCurrentConfig()
+```
+
+---
+
+**Ready to enhance your server's interface?** LGF HUD offers the perfect balance of functionality and customization. Check out our other [HUD options](/hud) or get [support](/support) if you need help with installation.

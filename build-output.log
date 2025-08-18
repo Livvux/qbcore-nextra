@@ -1,0 +1,109 @@
+
+> qbcore-nextra@1.0.0 build /Volumes/NVMe/Code/qbcore-nextra
+> pnpm run typecheck && next build
+
+
+> qbcore-nextra@1.0.0 typecheck /Volumes/NVMe/Code/qbcore-nextra
+> tsc --noEmit
+
+  ▲ Next.js 14.2.31
+  - Experiments (use with caution):
+    · optimizeCss
+
+   Linting and checking validity of types ...
+
+./pages/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./pages/docs/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./pages/docs/core/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./pages/docs/installation/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./pages/docs/resources/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./pages/hud/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./pages/news/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./pages/scripts/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./pages/tools/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+./pages/tutorials/_meta.ts
+1:1  Warning: Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Creating an optimized production build ...
+<w> [webpack.cache.PackFileCacheStrategy] Skipped not serializable cache item 'Compilation/modules|/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[7].oneOf[14].use[1]!/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[7].oneOf[14].use[2]!/Volumes/NVMe/Code/qbcore-nextra/styles/globals.css': No serializer registered for PostCSSSyntaxError
+<w> while serializing webpack/lib/cache/PackFileCacheStrategy.PackContentItems -> webpack/lib/NormalModule -> webpack/lib/ModuleBuildError -> PostCSSSyntaxError
+Failed to compile.
+
+./styles/globals.css:7:1
+Syntax error: /Volumes/NVMe/Code/qbcore-nextra/styles/globals.css `@layer base` is used but no matching `@tailwind base` directive is present.
+
+  5 | @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+  6 | 
+> 7 | @layer base {
+    | ^
+  8 |   html {
+  9 |     scroll-behavior: smooth;
+
+./styles/globals.css
+Syntax error: /Volumes/NVMe/Code/qbcore-nextra/styles/globals.css `@layer base` is used but no matching `@tailwind base` directive is present. (7:1)
+
+  5 | @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+  6 | 
+> 7 | @layer base {
+    | ^
+  8 |   html {
+  9 |     scroll-behavior: smooth;
+
+    at tryRunOrWebpackError (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:312989)
+    at __webpack_require_module__ (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:131165)
+    at __nested_webpack_require_153728__ (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:130607)
+    at /Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:131454
+    at symbolIterator (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+    at done (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/neo-async/async.js:1:14824)
+    at Hook.eval [as callAsync] (eval at create (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:13:28858), <anonymous>:15:1)
+    at Hook.CALL_ASYNC_DELEGATE [as _callAsync] (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:13:26012)
+    at /Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:130328
+    at symbolIterator (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/neo-async/async.js:1:14402)
+-- inner error --
+Syntax error: /Volumes/NVMe/Code/qbcore-nextra/styles/globals.css `@layer base` is used but no matching `@tailwind base` directive is present. (7:1)
+
+  5 | @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+  6 | 
+> 7 | @layer base {
+    | ^
+  8 |   html {
+  9 |     scroll-behavior: smooth;
+
+    at Object.<anonymous> (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[7].oneOf[14].use[1]!/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[7].oneOf[14].use[2]!/Volumes/NVMe/Code/qbcore-nextra/styles/globals.css:1:7)
+    at /Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:922493
+    at Hook.eval [as call] (eval at create (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:13:28636), <anonymous>:7:1)
+    at Hook.CALL_DELEGATE [as _call] (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:13:25906)
+    at /Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:131198
+    at tryRunOrWebpackError (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:312943)
+    at __webpack_require_module__ (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:131165)
+    at __nested_webpack_require_153728__ (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:130607)
+    at /Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/webpack/bundle5.js:28:131454
+    at symbolIterator (/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/compiled/neo-async/async.js:1:14444)
+
+Generated code for /Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/css-loader/src/index.js??ruleSet[1].rules[7].oneOf[14].use[1]!/Volumes/NVMe/Code/qbcore-nextra/node_modules/.pnpm/next@14.2.31_@babel+core@7.28.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/build/webpack/loaders/postcss-loader/src/index.js??ruleSet[1].rules[7].oneOf[14].use[2]!/Volumes/NVMe/Code/qbcore-nextra/styles/globals.css
+
+Import trace for requested module:
+./styles/globals.css
+
+
+> Build failed because of webpack errors
+ ELIFECYCLE  Command failed with exit code 1.

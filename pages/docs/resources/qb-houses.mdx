@@ -1,0 +1,554 @@
+# QB-Houses - Advanced Housing System
+
+import { Callout } from 'nextra/components'
+
+The **qb-houses** resource provides an advanced housing system for QBCore servers, featuring property ownership, interior customization, real estate markets, and comprehensive property management.
+
+## Overview
+
+QB-Houses creates a realistic property system with buying, selling, renting, decorating, and managing residential properties. Players can own multiple properties, customize interiors, and participate in the real estate market.
+
+### Key Features
+
+- **Property Ownership**: Buy, sell, and manage properties
+- **Interior Decoration**: Furniture placement and customization
+- **Real Estate Market**: Dynamic property pricing
+- **Rental System**: Property leasing and tenant management
+- **Security Systems**: Locks, alarms, and access control
+- **Utilities Management**: Electricity, water, and maintenance
+- **Property Types**: Houses, apartments, mansions, and commercial spaces
+- **Mortgage System**: Property financing and payments
+
+## Installation
+
+### Prerequisites
+
+- QBCore Framework
+- qb-target (for interaction system)
+- qb-menu (for housing menus)
+- qb-inventory (for storage systems)
+- qb-interior (for interior management)
+
+### Installation Steps
+
+1. **Download the Resource**
+```bash
+cd resources/[qb]
+git clone https://github.com/qbcore-framework/qb-houses.git
+```
+
+2. **Database Setup**
+```sql
+-- Housing system tables
+CREATE TABLE IF NOT EXISTS `player_houses` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `house` varchar(50) NOT NULL,
+  `identifier` varchar(50) DEFAULT NULL,
+  `citizenid` varchar(50) DEFAULT NULL,
+  `keyholders` longtext DEFAULT NULL,
+  `decorations` longtext DEFAULT NULL,
+  `stash` longtext DEFAULT NULL,
+  `outfit` longtext DEFAULT NULL,
+  `logout` longtext DEFAULT NULL,
+  `mortgage` int(11) DEFAULT 0,
+  `last_payment` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `house` (`house`)
+);
+
+CREATE TABLE IF NOT EXISTS `house_plants` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `building` varchar(50) DEFAULT NULL,
+  `stage` int(11) DEFAULT 0,
+  `sort` varchar(50) DEFAULT NULL,
+  `coords` longtext DEFAULT NULL,
+  `plantid` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+);
+
+CREATE TABLE IF NOT EXISTS `property_sales` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `property_id` varchar(50) DEFAULT NULL,
+  `seller_citizenid` varchar(50) DEFAULT NULL,
+  `buyer_citizenid` varchar(50) DEFAULT NULL,
+  `sale_price` int(11) DEFAULT 0,
+  `commission` int(11) DEFAULT 0,
+  `sale_date` timestamp DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`)
+);
+```
+
+3. **Add Job Configuration to qb-core/shared/jobs.lua**
+```lua
+['realestate'] = {
+    label = 'Real Estate',
+    defaultDuty = true,
+    offDutyPay = false,
+    grades = {
+        ['0'] = {
+            name = 'Real Estate Agent',
+            payment = 75
+        },
+        ['1'] = {
+            name = 'Senior Agent',
+            payment = 100
+        },
+        ['2'] = {
+            name = 'Broker',
+            payment = 125,
+            isboss = true
+        },
+        ['3'] = {
+            name = 'Property Manager',
+            payment = 150,
+            isboss = true
+        }
+    }
+}
+```
+
+4. **Add Items to qb-core/shared/items.lua**
+```lua
+-- Housing Items
+['house_key'] = {
+    ['name'] = 'house_key',
+    ['label'] = 'House Key',
+    ['weight'] = 10,
+    ['type'] = 'item',
+    ['image'] = 'house_key.png',
+    ['unique'] = true,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Key to access property'
+},
+['furniture_chair'] = {
+    ['name'] = 'furniture_chair',
+    ['label'] = 'Chair',
+    ['weight'] = 2000,
+    ['type'] = 'item',
+    ['image'] = 'furniture_chair.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Comfortable seating furniture'
+},
+['furniture_table'] = {
+    ['name'] = 'furniture_table',
+    ['label'] = 'Table',
+    ['weight'] = 3000,
+    ['type'] = 'item',
+    ['image'] = 'furniture_table.png',
+    ['unique'] = false,
+    ['useable'] = true,
+    ['shouldClose'] = true,
+    ['combinable'] = nil,
+    ['description'] = 'Wooden dining table'
+}
+```
+
+5. **Add to server.cfg**
+```cfg
+ensure qb-houses
+```
+
+## Configuration
+
+### Basic Configuration
+
+```lua
+Config = {}
+
+-- General Settings
+Config.UseTarget = true
+Config.MortgageEnabled = true
+Config.RentalSystem = true
+Config.PropertyTax = 0.02 -- 2% monthly property tax
+
+-- Property Categories
+Config.PropertyTypes = {
+    ["low_end"] = {
+        label = "Starter Homes",
+        price_range = {50000, 150000},
+        monthly_tax = 500,
+        storage_slots = 50,
+        decoration_limit = 25
+    },
+    ["mid_tier"] = {
+        label = "Family Homes",
+        price_range = {150000, 400000},
+        monthly_tax = 1200,
+        storage_slots = 75,
+        decoration_limit = 50
+    },
+    ["high_end"] = {
+        label = "Luxury Properties",
+        price_range = {400000, 1000000},
+        monthly_tax = 3000,
+        storage_slots = 100,
+        decoration_limit = 100
+    },
+    ["mansion"] = {
+        label = "Mansions",
+        price_range = {1000000, 5000000},
+        monthly_tax = 8000,
+        storage_slots = 200,
+        decoration_limit = 200
+    }
+}
+
+-- Default House Locations
+Config.Houses = {
+    ["house1"] = {
+        coords = {x = -174.35, y = 497.69, z = 137.64, h = 92.4},
+        price = 200000,
+        type = "mid_tier",
+        interior = "modern_apartment",
+        garage = {
+            coords = {x = -180.35, y = 502.69, z = 135.64, h = 92.4},
+            size = 2
+        }
+    },
+    ["house2"] = {
+        coords = {x = -681.85, y = 596.66, z = 145.38, h = 225.5},
+        price = 350000,
+        type = "mid_tier",
+        interior = "house_hi_end_v2",
+        garage = {
+            coords = {x = -685.85, y = 590.66, z = 143.38, h = 225.5},
+            size = 3
+        }
+    },
+    -- Add more houses as needed
+}
+
+-- Interior Types
+Config.Interiors = {
+    ["modern_apartment"] = {
+        label = "Modern Apartment",
+        spawn = {x = -174.35, y = 497.69, z = 137.64, h = 92.4},
+        stash = {x = -168.35, y = 487.69, z = 137.64},
+        logout = {x = -172.35, y = 493.69, z = 137.64},
+        storage_slots = 50,
+        price = 25000
+    },
+    ["house_hi_end_v2"] = {
+        label = "High-End House",
+        spawn = {x = -681.85, y = 596.66, z = 145.38, h = 225.5},
+        stash = {x = -670.85, y = 588.66, z = 145.38},
+        logout = {x = -675.85, y = 592.66, z = 145.38},
+        storage_slots = 75,
+        price = 50000
+    }
+}
+
+-- Furniture Categories
+Config.Furniture = {
+    ["seating"] = {
+        label = "Seating",
+        items = {
+            ["furniture_chair"] = {
+                label = "Chair",
+                model = "p_armchair_01_s",
+                price = 500,
+                width = 1.2,
+                length = 1.2
+            },
+            ["furniture_sofa"] = {
+                label = "Sofa",
+                model = "p_sofa_01_s",
+                price = 1500,
+                width = 2.5,
+                length = 1.0
+            }
+        }
+    },
+    ["tables"] = {
+        label = "Tables",
+        items = {
+            ["furniture_table"] = {
+                label = "Dining Table",
+                model = "p_dining_table_01_s",
+                price = 800,
+                width = 2.0,
+                length = 1.2
+            },
+            ["furniture_coffee_table"] = {
+                label = "Coffee Table",
+                model = "p_coffee_table_01_s",
+                price = 400,
+                width = 1.5,
+                length = 0.8
+            }
+        }
+    },
+    ["storage"] = {
+        label = "Storage",
+        items = {
+            ["furniture_wardrobe"] = {
+                label = "Wardrobe",
+                model = "p_wardrobe_01_s",
+                price = 1200,
+                width = 1.5,
+                length = 0.8,
+                storage = true
+            }
+        }
+    }
+}
+```
+
+### Mortgage System
+
+```lua
+-- Mortgage Configuration
+Config.MortgageSystem = {
+    enabled = true,
+    down_payment_min = 0.10, -- 10% minimum down payment
+    interest_rates = {
+        excellent_credit = 0.035, -- 3.5% APR
+        good_credit = 0.045,     -- 4.5% APR
+        fair_credit = 0.055,     -- 5.5% APR
+        poor_credit = 0.075      -- 7.5% APR
+    },
+    term_options = {15, 20, 25, 30}, -- Years
+    payment_frequency = 30, -- Days between payments
+    late_fee = 0.05, -- 5% late fee
+    foreclosure_days = 90 -- Days before foreclosure
+}
+
+-- Real Estate Market
+Config.MarketSystem = {
+    price_fluctuation = true,
+    max_price_change = 0.15, -- 15% max change per month
+    market_factors = {
+        location_demand = 0.3,
+        property_condition = 0.25,
+        local_economy = 0.25,
+        seasonal_trends = 0.2
+    },
+    commission_rates = {
+        seller = 0.06, -- 6% seller commission
+        buyer = 0.03   -- 3% buyer commission
+    }
+}
+```
+
+## API Reference
+
+### Client Exports
+
+#### EnterHouse
+Enter a house interior.
+
+```lua
+exports['qb-houses']:EnterHouse(houseId, spawn)
+
+-- Parameters:
+-- houseId: House identifier
+-- spawn: Spawn coordinates (optional)
+```
+
+#### ExitHouse
+Exit house interior.
+
+```lua
+exports['qb-houses']:ExitHouse(exitCoords)
+
+-- Parameters:
+-- exitCoords: Exit coordinates (optional)
+```
+
+#### PlaceFurniture
+Place furniture item in house.
+
+```lua
+local success = exports['qb-houses']:PlaceFurniture(furnitureType, coords, rotation)
+
+-- Parameters:
+-- furnitureType: Type of furniture to place
+-- coords: Placement coordinates
+-- rotation: Furniture rotation
+```
+
+### Server Exports
+
+#### CreateHouse
+Create a new house.
+
+```lua
+local houseId = exports['qb-houses']:CreateHouse(houseData)
+
+-- Parameters:
+-- houseData: House configuration data
+```
+
+#### SetHouseOwner
+Set house ownership.
+
+```lua
+exports['qb-houses']:SetHouseOwner(houseId, citizenId)
+
+-- Parameters:
+-- houseId: House identifier
+-- citizenId: New owner citizen ID
+```
+
+#### AddKeyHolder
+Add keyholder to property.
+
+```lua
+local success = exports['qb-houses']:AddKeyHolder(houseId, citizenId)
+
+-- Parameters:
+-- houseId: House identifier
+-- citizenId: Keyholder citizen ID
+```
+
+### Events
+
+#### Client Events
+
+```lua
+-- House entered
+RegisterNetEvent('qb-houses:client:houseEntered', function(houseId)
+    -- Handle house entry
+end)
+
+-- Furniture placed
+RegisterNetEvent('qb-houses:client:furniturePlaced', function(furnitureData)
+    -- Handle furniture placement
+end)
+
+-- House purchased
+RegisterNetEvent('qb-houses:client:housePurchased', function(houseData)
+    -- Handle house purchase
+end)
+```
+
+#### Server Events
+
+```lua
+-- House ownership changed
+RegisterNetEvent('qb-houses:server:ownershipChanged', function(houseId, oldOwner, newOwner)
+    -- Handle ownership change
+end)
+
+-- Mortgage payment due
+RegisterNetEvent('qb-houses:server:mortgagePaymentDue', function(citizenId, amount)
+    -- Handle mortgage payment
+end)
+
+-- Property tax due
+RegisterNetEvent('qb-houses:server:propertyTaxDue', function(houseId, amount)
+    -- Handle property tax
+end)
+```
+
+## Usage Examples
+
+### House Purchase System
+
+```lua
+-- Client-side house purchasing
+RegisterNetEvent('qb-houses:client:purchaseHouse', function(houseId)
+    local houseData = Config.Houses[houseId]
+    if not houseData then
+        QBCore.Functions.Notify("House not found", "error")
+        return
+    end
+    
+    -- Check if house is available
+    QBCore.Functions.TriggerCallback('qb-houses:server:isHouseAvailable', function(isAvailable)
+        if not isAvailable then
+            QBCore.Functions.Notify("This property is not available", "error")
+            return
+        end
+        
+        -- Create purchase options menu
+        local purchaseMenu = {
+            {
+                header = "Purchase Property",
+                txt = "Price: $" .. houseData.price,
+                isMenuHeader = true
+            },
+            {
+                header = "Cash Purchase",
+                txt = "Pay full amount upfront",
+                params = {
+                    event = "qb-houses:client:processPurchase",
+                    args = {
+                        houseId = houseId,
+                        method = "cash"
+                    }
+                }
+            },
+            {
+                header = "Mortgage Purchase",
+                txt = "Finance with monthly payments",
+                params = {
+                    event = "qb-houses:client:showMortgageOptions",
+                    args = {
+                        houseId = houseId
+                    }
+                }
+            },
+            {
+                header = "Schedule Viewing",
+                txt = "Tour the property first",
+                params = {
+                    event = "qb-houses:client:scheduleViewing",
+                    args = {
+                        houseId = houseId
+                    }
+                }
+            }
+        }
+        
+        exports['qb-menu']:openMenu(purchaseMenu)
+        
+    end, houseId)
+end)
+
+-- Process cash purchase
+RegisterNetEvent('qb-houses:client:processPurchase', function(data)
+    local houseData = Config.Houses[data.houseId]
+    
+    QBCore.Functions.TriggerCallback('qb-houses:server:canAffordHouse', function(canAfford)
+        if canAfford then
+            TriggerServerEvent('qb-houses:server:buyHouse', data.houseId, data.method)
+        else
+            QBCore.Functions.Notify("Insufficient funds", "error")
+        end
+    end, houseData.price)
+end)
+
+-- Server-side house purchase
+RegisterNetEvent('qb-houses:server:buyHouse', function(houseId, method)
+    local src = source
+    local player = QBCore.Functions.GetPlayer(src)
+    local houseData = Config.Houses[houseId]
+    
+    if not player or not houseData then return end
+    
+    -- Check if house is still available
+    local existingOwner = MySQL.scalar.await('SELECT citizenid FROM player_houses WHERE house = ?', {houseId})
+    if existingOwner then
+        TriggerClientEvent('QBCore:Notify', src, 'Property no longer available', 'error')
+        return
+    end
+    
+    if method == "cash" then
+        if player.Functions.RemoveMoney('bank', houseData.price, 'house-purchase') then
+            -- Create house ownership record
+            MySQL.insert('INSERT INTO player_houses (house, identifier, citizenid, keyholders, decorations, stash, outfit, logout) VALUES (?, ?, ?, ?, ?, ?, ?, ?)', {
+                houseId,
+                player.PlayerData.license,
+                player.PlayerData.citizenid,
+                json.encode({}),
+                json.encode({}),
+                json.encode({}),
+                json.encode({}),
+                json.encode({})
+            })\n            \n            -- Give house key\n            player.Functions.AddItem('house_key', 1, false, {\n                house = houseId,\n                label = houseData.label or \"House Key\"\n            })\n            \n            TriggerClientEvent('QBCore:Notify', src, 'House purchased successfully!', 'success')\n            TriggerClientEvent('qb-houses:client:housePurchased', src, {house = houseId, method = method})\n            \n            -- Log the sale\n            MySQL.insert('INSERT INTO property_sales (property_id, buyer_citizenid, sale_price, sale_date) VALUES (?, ?, ?, NOW())', {\n                houseId,\n                player.PlayerData.citizenid,\n                houseData.price\n            })\n        else\n            TriggerClientEvent('QBCore:Notify', src, 'Payment failed', 'error')\n        end\n    end\nend)\n```\n\n### Interior Decoration System\n\n```lua\n-- Furniture placement system\nlocal decoratingMode = false\nlocal selectedFurniture = nil\nlocal furniturePreview = nil\n\nRegisterNetEvent('qb-houses:client:enterDecoratingMode', function(houseId)\n    decoratingMode = true\n    \n    QBCore.Functions.Notify(\"Decorating mode enabled. Use mouse to place furniture\", \"info\")\n    \n    -- Create decorating menu\n    local decorMenu = {\n        {\n            header = \"Furniture Catalog\",\n            isMenuHeader = true\n        }\n    }\n    \n    for category, categoryData in pairs(Config.Furniture) do\n        table.insert(decorMenu, {\n            header = categoryData.label,\n            txt = \"Browse \" .. categoryData.label:lower(),\n            params = {\n                event = \"qb-houses:client:browseFurniture\",\n                args = {\n                    category = category,\n                    houseId = houseId\n                }\n            }\n        })\n    end\n    \n    table.insert(decorMenu, {\n        header = \"Exit Decorating\",\n        txt = \"Return to normal mode\",\n        params = {\n            event = \"qb-houses:client:exitDecoratingMode\"\n        }\n    })\n    \n    exports['qb-menu']:openMenu(decorMenu)\n    \n    -- Start decoration thread\n    CreateThread(function()\n        while decoratingMode do\n            Wait(1)\n            \n            if selectedFurniture then\n                -- Handle furniture placement\n                local hit, coords, entity = GetCursorPosition()\n                \n                if hit then\n                    -- Update preview position\n                    if furniturePreview then\n                        SetEntityCoords(furniturePreview, coords.x, coords.y, coords.z)\n                    end\n                    \n                    -- Place furniture on click\n                    if IsControlJustPressed(0, 24) then -- Left mouse button\n                        PlaceFurnitureAtPosition(selectedFurniture, coords, houseId)\n                        selectedFurniture = nil\n                        \n                        if furniturePreview then\n                            DeleteEntity(furniturePreview)\n                            furniturePreview = nil\n                        end\n                    end\n                end\n                \n                -- Cancel placement\n                if IsControlJustPressed(0, 25) then -- Right mouse button\n                    selectedFurniture = nil\n                    \n                    if furniturePreview then\n                        DeleteEntity(furniturePreview)\n                        furniturePreview = nil\n                    end\n                end\n            end\n        end\n    end)\nend)\n\nfunction PlaceFurnitureAtPosition(furnitureType, coords, houseId)\n    local furnitureData = GetFurnitureData(furnitureType)\n    if not furnitureData then return end\n    \n    -- Check if player owns furniture item\n    QBCore.Functions.TriggerCallback('qb-houses:server:hasFurnitureItem', function(hasItem)\n        if hasItem then\n            -- Place furniture\n            TriggerServerEvent('qb-houses:server:placeFurniture', houseId, furnitureType, coords, 0.0)\n        else\n            QBCore.Functions.Notify(\"You don't have this furniture item\", \"error\")\n        end\n    end, furnitureType)\nend\n\n-- Server-side furniture placement\nRegisterNetEvent('qb-houses:server:placeFurniture', function(houseId, furnitureType, coords, rotation)\n    local src = source\n    local player = QBCore.Functions.GetPlayer(src)\n    \n    if not player then return end\n    \n    -- Verify house ownership\n    local houseOwnership = MySQL.query.await('SELECT * FROM player_houses WHERE house = ? AND citizenid = ?', {\n        houseId, player.PlayerData.citizenid\n    })\n    \n    if not houseOwnership[1] then\n        TriggerClientEvent('QBCore:Notify', src, 'You don\\'t own this property', 'error')\n        return\n    end\n    \n    -- Remove furniture item from inventory\n    if player.Functions.RemoveItem(furnitureType, 1) then\n        -- Get current decorations\n        local currentDecorations = json.decode(houseOwnership[1].decorations) or {}\n        \n        -- Add new furniture\n        local furnitureId = GenerateUniqueId()\n        currentDecorations[furnitureId] = {\n            type = furnitureType,\n            coords = coords,\n            rotation = rotation,\n            placed_date = os.date(\"%Y-%m-%d %H:%M:%S\")\n        }\n        \n        -- Update database\n        MySQL.update('UPDATE player_houses SET decorations = ? WHERE house = ?', {\n            json.encode(currentDecorations),\n            houseId\n        })\n        \n        TriggerClientEvent('QBCore:Notify', src, 'Furniture placed successfully!', 'success')\n        TriggerClientEvent('qb-houses:client:spawnFurniture', src, furnitureId, currentDecorations[furnitureId])\n    else\n        TriggerClientEvent('QBCore:Notify', src, 'You don\\'t have this furniture item', 'error')\n    end\nend)\n```\n\n### Rental Management System\n\n```lua\n-- Property rental system\nRegisterNetEvent('qb-houses:client:manageRentals', function(houseId)\n    QBCore.Functions.TriggerCallback('qb-houses:server:getRentalInfo', function(rentalData)\n        local rentalMenu = {\n            {\n                header = \"Rental Management\",\n                txt = \"Property: \" .. houseId,\n                isMenuHeader = true\n            }\n        }\n        \n        if rentalData.current_tenant then\n            table.insert(rentalMenu, {\n                header = \"Current Tenant\",\n                txt = rentalData.tenant_name .. \" - $\" .. rentalData.monthly_rent .. \"/month\",\n                params = {\n                    event = \"qb-houses:client:manageTenant\",\n                    args = {\n                        houseId = houseId,\n                        tenantId = rentalData.current_tenant\n                    }\n                }\n            })\n        else\n            table.insert(rentalMenu, {\n                header = \"List for Rent\",\n                txt = \"Set rental price and list property\",\n                params = {\n                    event = \"qb-houses:client:listForRent\",\n                    args = {\n                        houseId = houseId\n                    }\n                }\n            })\n        end\n        \n        table.insert(rentalMenu, {\n            header = \"Rental History\",\n            txt = \"View past tenants and payments\",\n            params = {\n                event = \"qb-houses:client:viewRentalHistory\",\n                args = {\n                    houseId = houseId\n                }\n            }\n        })\n        \n        exports['qb-menu']:openMenu(rentalMenu)\n        \n    end, houseId)\nend)\n\n-- List property for rent\nRegisterNetEvent('qb-houses:client:listForRent', function(data)\n    local input = exports['qb-input']:ShowInput({\n        header = \"List Property for Rent\",\n        submitText = \"List Property\",\n        inputs = {\n            {\n                text = \"Monthly Rent ($)\",\n                name = \"rent_amount\",\n                type = \"number\",\n                isRequired = true\n            },\n            {\n                text = \"Security Deposit ($)\",\n                name = \"security_deposit\",\n                type = \"number\",\n                isRequired = true\n            },\n            {\n                text = \"Lease Term (months)\",\n                name = \"lease_term\",\n                type = \"number\",\n                isRequired = true\n            }\n        }\n    })\n    \n    if input then\n        TriggerServerEvent('qb-houses:server:listPropertyForRent', data.houseId, {\n            rent_amount = tonumber(input.rent_amount),\n            security_deposit = tonumber(input.security_deposit),\n            lease_term = tonumber(input.lease_term)\n        })\n    end\nend)\n```\n\n## Troubleshooting\n\n### Common Issues\n\n#### Interior Loading Problems\n```lua\n-- Check interior existence\nfunction ValidateInterior(interiorType)\n    local interiorData = Config.Interiors[interiorType]\n    if not interiorData then\n        print(\"Interior type not found:\", interiorType)\n        return false\n    end\n    return true\nend\n```\n\n#### Furniture Placement Issues\n- Verify furniture model existence in game files\n- Check collision detection for placement validation\n- Ensure proper coordinate transformation for interiors\n\n#### Ownership Sync Problems\n```lua\n-- Debug house ownership\nRegisterCommand('checkhouse', function(source, args)\n    local houseId = args[1]\n    if houseId then\n        local ownership = MySQL.query.await('SELECT * FROM player_houses WHERE house = ?', {houseId})\n        if ownership[1] then\n            print(\"House owner:\", ownership[1].citizenid)\n            print(\"Keyholders:\", ownership[1].keyholders)\n        else\n            print(\"House not owned:\", houseId)\n        end\n    end\nend)\n```\n\n### Debug Commands\n\n```lua\n-- Give house key\n/givehousekey [player_id] [house_id]\n\n-- Set house owner\n/sethouseowner [house_id] [citizen_id]\n\n-- Add furniture item\n/givefurniture [player_id] [furniture_type] [amount]\n\n-- Check property value\n/propertyvalue [house_id]\n```\n\n<Callout type=\"info\">\n  Regular maintenance of property databases and monitoring of the real estate market helps maintain server economy balance.\n</Callout>
