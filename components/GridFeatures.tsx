@@ -11,7 +11,7 @@ const GridFeatures = () => {
       description: 'Complete player system with jobs, gangs, permissions, and metadata',
       code: `local Player = QBCore.Functions.GetPlayer(src)
 Player.Functions.AddMoney("cash", 1000)
-Player.Functions.SetJob("police", 1)`
+Player.Functions.SetJob("police", 1)`,
     },
     {
       icon: Database,
@@ -21,7 +21,7 @@ Player.Functions.SetJob("police", 1)`
 (license, citizenid, vehicle, hash, mods) 
 VALUES (?, ?, ?, ?, ?)', {
     license, citizenid, vehicle, hash, mods
-})`
+})`,
     },
     {
       icon: Code,
@@ -30,7 +30,7 @@ VALUES (?, ?, ?, ?, ?)', {
       code: `RegisterNetEvent('qb-example:client:notify')
 AddEventHandler('qb-example:client:notify', function(msg)
     QBCore.Functions.Notify(msg, "success")
-end)`
+end)`,
     },
     {
       icon: Shield,
@@ -42,7 +42,7 @@ function(cops)
     if cops >= Config.MinCops then
         -- Action allowed
     end
-end)`
+end)`,
     },
     {
       icon: Zap,
@@ -56,7 +56,7 @@ CreateThread(function()
         end
         Wait(30000) -- 30 second intervals
     end
-end)`
+end)`,
     },
     {
       icon: Settings,
@@ -68,7 +68,7 @@ Config.DefaultMoney = {
     cash = 500,
     bank = 5000,
     crypto = 0
-}`
+}`,
     },
     {
       icon: Globe,
@@ -77,7 +77,7 @@ Config.DefaultMoney = {
       code: `local Lang = QBCore.Shared.Locale
 Lang:t('info.received_paycheck', {
     value = ESX.Math.GroupDigits(salary)
-})`
+})`,
     },
     {
       icon: Cpu,
@@ -96,8 +96,8 @@ Lang:t('info.received_paycheck', {
         combinable = nil,
         description = 'A bandage works every time'
     }
-})`
-    }
+})`,
+    },
   ]
 
   const containerVariants = {
@@ -105,9 +105,9 @@ Lang:t('info.received_paycheck', {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   }
 
   const itemVariants = {
@@ -116,31 +116,30 @@ Lang:t('info.received_paycheck', {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6
-      }
-    }
+        duration: 0.6,
+      },
+    },
   }
 
   return (
-    <section className="py-24 bg-black relative overflow-hidden">
+    <section className="relative overflow-hidden bg-black py-24">
       {/* Background Elements */}
       <div className="grid-pattern absolute inset-0 opacity-10"></div>
       <div className="bg-mesh absolute inset-0 opacity-30"></div>
 
-      <div className="container mx-auto px-6 relative z-10">
+      <div className="container relative z-10 mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-20"
+          className="mb-20 text-center"
         >
-          <h2 className="text-4xl md:text-5xl font-black text-white mb-6">
-            Everything You Need to Build{' '}
-            <span className="text-gradient">Epic Servers</span> 🎯
+          <h2 className="mb-6 text-4xl font-black text-white md:text-5xl">
+            Everything You Need to Build <span className="text-gradient">Epic Servers</span> 🎯
           </h2>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            QBCore comes packed with powerful features and tools that make server development 
+          <p className="mx-auto max-w-3xl text-xl text-gray-400">
+            QBCore comes packed with powerful features and tools that make server development
             faster, easier, and more enjoyable.
           </p>
         </motion.div>
@@ -150,7 +149,7 @@ Lang:t('info.received_paycheck', {
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
         >
           {features.map((feature, index) => (
             <motion.div
@@ -158,21 +157,19 @@ Lang:t('info.received_paycheck', {
               variants={itemVariants}
               className="feature-card group cursor-pointer"
             >
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-qbcore/10 border border-qbcore/20 group-hover:bg-qbcore/20 transition-colors">
-                  <feature.icon className="h-5 w-5 text-qbcore" />
+              <div className="mb-4 flex items-center gap-3">
+                <div className="bg-qbcore/10 border-qbcore/20 group-hover:bg-qbcore/20 rounded-lg border p-2 transition-colors">
+                  <feature.icon className="text-qbcore h-5 w-5" />
                 </div>
-                <h3 className="text-lg font-bold text-white group-hover:text-qbcore transition-colors">
+                <h3 className="group-hover:text-qbcore text-lg font-bold text-white transition-colors">
                   {feature.title}
                 </h3>
               </div>
-              
-              <p className="text-gray-400 text-sm mb-4 leading-relaxed">
-                {feature.description}
-              </p>
 
-              <div className="code-block text-xs opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <pre className="text-gray-300 overflow-x-auto">
+              <p className="mb-4 text-sm leading-relaxed text-gray-400">{feature.description}</p>
+
+              <div className="code-block text-xs opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <pre className="overflow-x-auto text-gray-300">
                   <code>{feature.code}</code>
                 </pre>
               </div>
@@ -186,9 +183,9 @@ Lang:t('info.received_paycheck', {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="text-center mt-20"
+          className="mt-20 text-center"
         >
-          <div className="inline-flex items-center gap-4 bg-white/5 border border-white/10 rounded-full px-8 py-4 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-4 rounded-full border border-white/10 bg-white/5 px-8 py-4 backdrop-blur-sm">
             <span className="text-gray-400">Ready to get started?</span>
             <a href="/docs" className="btn-primary text-sm">
               View Documentation

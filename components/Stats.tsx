@@ -108,7 +108,7 @@ const Stats = () => {
           onViewportEnter={() => setIsVisible(true)}
           className="mb-16 text-center"
         >
-          <h2 className="mb-6 text-4xl font-bold text-gray-900 md:text-5xl dark:text-white">
+          <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl">
             Trusted by the
             <span className="text-gradient block">FiveM Community</span>
           </h2>

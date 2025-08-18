@@ -1,7 +1,9 @@
 import { GetServerSideProps } from 'next'
 import { getAllPages } from '../lib/seo'
 
-function generateSiteMap(pages: Array<{ url: string; lastModified: string; changeFrequency: string; priority: number }>) {
+function generateSiteMap(
+  pages: Array<{ url: string; lastModified: string; changeFrequency: string; priority: number }>
+) {
   return `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 ${pages
@@ -24,7 +26,7 @@ function SiteMap() {
 export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   // Get all pages from your MDX structure
   const pages = await getAllPages()
-  
+
   // Generate the XML sitemap
   const sitemap = generateSiteMap(pages)
 
@@ -35,7 +37,7 @@ export const getServerSideProps: GetServerSideProps = async ({ res }) => {
   res.end()
 
   return {
-    props: {}
+    props: {},
   }
 }
 

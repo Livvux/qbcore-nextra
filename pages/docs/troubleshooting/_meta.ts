@@ -1,5 +1,5 @@
 const meta = {
-  index: "Overview"
+  index: 'Overview',
 }
 
 export default meta

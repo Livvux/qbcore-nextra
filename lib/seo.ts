@@ -17,7 +17,7 @@ const PAGE_PRIORITIES = {
   mainSections: 0.8,
   subPages: 0.6,
   resources: 0.7,
-  tutorials: 0.6
+  tutorials: 0.6,
 } as const
 
 // Define change frequencies for different page types
@@ -26,7 +26,7 @@ const CHANGE_FREQUENCIES = {
   documentation: 'monthly' as const,
   resources: 'monthly' as const,
   tutorials: 'monthly' as const,
-  static: 'yearly' as const
+  static: 'yearly' as const,
 }
 
 /**
@@ -36,7 +36,8 @@ function getPriority(path: string): number {
   if (path === '/') return PAGE_PRIORITIES.homepage
   if (path.startsWith('/docs') && path.split('/').length === 2) return PAGE_PRIORITIES.mainSections
   if (path.startsWith('/docs/resources')) return PAGE_PRIORITIES.resources
-  if (path.startsWith('/docs/tutorials') || path.startsWith('/tutorials')) return PAGE_PRIORITIES.tutorials
+  if (path.startsWith('/docs/tutorials') || path.startsWith('/tutorials'))
+    return PAGE_PRIORITIES.tutorials
   return PAGE_PRIORITIES.subPages
 }
 
@@ -63,11 +64,13 @@ function shouldInclude(filename: string): boolean {
     '404.tsx',
     'sitemap.xml.ts',
     'robots.txt.ts',
-    '_meta.ts'
+    '_meta.ts',
   ]
-  
-  return !excludePatterns.some(pattern => filename.includes(pattern)) && 
-         (filename.endsWith('.tsx') || filename.endsWith('.mdx'))
+
+  return (
+    !excludePatterns.some((pattern) => filename.includes(pattern)) &&
+    (filename.endsWith('.tsx') || filename.endsWith('.mdx'))
+  )
 }
 
 /**
@@ -78,10 +81,10 @@ function filePathToUrl(filePath: string): string {
     .replace(PAGES_DIR, '')
     .replace(/\.(tsx|mdx)$/, '')
     .replace(/\/index$/, '')
-  
+
   if (url === '') url = '/'
   if (url !== '/' && !url.startsWith('/')) url = '/' + url
-  
+
   return url
 }
 
@@ -102,11 +105,11 @@ function getLastModified(filePath: string): string {
  */
 function scanDirectory(dir: string, pages: PageInfo[] = []): PageInfo[] {
   const items = readdirSync(dir)
-  
+
   for (const item of items) {
     const itemPath = join(dir, item)
     const stats = statSync(itemPath)
-    
+
     if (stats.isDirectory()) {
       // Recursively scan subdirectories
       scanDirectory(itemPath, pages)
@@ -115,16 +118,16 @@ function scanDirectory(dir: string, pages: PageInfo[] = []): PageInfo[] {
       const lastModified = getLastModified(itemPath)
       const priority = getPriority(url)
       const changeFrequency = getChangeFrequency(url)
-      
+
       pages.push({
         url: `${BASE_URL}${url}`,
         lastModified,
         changeFrequency,
-        priority
+        priority,
       })
     }
   }
-  
+
   return pages
 }
 
@@ -133,7 +136,7 @@ function scanDirectory(dir: string, pages: PageInfo[] = []): PageInfo[] {
  */
 export async function getAllPages(): Promise<PageInfo[]> {
   const pages = scanDirectory(PAGES_DIR)
-  
+
   // Sort by priority (highest first) then by URL
   return pages.sort((a, b) => {
     if (a.priority !== b.priority) {
@@ -154,14 +157,12 @@ export function getOrganizationSchema() {
     description: 'The #1 FiveM Framework',
     url: BASE_URL,
     logo: `${BASE_URL}/logo.webp`,
-    sameAs: [
-      'https://github.com/qbcore-framework',
-    ],
+    sameAs: ['https://github.com/qbcore-framework'],
     contactPoint: {
       '@type': 'ContactPoint',
       contactType: 'technical support',
-      url: `${BASE_URL}/support`
-    }
+      url: `${BASE_URL}/support`,
+    },
   }
 }
 
@@ -178,12 +179,12 @@ export function getDocumentationSchema(title: string, description: string, url: 
     publisher: {
       '@type': 'Organization',
       name: 'QBCore Framework',
-      url: BASE_URL
+      url: BASE_URL,
     },
     mainEntityOfPage: {
       '@type': 'WebPage',
-      '@id': url
-    }
+      '@id': url,
+    },
   }
 }
 
@@ -198,7 +199,7 @@ export function getBreadcrumbSchema(breadcrumbs: Array<{ name: string; url: stri
       '@type': 'ListItem',
       position: index + 1,
       name: crumb.name,
-      item: crumb.url
-    }))
+      item: crumb.url,
+    })),
   }
 }

@@ -16,22 +16,50 @@ export default function LandingLayout({ children }: LandingLayoutProps) {
             </div>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
-                <a href="/introduction" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Introduction</a>
-                <a href="/quickstart" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Quick Start</a>
-                <a href="/docs" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Documentation</a>
-                <a href="/tutorials" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Tutorials</a>
-                <a href="/scripts" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">Scripts</a>
-                <a href="https://github.com/qbcore-framework" className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium">GitHub</a>
+                <a
+                  href="/introduction"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
+                >
+                  Introduction
+                </a>
+                <a
+                  href="/quickstart"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
+                >
+                  Quick Start
+                </a>
+                <a
+                  href="/docs"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
+                >
+                  Documentation
+                </a>
+                <a
+                  href="/tutorials"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
+                >
+                  Tutorials
+                </a>
+                <a
+                  href="/scripts"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
+                >
+                  Scripts
+                </a>
+                <a
+                  href="https://github.com/qbcore-framework"
+                  className="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:text-white"
+                >
+                  GitHub
+                </a>
               </div>
             </div>
           </div>
         </div>
       </nav>
-      
+
       {/* Main content */}
-      <main className="w-full">
-        {children}
-      </main>
+      <main className="w-full">{children}</main>
     </div>
   )
 }

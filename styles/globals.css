@@ -10,15 +10,21 @@
   }
 
   body {
-    @apply antialiased bg-black text-white;
+    @apply bg-black text-white antialiased;
     font-family: 'Inter', system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     font-family: 'Space Grotesk', system-ui, sans-serif;
   }
 
-  code, pre {
+  code,
+  pre {
     font-family: 'JetBrains Mono', monospace;
   }
 
@@ -36,13 +42,13 @@
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background-color: #DB123E;
+    background-color: #db123e;
   }
 }
 
 @layer components {
   .hero-text {
-    background: linear-gradient(135deg, #DB123E 0%, #FF4B6E 50%, #DB123E 100%);
+    background: linear-gradient(135deg, #db123e 0%, #ff4b6e 50%, #db123e 100%);
     @apply bg-clip-text text-transparent;
     background-size: 200% auto;
     animation: gradient 3s ease infinite;
@@ -57,49 +63,49 @@
   }
 
   .btn-primary {
-    background: linear-gradient(135deg, #DB123E 0%, #FF4B6E 100%);
+    background: linear-gradient(135deg, #db123e 0%, #ff4b6e 100%);
     @apply rounded-lg px-8 py-4 font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg;
     box-shadow: 0 4px 20px rgba(219, 18, 62, 0.3);
   }
 
   .btn-secondary {
     @apply rounded-lg border-2 bg-transparent px-8 py-4 font-semibold transition-all duration-300;
-    border-color: #DB123E;
-    color: #DB123E;
+    border-color: #db123e;
+    color: #db123e;
   }
-  
+
   .btn-secondary:hover {
-    background-color: #DB123E;
+    background-color: #db123e;
     @apply text-white;
   }
 
   .feature-card {
     @apply rounded-lg border bg-black/50 p-6 transition-all duration-300 hover:scale-[1.02];
-    border-color: #1A1A1A;
+    border-color: #1a1a1a;
     backdrop-filter: blur(8px);
   }
-  
+
   .feature-card:hover {
-    border-color: #DB123E;
+    border-color: #db123e;
     box-shadow: 0 4px 20px rgba(219, 18, 62, 0.1);
   }
 
   .code-block {
     @apply overflow-x-auto rounded-lg p-4 font-mono text-sm text-gray-100;
-    background-color: #0D0D0D;
-    border: 1px solid #1A1A1A;
+    background-color: #0d0d0d;
+    border: 1px solid #1a1a1a;
   }
 
   .terminal-window {
-    @apply rounded-lg overflow-hidden;
-    background-color: #0D0D0D;
-    border: 1px solid #1A1A1A;
+    @apply overflow-hidden rounded-lg;
+    background-color: #0d0d0d;
+    border: 1px solid #1a1a1a;
   }
 
   .terminal-header {
     @apply flex items-center gap-2 px-4 py-3;
-    background-color: #1A1A1A;
-    border-bottom: 1px solid #2A2A2A;
+    background-color: #1a1a1a;
+    border-bottom: 1px solid #2a2a2a;
   }
 
   .terminal-dot {
@@ -111,9 +117,9 @@
   }
 
   .grid-pattern {
-    background-image: 
-      linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
     background-size: 50px 50px;
   }
 
@@ -122,19 +128,24 @@
   }
 
   @keyframes float-emoji {
-    0%, 100% { transform: translateY(0px) rotate(0deg); }
-    50% { transform: translateY(-10px) rotate(5deg); }
+    0%,
+    100% {
+      transform: translateY(0px) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(5deg);
+    }
   }
 
   .logo-header {
-    @apply max-h-8 max-w-32 w-auto h-auto;
+    @apply h-auto max-h-8 w-auto max-w-32;
     object-fit: contain;
   }
 }
 
 @layer utilities {
   .text-gradient {
-    background: linear-gradient(135deg, #DB123E 0%, #FF4B6E 100%);
+    background: linear-gradient(135deg, #db123e 0%, #ff4b6e 100%);
     @apply bg-clip-text text-transparent;
   }
 
@@ -146,15 +157,15 @@
   }
 
   .text-qbcore {
-    color: #DB123E;
+    color: #db123e;
   }
 
   .border-qbcore {
-    border-color: #DB123E;
+    border-color: #db123e;
   }
 
   .bg-qbcore {
-    background-color: #DB123E;
+    background-color: #db123e;
   }
 
   .animate-float {
@@ -221,5 +232,4 @@
     padding: 0 !important;
     width: 100% !important;
   }
-
 }

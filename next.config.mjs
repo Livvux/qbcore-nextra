@@ -5,25 +5,25 @@ const withNextra = nextra({
   themeConfig: './theme.config.tsx',
   // Enable search indexing for better SEO
   search: {
-    codeblocks: true
+    codeblocks: true,
   },
   // MDX options for better SEO
   mdxOptions: {
     rehypePlugins: [
       // Add any rehype plugins for SEO here
-    ]
-  }
+    ],
+  },
 })
 
 const config = {
   reactStrictMode: true,
   pageExtensions: ['tsx', 'ts', 'jsx', 'js', 'mdx'],
-  
+
   // Performance optimizations
   swcMinify: true,
   poweredByHeader: false,
   compress: true,
-  
+
   // SEO and Performance Headers
   async headers() {
     return [
@@ -76,7 +76,7 @@ const config = {
       },
     ]
   },
-  
+
   // Redirects for SEO
   async redirects() {
     return [
@@ -88,10 +88,11 @@ const config = {
       },
     ]
   },
-  
+
   // Enable standalone output for Docker
-  output: process.env.NODE_ENV === 'production' && !process.env.NEXT_EXPORT ? 'standalone' : undefined,
-  
+  output:
+    process.env.NODE_ENV === 'production' && !process.env.NEXT_EXPORT ? 'standalone' : undefined,
+
   // Webpack configuration for better performance
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -100,10 +101,10 @@ const config = {
         fs: false,
       }
     }
-    
+
     return config
   },
-  
+
   // Enable experimental features for better performance
   // experimental: {
   //   optimizeCss: true,
@@ -115,7 +116,7 @@ if (process.env.NODE_ENV === 'production' && process.env.NEXT_EXPORT === 'true')
   config.output = 'export'
   config.trailingSlash = true
   config.images = {
-    unoptimized: true
+    unoptimized: true,
   }
 }
 

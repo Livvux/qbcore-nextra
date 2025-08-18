@@ -24,7 +24,9 @@ const Hero = () => {
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText('git clone https://github.com/qbcore-framework/qb-core.git')
+      await navigator.clipboard.writeText(
+        'git clone https://github.com/qbcore-framework/qb-core.git'
+      )
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch (err) {
@@ -50,18 +52,27 @@ const Hero = () => {
       <div className="grid-pattern absolute inset-0 opacity-40"></div>
       <div className="bg-mesh absolute inset-0 opacity-60"></div>
       <div className="absolute inset-0">
-        <div className="animate-float absolute top-1/4 left-1/4 h-96 w-96 rounded-full opacity-30 mix-blend-multiply blur-3xl filter" style={{ background: 'radial-gradient(circle, #DB123E 0%, transparent 70%)' }}></div>
         <div
-          className="animate-float absolute top-1/3 right-1/4 h-80 w-80 rounded-full opacity-20 mix-blend-multiply blur-3xl filter"
-          style={{ animationDelay: '2s', background: 'radial-gradient(circle, #FF4B6E 0%, transparent 70%)' }}
+          className="animate-float absolute left-1/4 top-1/4 h-96 w-96 rounded-full opacity-30 mix-blend-multiply blur-3xl filter"
+          style={{ background: 'radial-gradient(circle, #DB123E 0%, transparent 70%)' }}
+        ></div>
+        <div
+          className="animate-float absolute right-1/4 top-1/3 h-80 w-80 rounded-full opacity-20 mix-blend-multiply blur-3xl filter"
+          style={{
+            animationDelay: '2s',
+            background: 'radial-gradient(circle, #FF4B6E 0%, transparent 70%)',
+          }}
         ></div>
         <div
           className="animate-float absolute bottom-1/4 left-1/3 h-72 w-72 rounded-full opacity-25 mix-blend-multiply blur-3xl filter"
-          style={{ animationDelay: '4s', background: 'radial-gradient(circle, #DB123E 0%, transparent 70%)' }}
+          style={{
+            animationDelay: '4s',
+            background: 'radial-gradient(circle, #DB123E 0%, transparent 70%)',
+          }}
         ></div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-6 text-center py-12">
+      <div className="container relative z-10 mx-auto px-6 py-12 text-center">
         <motion.div
           variants={staggerChildren}
           initial="initial"
@@ -73,21 +84,24 @@ const Hero = () => {
             variants={fadeInUp}
             className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 backdrop-blur-sm"
           >
-            <Zap className="h-4 w-4 text-qbcore" />
+            <Zap className="text-qbcore h-4 w-4" />
             <span className="text-sm font-medium text-gray-300">The #1 FiveM Framework</span>
           </motion.div>
 
           {/* Main Headline */}
           <motion.h1
             variants={fadeInUp}
-            className="mb-8 text-5xl leading-tight font-black text-white md:text-7xl lg:text-8xl"
+            className="mb-8 text-5xl font-black leading-tight text-white md:text-7xl lg:text-8xl"
           >
-            Build Amazing{' '}
-            <span className="emoji-float inline-block">🚔</span>{' '}
+            Build Amazing <span className="emoji-float inline-block">🚔</span>{' '}
             <span className="hero-text">Roleplay Servers</span>{' '}
-            <span className="emoji-float inline-block" style={{ animationDelay: '1s' }}>🎮</span>{' '}
+            <span className="emoji-float inline-block" style={{ animationDelay: '1s' }}>
+              🎮
+            </span>{' '}
             with QBCore{' '}
-            <span className="emoji-float inline-block" style={{ animationDelay: '2s' }}>⚡</span>
+            <span className="emoji-float inline-block" style={{ animationDelay: '2s' }}>
+              ⚡
+            </span>
           </motion.h1>
 
           {/* Subtitle */}
@@ -96,7 +110,7 @@ const Hero = () => {
             className="mx-auto mb-12 max-w-4xl text-xl leading-relaxed text-gray-400 md:text-2xl"
           >
             The most popular and feature-rich FiveM framework. Used by{' '}
-            <span className="font-bold text-qbcore">5,000+ servers</span> worldwide to create
+            <span className="text-qbcore font-bold">5,000+ servers</span> worldwide to create
             immersive gaming experiences.
           </motion.p>
 
@@ -107,17 +121,19 @@ const Hero = () => {
                 <div className="terminal-dot bg-red-500"></div>
                 <div className="terminal-dot bg-yellow-500"></div>
                 <div className="terminal-dot bg-green-500"></div>
-                <span className="text-gray-400 text-sm ml-4">Terminal</span>
+                <span className="ml-4 text-sm text-gray-400">Terminal</span>
               </div>
               <div className="terminal-content">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-qbcore">$</span>
-                    <span className="text-white">git clone https://github.com/qbcore-framework/qb-core.git</span>
+                    <span className="text-white">
+                      git clone https://github.com/qbcore-framework/qb-core.git
+                    </span>
                   </div>
                   <button
                     onClick={copyToClipboard}
-                    className="flex items-center gap-2 rounded px-3 py-1 text-xs text-gray-400 hover:text-white transition-colors"
+                    className="flex items-center gap-2 rounded px-3 py-1 text-xs text-gray-400 transition-colors hover:text-white"
                   >
                     <Copy className="h-3 w-3" />
                     {copied ? 'Copied!' : 'Copy'}
@@ -136,9 +152,9 @@ const Hero = () => {
             ].map((feature, index) => (
               <div
                 key={index}
-                className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 backdrop-blur-sm hover:border-qbcore/30 transition-colors"
+                className="hover:border-qbcore/30 flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 backdrop-blur-sm transition-colors"
               >
-                <feature.icon className="h-4 w-4 text-qbcore" />
+                <feature.icon className="text-qbcore h-4 w-4" />
                 <span className="text-sm font-medium text-gray-300">{feature.text}</span>
               </div>
             ))}
@@ -169,9 +185,11 @@ const Hero = () => {
               { number: '50,000+', label: 'Downloads' },
               { number: '100+', label: 'Resources' },
             ].map((stat, index) => (
-              <div key={index} className="text-center group">
-                <div className="mb-3 text-4xl font-black text-white md:text-5xl font-mono group-hover:text-qbcore transition-colors">{stat.number}</div>
-                <div className="text-gray-400 font-medium tracking-wide">{stat.label}</div>
+              <div key={index} className="group text-center">
+                <div className="group-hover:text-qbcore mb-3 font-mono text-4xl font-black text-white transition-colors md:text-5xl">
+                  {stat.number}
+                </div>
+                <div className="font-medium tracking-wide text-gray-400">{stat.label}</div>
               </div>
             ))}
           </motion.div>
@@ -185,11 +203,10 @@ const Hero = () => {
         transition={{ delay: 1.5, duration: 0.6 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2 transform"
       >
-        <div className="flex h-10 w-6 justify-center rounded-full border-2 border-gray-600 hover:border-qbcore transition-colors">
+        <div className="hover:border-qbcore flex h-10 w-6 justify-center rounded-full border-2 border-gray-600 transition-colors">
           <div className="mt-2 h-3 w-1 animate-bounce rounded-full bg-gray-600"></div>
         </div>
       </motion.div>
-
     </section>
   )
 }

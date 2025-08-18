@@ -87,7 +87,7 @@ const Testimonials = () => {
           transition={{ duration: 0.6 }}
           className="mb-16 text-center"
         >
-          <h2 className="mb-6 text-4xl font-bold text-gray-900 md:text-5xl dark:text-white">
+          <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl">
             What the Community
             <span className="text-gradient block">Says About QBCore</span>
           </h2>
@@ -117,7 +117,7 @@ const Testimonials = () => {
               >
                 <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-800">
                   {/* Quote Icon */}
-                  <div className="absolute top-4 right-4 opacity-10">
+                  <div className="absolute right-4 top-4 opacity-10">
                     <Quote className="h-12 w-12 text-blue-500" />
                   </div>
 

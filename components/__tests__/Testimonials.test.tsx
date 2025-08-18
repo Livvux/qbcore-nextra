@@ -159,7 +159,7 @@ describe('Testimonials Component', () => {
     // Verify that testimonial text is properly displayed
     const testimonialText = screen.getByText(/QBCore transformed our server completely/i)
     expect(testimonialText).toBeInTheDocument()
-    
+
     // Verify that testimonial includes the quoted formatting
     expect(testimonialText.textContent).toBeTruthy()
   })

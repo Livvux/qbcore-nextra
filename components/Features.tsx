@@ -112,7 +112,7 @@ const Features = () => {
           transition={{ duration: 0.6 }}
           className="mb-16 text-center"
         >
-          <h2 className="mb-6 text-4xl font-bold text-gray-900 md:text-5xl dark:text-white">
+          <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl">
             Everything You Need to Build
             <span className="text-gradient block">Amazing Roleplay Servers</span>
           </h2>
@@ -130,7 +130,7 @@ const Features = () => {
           className="mx-auto grid max-w-7xl grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
         >
           {features.map((feature, index) => (
-            <motion.div key={index} variants={itemVariants} className="group feature-card relative">
+            <motion.div key={index} variants={itemVariants} className="feature-card group relative">
               {/* Gradient Background */}
               <div
                 className={`absolute inset-0 bg-gradient-to-r ${feature.color} rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-5`}

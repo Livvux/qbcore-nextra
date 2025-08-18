@@ -10,9 +10,9 @@ if (existsSync(standaloneServerPath)) {
   console.log('🚀 Starting standalone server...')
   const child = spawn('node', [standaloneServerPath], {
     stdio: 'inherit',
-    env: process.env
+    env: process.env,
   })
-  
+
   child.on('exit', (code) => {
     process.exit(code)
   })
@@ -20,9 +20,9 @@ if (existsSync(standaloneServerPath)) {
   console.log('🚀 Starting Next.js development server...')
   const child = spawn('next', ['start'], {
     stdio: 'inherit',
-    env: process.env
+    env: process.env,
   })
-  
+
   child.on('exit', (code) => {
     process.exit(code)
   })

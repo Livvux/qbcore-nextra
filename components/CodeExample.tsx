@@ -167,7 +167,7 @@ TriggerClientEvent('qb-core:notify', source, 'Welcome to the server!', 'success'
                   </pre>
 
                   {/* Language Badge */}
-                  <div className="absolute top-4 right-4">
+                  <div className="absolute right-4 top-4">
                     <span className="rounded border border-blue-500/30 bg-blue-500/20 px-2 py-1 text-xs font-medium text-blue-300">
                       {example.language}
                     </span>

@@ -1,44 +1,44 @@
 const meta = {
   introduction: {
-    title: "Introduction",
-    type: 'page'
+    title: 'Introduction',
+    type: 'page',
   },
   quickstart: {
-    title: "Quick Start",
-    type: 'page'
+    title: 'Quick Start',
+    type: 'page',
   },
   docs: {
-    title: "Documentation",
-    type: 'page'
+    title: 'Documentation',
+    type: 'page',
   },
   tutorials: {
-    title: "Tutorials",
-    type: 'page'
+    title: 'Tutorials',
+    type: 'page',
   },
   scripts: {
-    title: "Scripts",
-    type: 'page'
+    title: 'Scripts',
+    type: 'page',
   },
   inventory: {
-    title: "Inventory",
-    type: 'page'
+    title: 'Inventory',
+    type: 'page',
   },
   hud: {
-    title: "HUD",
-    type: 'page'
+    title: 'HUD',
+    type: 'page',
   },
   tools: {
-    title: "Tools",
-    type: 'page'
+    title: 'Tools',
+    type: 'page',
   },
   download: {
-    title: "Download",
-    type: 'page'
+    title: 'Download',
+    type: 'page',
   },
   support: {
-    title: "Support",
-    type: 'page'
-  }
+    title: 'Support',
+    type: 'page',
+  },
 }
 
 export default meta
