@@ -11,7 +11,7 @@ import Footer from '../components/Footer'
 export default function HomePage() {
   return (
     <>
-      <style jsx global>{`
+      <style global>{`
         /* Hide sidebar and toc for landing page only */
         .nextra-sidebar-container,
         .nextra-sidebar,
@@ -45,11 +45,11 @@ export default function HomePage() {
           padding: 0 !important;
         }
       `}</style>
-      
+
       <div className="min-h-screen bg-black text-white">
         {/* Navigation */}
         <Navigation />
-        
+
         {/* Main content */}
         <main className="w-full">
           <Hero />
@@ -59,7 +59,7 @@ export default function HomePage() {
           <CodeExample />
           <Testimonials />
         </main>
-        
+
         {/* Footer */}
         <Footer />
       </div>

@@ -20,7 +20,15 @@ vi.mock('next/router', () => ({
 
 // Mock Next.js link
 vi.mock('next/link', () => ({
-  default: ({ children, href, ...props }: unknown) => {
+  default: ({
+    children,
+    href,
+    ...props
+  }: {
+    children: React.ReactNode
+    href: string
+    [key: string]: any
+  }) => {
     return React.createElement('a', { href, ...props }, children)
   },
 }))
@@ -28,10 +36,14 @@ vi.mock('next/link', () => ({
 // Mock framer-motion for simpler testing
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: unknown) => React.createElement('div', props, children),
-    section: ({ children, ...props }: unknown) => React.createElement('section', props, children),
-    h1: ({ children, ...props }: unknown) => React.createElement('h1', props, children),
-    p: ({ children, ...props }: unknown) => React.createElement('p', props, children),
+    div: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) =>
+      React.createElement('div', props, children),
+    section: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) =>
+      React.createElement('section', props, children),
+    h1: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) =>
+      React.createElement('h1', props, children),
+    p: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) =>
+      React.createElement('p', props, children),
   },
 }))
 
