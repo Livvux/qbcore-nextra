@@ -11,7 +11,7 @@ import Footer from '../components/Footer'
 export default function HomePage() {
   return (
     <>
-      <style global jsx>{`
+      <style jsx global>{`
         /* Hide sidebar and toc for landing page only */
         .nextra-sidebar-container,
         .nextra-sidebar,
