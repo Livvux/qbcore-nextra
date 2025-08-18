@@ -1,5 +1,7 @@
-[providers]
-node = "18"
+providers = ["node"]
+
+[phases.setup]
+nixPkgs = ["nodejs_18", "pnpm"]
 
 [build]
 cmd = "pnpm run build"
