@@ -36,14 +36,67 @@ vi.mock('next/link', () => ({
 // Mock framer-motion for simpler testing
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) =>
-      React.createElement('div', props, children),
-    section: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) =>
-      React.createElement('section', props, children),
-    h1: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) =>
-      React.createElement('h1', props, children),
-    p: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) =>
-      React.createElement('p', props, children),
+    div: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
+      // Filter out framer-motion specific props
+      const {
+        initial,
+        animate,
+        exit,
+        whileInView,
+        viewport,
+        variants,
+        transition,
+        onViewportEnter,
+        onViewportLeave,
+        ...domProps
+      } = props
+      return React.createElement('div', domProps, children)
+    },
+    section: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
+      const {
+        initial,
+        animate,
+        exit,
+        whileInView,
+        viewport,
+        variants,
+        transition,
+        onViewportEnter,
+        onViewportLeave,
+        ...domProps
+      } = props
+      return React.createElement('section', domProps, children)
+    },
+    h1: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
+      const {
+        initial,
+        animate,
+        exit,
+        whileInView,
+        viewport,
+        variants,
+        transition,
+        onViewportEnter,
+        onViewportLeave,
+        ...domProps
+      } = props
+      return React.createElement('h1', domProps, children)
+    },
+    p: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
+      const {
+        initial,
+        animate,
+        exit,
+        whileInView,
+        viewport,
+        variants,
+        transition,
+        onViewportEnter,
+        onViewportLeave,
+        ...domProps
+      } = props
+      return React.createElement('p', domProps, children)
+    },
   },
 }))
 

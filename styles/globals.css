@@ -232,4 +232,34 @@
     padding: 0 !important;
     width: 100% !important;
   }
+
+  /* Landing page specific - hide Nextra sidebar and navigation elements */
+  .landing-page .nextra-sidebar-container,
+  .landing-page .nextra-sidebar,
+  .landing-page aside,
+  .landing-page [role='complementary'],
+  .landing-page .nextra-toc {
+    display: none !important;
+  }
+
+  /* Landing page layout overrides */
+  .landing-page .nextra-container {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .landing-page main {
+    margin: 0 !important;
+    padding: 0 !important;
+    max-width: none !important;
+  }
+
+  .landing-page body {
+    --nextra-sidebar-width: 0px !important;
+  }
+
+  .landing-page .nextra-content {
+    padding: 0 !important;
+  }
 }
