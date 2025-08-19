@@ -1,8 +1,12 @@
-import React from 'react'
-import { Github, BookOpen, Users, ExternalLink, Heart } from 'lucide-react'
+import React, { useState } from 'react'
+import { Github, BookOpen, Users, ExternalLink, Heart, Loader2, Check, AlertCircle } from 'lucide-react'
 
 const Footer = () => {
   const currentYear = new Date().getFullYear()
+  const [email, setEmail] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [message, setMessage] = useState('')
+  const [messageType, setMessageType] = useState<'success' | 'error' | ''>('')
 
   const footerLinks = {
     documentation: [
@@ -23,6 +27,64 @@ const Footer = () => {
       { label: 'Scripts', href: '/scripts' },
       { label: 'Inventory', href: '/inventory' },
     ],
+  }
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    return emailRegex.test(email)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!email.trim()) {
+      setMessage('Please enter your email address')
+      setMessageType('error')
+      return
+    }
+
+    if (!validateEmail(email.trim())) {
+      setMessage('Please enter a valid email address')
+      setMessageType('error')
+      return
+    }
+
+    setIsLoading(true)
+    setMessage('')
+    setMessageType('')
+
+    try {
+      const response = await fetch('/api/newsletter/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email.trim() }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setMessage(data.message)
+        setMessageType('success')
+        setEmail('')
+        
+        // Clear message after 5 seconds
+        setTimeout(() => {
+          setMessage('')
+          setMessageType('')
+        }, 5000)
+      } else {
+        setMessage(data.message || 'Failed to subscribe. Please try again.')
+        setMessageType('error')
+      }
+    } catch (error) {
+      console.error('Newsletter subscription error:', error)
+      setMessage('Network error. Please check your connection and try again.')
+      setMessageType('error')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -109,14 +171,47 @@ const Footer = () => {
               </p>
             </div>
 
-            <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row">
-              <input
-                type="email"
-                placeholder="Enter your email"
-                className="focus:border-qbcore focus:ring-qbcore flex-1 rounded-lg border border-white/20 bg-black/50 px-4 py-3 text-white placeholder-gray-400 backdrop-blur-sm focus:outline-none focus:ring-1"
-              />
-              <button className="btn-primary whitespace-nowrap">Subscribe</button>
-            </div>
+            <form onSubmit={handleSubmit} className="w-full max-w-md">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  className="focus:border-qbcore focus:ring-qbcore flex-1 rounded-lg border border-white/20 bg-black/50 px-4 py-3 text-white placeholder-gray-400 backdrop-blur-sm focus:outline-none focus:ring-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <button 
+                  type="submit"
+                  disabled={isLoading || !email.trim()}
+                  className="btn-primary whitespace-nowrap flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Subscribing...
+                    </>
+                  ) : (
+                    'Subscribe'
+                  )}
+                </button>
+              </div>
+              
+              {message && (
+                <div className={`mt-3 flex items-center gap-2 text-sm ${
+                  messageType === 'success' 
+                    ? 'text-green-400' 
+                    : 'text-red-400'
+                }`}>
+                  {messageType === 'success' ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4" />
+                  )}
+                  {message}
+                </div>
+              )}
+            </form>
           </div>
         </div>
 

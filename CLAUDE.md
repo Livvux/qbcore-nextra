@@ -142,3 +142,7 @@ Always run: `pnpm check-all` to ensure all checks pass.
 ---
 
 **Always use pnpm for this project** - it's optimized for pnpm's linking strategy and dependency management.
+- Coolify project data
+Project ID: tk0wkwgssc480scs0scoggk0
+Environment (Production): bo00o8oc0c4sskwkgcksc4o0
+Application ID: n0ck0o0oo0googwk400ksskg
