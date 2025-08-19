@@ -20,15 +20,15 @@ export default function Document() {
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         
-        {/* Favicon and Icons - Updated with new icons */}
+        {/* Favicon and Icons - QBCore branded */}
         <link rel="icon" href="/favicon.ico" />
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
         
         {/* Theme and browser UI */}
-        <meta name="theme-color" content="#0f172a" />
-        <meta name="msapplication-TileColor" content="#0f172a" />
+        <meta name="theme-color" content="#dc2626" />
+        <meta name="msapplication-TileColor" content="#dc2626" />
         <meta name="msapplication-config" content="/browserconfig.xml" />
         
         {/* Security headers (additional to next.config.mjs) */}
@@ -50,7 +50,7 @@ export default function Document() {
         
         {/* Preload critical resources */}
         <link rel="preload" href="/og-image.svg" as="image" type="image/svg+xml" />
-        <link rel="preload" href="/logo.webp" as="image" type="image/webp" />
+        <link rel="preload" href="/qbcore.webp" as="image" type="image/webp" />
         
         {/* Alternative formats and feeds */}
         <link
