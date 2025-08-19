@@ -3,24 +3,12 @@
 import { motion } from 'framer-motion'
 import { 
   Server, 
-  Database, 
-  Activity, 
   Code, 
   CheckCircle, 
   Bug, 
   User, 
   Car, 
-  Calculator, 
-  Shield, 
-  HardDrive, 
-  Zap,
-  Users,
-  FileText,
-  Globe,
-  BarChart3,
-  Map,
-  Gamepad2,
-  Folder
+  Calculator
 } from 'lucide-react'
 import { ToolCard } from './ToolCard'
 
@@ -38,43 +26,6 @@ const toolsData = {
       href: "/tools/server-ip-finder",
       icon: Server,
       status: 'popular' as const
-    },
-    {
-      title: "Database Manager",
-      description: "Manage your QBCore database with a user-friendly interface",
-      href: "/tools/database-manager",
-      icon: Database
-    },
-    {
-      title: "Resource Monitor", 
-      description: "Monitor server performance and resource usage in real-time",
-      href: "/tools/resource-monitor",
-      icon: Activity
-    },
-    {
-      title: "Log Analyzer",
-      description: "Parse and analyze server logs with advanced filtering and insights",
-      href: "/tools/log-analyzer",
-      icon: FileText
-    },
-    {
-      title: "Player Manager",
-      description: "Manage player accounts, data, and permissions efficiently",
-      href: "/tools/player-manager",
-      icon: Users
-    },
-    {
-      title: "Resource Manager",
-      description: "Install, update, and configure server resources seamlessly",
-      href: "/tools/resource-manager",
-      icon: Folder
-    },
-    {
-      title: "Security Scanner",
-      description: "Scan for vulnerabilities and security issues in your server",
-      href: "/tools/security-scanner",
-      icon: Shield,
-      status: 'new' as const
     }
   ],
   dev: [
@@ -96,24 +47,6 @@ const toolsData = {
       description: "Debug and monitor QBCore events in real-time",
       href: "/tools/event-debugger",
       icon: Bug
-    },
-    {
-      title: "Database Schema Tool",
-      description: "Manage database schemas and migrations for QBCore",
-      href: "/tools/database-schema-tool",
-      icon: Database
-    },
-    {
-      title: "API Tester",
-      description: "Test server callbacks, exports, and API endpoints",
-      href: "/tools/api-tester",
-      icon: Globe
-    },
-    {
-      title: "Performance Profiler",
-      description: "Identify performance bottlenecks and optimization opportunities",
-      href: "/tools/performance-profiler",
-      icon: BarChart3
     }
   ],
   player: [
@@ -135,47 +68,10 @@ const toolsData = {
       description: "Calculate optimal economy settings and job payouts",
       href: "/tools/economy-calculator",
       icon: Calculator
-    },
-    {
-      title: "Map Tool",
-      description: "Create and manage custom map locations and coordinates",
-      href: "/tools/map-tool",
-      icon: Map
-    },
-    {
-      title: "Scenario Builder",
-      description: "Design immersive roleplay scenarios and events",
-      href: "/tools/scenario-builder",
-      icon: Gamepad2
-    },
-    {
-      title: "Statistics Dashboard",
-      description: "View comprehensive server and player statistics",
-      href: "/tools/statistics-dashboard",
-      icon: BarChart3,
-      status: 'popular' as const
     }
   ],
   maintenance: [
-    {
-      title: "Health Checker",
-      description: "Automated server health monitoring and diagnostics",
-      href: "/tools/health-checker",
-      icon: Shield,
-      status: 'new' as const
-    },
-    {
-      title: "Cache Cleaner", 
-      description: "Clear and optimize server caches for better performance",
-      href: "/tools/cache-cleaner",
-      icon: HardDrive
-    },
-    {
-      title: "Startup Optimizer",
-      description: "Optimize server startup sequence and resource loading",
-      href: "/tools/startup-optimizer", 
-      icon: Zap
-    }
+    // No tools currently available - all maintenance tools need to be implemented
   ]
 }
 

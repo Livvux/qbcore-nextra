@@ -92,7 +92,7 @@ export default function Document() {
         <meta name="author" content="QBCore Framework Team" />
         <meta name="generator" content="Next.js, Nextra" />
       </Head>
-      <body className="bg-slate-900 text-white">
+      <body style={{ backgroundColor: 'rgba(17, 17, 17, var(--tw-bg-opacity))' }} className="text-white">
         <Main />
         <NextScript />
       </body>

@@ -42,7 +42,7 @@ import { ToolsGrid } from '../../components/tools/ToolsGrid'
         </p>
       </div>
       
-      <div className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
+      <div className="flex justify-center max-w-6xl mx-auto">
         {/* Server IP Finder Feature */}
         <div className="feature-card group">
           <div className="flex items-center mb-6">
@@ -78,40 +78,6 @@ import { ToolsGrid } from '../../components/tools/ToolsGrid'
           </a>
         </div>
         
-        {/* Database Manager Feature */}
-        <div className="feature-card group">
-          <div className="flex items-center mb-6">
-            <div className="h-12 w-12 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center mr-4">
-              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
-              </svg>
-            </div>
-            <h3 className="text-2xl font-bold text-white">Database Manager</h3>
-          </div>
-          
-          <p className="text-gray-400 mb-6 leading-relaxed">
-            Comprehensive database management tool designed specifically for QBCore servers with built-in schema understanding.
-          </p>
-          
-          <div className="space-y-3 mb-6">
-            <div className="flex items-center text-purple-400">
-              <span className="w-2 h-2 bg-purple-400 rounded-full mr-3"></span>
-              Visual table management interface
-            </div>
-            <div className="flex items-center text-purple-400">
-              <span className="w-2 h-2 bg-purple-400 rounded-full mr-3"></span>
-              Automated backup & restore
-            </div>
-            <div className="flex items-center text-purple-400">
-              <span className="w-2 h-2 bg-purple-400 rounded-full mr-3"></span>
-              Safe operations with rollback capability
-            </div>
-          </div>
-          
-          <a href="/tools/database-manager" className="inline-flex items-center text-purple-400 hover:text-purple-300 font-medium">
-            Learn more →
-          </a>
-        </div>
       </div>
     </div>
   </section>

@@ -1,0 +1,847 @@
+# Economy Calculator
+
+Calculate optimal economy settings, job payouts, item prices, and server financial balance for a healthy QBCore economy.
+
+## Overview
+
+The Economy Calculator helps server administrators design balanced economic systems by analyzing job payouts, item prices, business profits, and player spending patterns. Create sustainable economies that encourage gameplay while maintaining server balance.
+
+import { useState, useEffect } from 'react'
+import { Calculator, DollarSign, TrendingUp, TrendingDown, BarChart3, PieChart, AlertTriangle, CheckCircle, Settings, Users, Briefcase, ShoppingCart } from 'lucide-react'
+
+export function EconomyCalculator() {
+  const [activeTab, setActiveTab] = useState('jobs')
+  const [settings, setSettings] = useState({
+    // Server Settings
+    maxPlayers: 64,
+    averagePlaytime: 4, // hours
+    economyType: 'balanced', // conservative, balanced, liberal
+    inflationRate: 2, // percent per month
+    
+    // Starting Money
+    startingCash: 500,
+    startingBank: 5000,
+    
+    // Job Settings
+    minimumWage: 50,
+    maximumWage: 300,
+    payoutInterval: 30, // minutes
+    
+    // Item Pricing
+    itemMarkup: 25, // percent
+    vehicleMarkup: 15,
+    housingMarkup: 20
+  })
+
+  const [jobs, setJobs] = useState([
+    { id: 'unemployed', name: 'Unemployed', hourlyPay: 0, difficulty: 1, demand: 'unlimited' },
+    { id: 'police', name: 'Police Officer', hourlyPay: 150, difficulty: 7, demand: 'high' },
+    { id: 'ambulance', name: 'EMS', hourlyPay: 140, difficulty: 6, demand: 'high' },
+    { id: 'mechanic', name: 'Mechanic', hourlyPay: 120, difficulty: 5, demand: 'medium' },
+    { id: 'taxi', name: 'Taxi Driver', hourlyPay: 80, difficulty: 3, demand: 'medium' },
+    { id: 'garbage', name: 'Garbage Collector', hourlyPay: 90, difficulty: 4, demand: 'low' },
+    { id: 'trucker', name: 'Trucker', hourlyPay: 110, difficulty: 5, demand: 'medium' },
+    { id: 'lawyer', name: 'Lawyer', hourlyPay: 200, difficulty: 8, demand: 'low' }
+  ])
+
+  const [items, setItems] = useState([
+    { id: 'bread', name: 'Bread', basePrice: 5, category: 'food', demand: 'high' },
+    { id: 'water', name: 'Water Bottle', basePrice: 3, category: 'food', demand: 'high' },
+    { id: 'phone', name: 'Phone', basePrice: 500, category: 'electronics', demand: 'high' },
+    { id: 'lockpick', name: 'Lockpick', basePrice: 50, category: 'tools', demand: 'medium' },
+    { id: 'weapon_pistol', name: 'Pistol', basePrice: 2500, category: 'weapons', demand: 'low' },
+    { id: 'bandage', name: 'Bandage', basePrice: 25, category: 'medical', demand: 'medium' }
+  ])
+
+  const [analysis, setAnalysis] = useState(null)
+
+  const economyTypes = {
+    conservative: { multiplier: 0.8, description: 'Lower payouts, stable economy' },
+    balanced: { multiplier: 1.0, description: 'Standard payouts, balanced growth' },
+    liberal: { multiplier: 1.3, description: 'Higher payouts, faster progression' }
+  }
+
+  const calculateEconomy = () => {
+    const economyMultiplier = economyTypes[settings.economyType].multiplier
+    
+    // Job Analysis
+    const totalJobs = jobs.length
+    const averageHourlyPay = jobs.reduce((sum, job) => sum + job.hourlyPay, 0) / totalJobs
+    const adjustedAveragePay = averageHourlyPay * economyMultiplier
+    
+    // Daily money injection
+    const activeWorkers = settings.maxPlayers * 0.7 // 70% working
+    const hoursPerDay = settings.averagePlaytime
+    const dailyPayouts = activeWorkers * adjustedAveragePay * hoursPerDay
+    
+    // Item price analysis
+    const averageItemPrice = items.reduce((sum, item) => sum + item.basePrice, 0) / items.length
+    const adjustedItemPrice = averageItemPrice * (1 + settings.itemMarkup / 100)
+    
+    // Money sinks analysis
+    const estimatedDailySpending = activeWorkers * adjustedItemPrice * 10 // avg 10 items per player
+    
+    // Economy balance
+    const netDailyFlow = dailyPayouts - estimatedDailySpending
+    const inflationImpact = (netDailyFlow * settings.inflationRate / 100) / 30 // daily inflation
+    
+    // Recommendations
+    const recommendations = []
+    if (netDailyFlow > dailyPayouts * 0.3) {
+      recommendations.push({ type: 'warning', message: 'Too much money entering economy - consider adding money sinks' })
+    }
+    if (netDailyFlow < 0) {
+      recommendations.push({ type: 'error', message: 'Economy is deflationary - increase job payouts or reduce costs' })
+    }
+    if (adjustedAveragePay < settings.minimumWage) {
+      recommendations.push({ type: 'info', message: 'Average pay below minimum wage - consider adjusting job wages' })
+    }
+    
+    setAnalysis({
+      totalJobs,
+      averageHourlyPay: adjustedAveragePay,
+      dailyPayouts,
+      dailySpending: estimatedDailySpending,
+      netDailyFlow,
+      inflationImpact,
+      averageItemPrice: adjustedItemPrice,
+      economyHealth: getEconomyHealth(netDailyFlow, dailyPayouts),
+      recommendations
+    })
+  }
+
+  const getEconomyHealth = (netFlow, payouts) => {
+    const ratio = Math.abs(netFlow) / payouts
+    if (ratio < 0.1) return { status: 'excellent', color: 'green', description: 'Well balanced economy' }
+    if (ratio < 0.2) return { status: 'good', color: 'blue', description: 'Healthy economy with minor adjustments needed' }
+    if (ratio < 0.4) return { status: 'fair', color: 'yellow', description: 'Economy needs attention' }
+    return { status: 'poor', color: 'red', description: 'Economy requires immediate intervention' }
+  }
+
+  const updateJobPay = (jobId, newPay) => {
+    setJobs(prev => prev.map(job => 
+      job.id === jobId ? { ...job, hourlyPay: newPay } : job
+    ))
+  }
+
+  const updateItemPrice = (itemId, newPrice) => {
+    setItems(prev => prev.map(item => 
+      item.id === itemId ? { ...item, basePrice: newPrice } : item
+    ))
+  }
+
+  const exportConfig = () => {
+    const config = {
+      settings,
+      jobs: jobs.map(job => ({
+        name: job.id,
+        payment: Math.round(job.hourlyPay / (60 / settings.payoutInterval)), // Convert to per-interval payment
+        difficulty: job.difficulty
+      })),
+      items: items.map(item => ({
+        name: item.id,
+        price: Math.round(item.basePrice * (1 + settings.itemMarkup / 100))
+      })),
+      analysis,
+      exportDate: new Date().toISOString()
+    }
+    
+    const dataStr = JSON.stringify(config, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'qbcore_economy_config.json'
+    link.click()
+  }
+
+  useEffect(() => {
+    calculateEconomy()
+  }, [settings, jobs, items])
+
+  const tabs = [
+    { id: 'jobs', name: 'Jobs & Wages', icon: Briefcase },
+    { id: 'items', name: 'Item Pricing', icon: ShoppingCart },
+    { id: 'settings', name: 'Economy Settings', icon: Settings },
+    { id: 'analysis', name: 'Analysis', icon: BarChart3 }
+  ]
+
+  return (
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Economy Calculator</h2>
+          <p className="text-gray-400">Design balanced economic systems for your QBCore server</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={calculateEconomy}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Calculator className="w-4 h-4" />
+            Recalculate
+          </button>
+          <button
+            onClick={exportConfig}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            <DollarSign className="w-4 h-4" />
+            Export Config
+          </button>
+        </div>
+      </div>
+
+      {/* Economy Health Overview */}
+      {analysis && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-4 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp className="w-5 h-5 text-green-400" />
+              <span className="text-gray-400 text-sm">Daily Payouts</span>
+            </div>
+            <div className="text-2xl font-bold text-white">${analysis.dailyPayouts.toLocaleString()}</div>
+          </div>
+          
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-4 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingDown className="w-5 h-5 text-red-400" />
+              <span className="text-gray-400 text-sm">Daily Spending</span>
+            </div>
+            <div className="text-2xl font-bold text-white">${analysis.dailySpending.toLocaleString()}</div>
+          </div>
+          
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-4 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-2">
+              <BarChart3 className="w-5 h-5 text-blue-400" />
+              <span className="text-gray-400 text-sm">Net Flow</span>
+            </div>
+            <div className={`text-2xl font-bold ${analysis.netDailyFlow >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              ${analysis.netDailyFlow.toLocaleString()}
+            </div>
+          </div>
+          
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-4 backdrop-blur-md">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className={`w-5 h-5 text-${analysis.economyHealth.color}-400`} />
+              <span className="text-gray-400 text-sm">Health</span>
+            </div>
+            <div className={`text-lg font-bold text-${analysis.economyHealth.color}-400 capitalize`}>
+              {analysis.economyHealth.status}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-800">
+        <nav className="flex gap-8">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.name}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+        {activeTab === 'jobs' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Job Wages Configuration</h3>
+              <div className="text-sm text-gray-400">
+                Payout every {settings.payoutInterval} minutes
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b border-gray-800">
+                  <tr>
+                    <th className="text-left py-3 text-gray-300 font-medium">Job</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Hourly Pay</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Per Payout</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Difficulty</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Demand</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {jobs.map((job) => (
+                    <tr key={job.id} className="border-b border-gray-800/50">
+                      <td className="py-3 text-white font-medium">{job.name}</td>
+                      <td className="py-3">
+                        <input
+                          type="number"
+                          value={job.hourlyPay}
+                          onChange={(e) => updateJobPay(job.id, parseInt(e.target.value) || 0)}
+                          className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-white text-sm"
+                        />
+                      </td>
+                      <td className="py-3 text-gray-400">
+                        ${Math.round(job.hourlyPay / (60 / settings.payoutInterval))}
+                      </td>
+                      <td className="py-3">
+                        <div className="flex items-center">
+                          <div className="w-16 bg-gray-800 rounded-full h-2 mr-2">
+                            <div 
+                              className="bg-blue-500 h-2 rounded-full" 
+                              style={{ width: `${(job.difficulty / 10) * 100}%` }}
+                            />
+                          </div>
+                          <span className="text-gray-400 text-sm">{job.difficulty}/10</span>
+                        </div>
+                      </td>
+                      <td className="py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          job.demand === 'high' ? 'bg-green-500/20 text-green-400' :
+                          job.demand === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-red-500/20 text-red-400'
+                        }`}>
+                          {job.demand}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        <button className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4 p-4 bg-gray-900/50 rounded-lg">
+              <div>
+                <span className="text-gray-400 text-sm">Average Hourly Pay:</span>
+                <p className="text-white font-bold">${Math.round(jobs.reduce((sum, job) => sum + job.hourlyPay, 0) / jobs.length)}</p>
+              </div>
+              <div>
+                <span className="text-gray-400 text-sm">Highest Paying Job:</span>
+                <p className="text-white font-bold">{jobs.reduce((max, job) => job.hourlyPay > max.hourlyPay ? job : max).name}</p>
+              </div>
+              <div>
+                <span className="text-gray-400 text-sm">Total Jobs:</span>
+                <p className="text-white font-bold">{jobs.length}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'items' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-white">Item Pricing Configuration</h3>
+              <div className="text-sm text-gray-400">
+                Markup: {settings.itemMarkup}%
+              </div>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b border-gray-800">
+                  <tr>
+                    <th className="text-left py-3 text-gray-300 font-medium">Item</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Base Price</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Sell Price</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Category</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Demand</th>
+                    <th className="text-left py-3 text-gray-300 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-800/50">
+                      <td className="py-3 text-white font-medium">{item.name}</td>
+                      <td className="py-3">
+                        <input
+                          type="number"
+                          value={item.basePrice}
+                          onChange={(e) => updateItemPrice(item.id, parseInt(e.target.value) || 0)}
+                          className="w-20 px-2 py-1 bg-gray-800 border border-gray-700 rounded text-white text-sm"
+                        />
+                      </td>
+                      <td className="py-3 text-green-400 font-medium">
+                        ${Math.round(item.basePrice * (1 + settings.itemMarkup / 100))}
+                      </td>
+                      <td className="py-3 text-gray-400 capitalize">{item.category}</td>
+                      <td className="py-3">
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          item.demand === 'high' ? 'bg-green-500/20 text-green-400' :
+                          item.demand === 'medium' ? 'bg-yellow-500/20 text-yellow-400' :
+                          'bg-red-500/20 text-red-400'
+                        }`}>
+                          {item.demand}
+                        </span>
+                      </td>
+                      <td className="py-3">
+                        <button className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700">
+                          Edit
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4 p-4 bg-gray-900/50 rounded-lg">
+              <div>
+                <span className="text-gray-400 text-sm">Average Item Price:</span>
+                <p className="text-white font-bold">${Math.round(items.reduce((sum, item) => sum + item.basePrice, 0) / items.length)}</p>
+              </div>
+              <div>
+                <span className="text-gray-400 text-sm">Most Expensive:</span>
+                <p className="text-white font-bold">{items.reduce((max, item) => item.basePrice > max.basePrice ? item : max).name}</p>
+              </div>
+              <div>
+                <span className="text-gray-400 text-sm">Total Items:</span>
+                <p className="text-white font-bold">{items.length}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-white">Economy Settings</h3>
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Server Settings */}
+              <div className="space-y-4">
+                <h4 className="text-white font-medium">Server Configuration</h4>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Max Players</label>
+                  <input
+                    type="number"
+                    value={settings.maxPlayers}
+                    onChange={(e) => setSettings(prev => ({ ...prev, maxPlayers: parseInt(e.target.value) || 64 }))}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Average Playtime (hours)</label>
+                  <input
+                    type="number"
+                    value={settings.averagePlaytime}
+                    onChange={(e) => setSettings(prev => ({ ...prev, averagePlaytime: parseInt(e.target.value) || 4 }))}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Economy Type</label>
+                  <select
+                    value={settings.economyType}
+                    onChange={(e) => setSettings(prev => ({ ...prev, economyType: e.target.value }))}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                  >
+                    {Object.entries(economyTypes).map(([key, type]) => (
+                      <option key={key} value={key}>{key.charAt(0).toUpperCase() + key.slice(1)} - {type.description}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Money Settings */}
+              <div className="space-y-4">
+                <h4 className="text-white font-medium">Money Configuration</h4>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Starting Cash</label>
+                  <input
+                    type="number"
+                    value={settings.startingCash}
+                    onChange={(e) => setSettings(prev => ({ ...prev, startingCash: parseInt(e.target.value) || 500 }))}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Starting Bank</label>
+                  <input
+                    type="number"
+                    value={settings.startingBank}
+                    onChange={(e) => setSettings(prev => ({ ...prev, startingBank: parseInt(e.target.value) || 5000 }))}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Payout Interval (minutes)</label>
+                  <input
+                    type="number"
+                    value={settings.payoutInterval}
+                    onChange={(e) => setSettings(prev => ({ ...prev, payoutInterval: parseInt(e.target.value) || 30 }))}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">Item Markup (%)</label>
+                  <input
+                    type="number"
+                    value={settings.itemMarkup}
+                    onChange={(e) => setSettings(prev => ({ ...prev, itemMarkup: parseInt(e.target.value) || 25 }))}
+                    className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'analysis' && analysis && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-white">Economy Analysis</h3>
+            
+            {/* Economy Health */}
+            <div className={`p-4 rounded-lg border border-${analysis.economyHealth.color}-500/20 bg-${analysis.economyHealth.color}-500/10`}>
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className={`w-5 h-5 text-${analysis.economyHealth.color}-400`} />
+                <h4 className={`text-${analysis.economyHealth.color}-400 font-medium`}>
+                  Economy Health: {analysis.economyHealth.status.toUpperCase()}
+                </h4>
+              </div>
+              <p className={`text-${analysis.economyHealth.color}-200`}>
+                {analysis.economyHealth.description}
+              </p>
+            </div>
+
+            {/* Recommendations */}
+            {analysis.recommendations.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-white font-medium">Recommendations</h4>
+                {analysis.recommendations.map((rec, index) => (
+                  <div key={index} className={`p-3 rounded-lg border ${
+                    rec.type === 'error' ? 'border-red-500/20 bg-red-500/10' :
+                    rec.type === 'warning' ? 'border-yellow-500/20 bg-yellow-500/10' :
+                    'border-blue-500/20 bg-blue-500/10'
+                  }`}>
+                    <div className="flex items-start gap-2">
+                      {rec.type === 'error' ? <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" /> :
+                       rec.type === 'warning' ? <AlertTriangle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" /> :
+                       <CheckCircle className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />}
+                      <p className={`${
+                        rec.type === 'error' ? 'text-red-200' :
+                        rec.type === 'warning' ? 'text-yellow-200' :
+                        'text-blue-200'
+                      }`}>
+                        {rec.message}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Detailed Metrics */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <h4 className="text-white font-medium">Money Flow Analysis</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Daily Money In:</span>
+                    <span className="text-green-400 font-medium">+${analysis.dailyPayouts.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Daily Money Out:</span>
+                    <span className="text-red-400 font-medium">-${analysis.dailySpending.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between border-t border-gray-800 pt-2">
+                    <span className="text-gray-400">Net Daily Flow:</span>
+                    <span className={`font-medium ${analysis.netDailyFlow >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      ${analysis.netDailyFlow.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Inflation Impact:</span>
+                    <span className="text-yellow-400 font-medium">${analysis.inflationImpact.toFixed(2)}/day</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="text-white font-medium">Key Metrics</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Average Hourly Pay:</span>
+                    <span className="text-white font-medium">${analysis.averageHourlyPay.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Average Item Price:</span>
+                    <span className="text-white font-medium">${analysis.averageItemPrice.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Active Workers:</span>
+                    <span className="text-white font-medium">{Math.round(settings.maxPlayers * 0.7)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Economy Type:</span>
+                    <span className="text-white font-medium capitalize">{settings.economyType}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+<EconomyCalculator />
+
+## Economy Design Principles
+
+### Balanced Money Flow
+- **Money In**: Job payouts, business profits, mission rewards
+- **Money Out**: Item purchases, vehicle costs, housing, services
+- **Net Balance**: Slight positive flow to allow for growth and inflation
+
+### Job Hierarchy Design
+```lua
+-- Example job payment structure
+Config.Jobs = {
+    ['unemployed'] = { payment = 0 },
+    ['garbage'] = { payment = 15 }, -- Entry level
+    ['taxi'] = { payment = 20 }, -- Service industry
+    ['mechanic'] = { payment = 25 }, -- Skilled trade
+    ['police'] = { payment = 30 }, -- High responsibility
+    ['ambulance'] = { payment = 30 }, -- High responsibility
+    ['lawyer'] = { payment = 40 }, -- Professional
+    ['judge'] = { payment = 50 } -- Leadership
+}
+```
+
+### Item Pricing Strategy
+```lua
+-- Price tiers for different item categories
+Config.ItemPrices = {
+    -- Basic needs (high volume, low margin)
+    food = { multiplier = 1.0, markup = 10 },
+    
+    -- Tools and equipment (medium volume, medium margin)
+    tools = { multiplier = 1.5, markup = 25 },
+    
+    -- Luxury items (low volume, high margin)
+    luxury = { multiplier = 3.0, markup = 50 },
+    
+    -- Illegal items (risk premium)
+    contraband = { multiplier = 5.0, markup = 100 }
+}
+```
+
+## Money Sink Strategies
+
+### Effective Money Sinks
+1. **Vehicle Maintenance**: Regular repair and fuel costs
+2. **Housing Costs**: Rent, utilities, property taxes
+3. **License Fees**: Renewal costs for various permits
+4. **Insurance**: Vehicle and property insurance premiums
+5. **Luxury Services**: High-end shops and entertainment
+
+### Implementation Examples
+```lua
+-- Vehicle maintenance system
+RegisterNetEvent('garage:maintainVehicle', function(vehicleId)
+    local cost = CalculateMaintenanceCost(vehicleId)
+    local player = QBCore.Functions.GetPlayer(source)
+    
+    if player.Functions.RemoveMoney('bank', cost) then
+        -- Apply maintenance
+        TriggerClientEvent('garage:vehicleMaintained', source, vehicleId)
+    end
+end)
+
+-- Housing utility bills
+CreateThread(function()
+    while true do
+        Wait(3600000) -- Every hour
+        for _, player in pairs(QBCore.Functions.GetPlayers()) do
+            local bills = CalculateUtilityBills(player.PlayerData.citizenid)
+            if bills > 0 then
+                player.Functions.RemoveMoney('bank', bills)
+                TriggerClientEvent('phone:notification', player.PlayerData.source, {
+                    title = 'Utility Bill',
+                    text = 'You have been charged $' .. bills
+                })
+            end
+        end
+    end
+end)
+```
+
+## Economic Balance Formulas
+
+### Inflation Control
+```lua
+-- Calculate healthy money supply growth
+local function CalculateInflationRate()
+    local totalMoney = GetTotalServerMoney()
+    local playerCount = GetPlayerCount()
+    local averageMoney = totalMoney / playerCount
+    
+    -- Target: 2-3% monthly inflation
+    local targetGrowth = 0.025 / 30 -- Daily rate
+    local currentGrowth = GetDailyMoneyGrowth()
+    
+    if currentGrowth > targetGrowth * 1.5 then
+        -- Increase money sinks
+        AdjustPrices(1.1)
+        AddTaxes(0.05)
+    elseif currentGrowth < targetGrowth * 0.5 then
+        -- Increase money sources
+        AdjustJobPayouts(1.1)
+        ReduceTaxes(0.02)
+    end
+end
+```
+
+### Dynamic Pricing
+```lua
+-- Adjust prices based on supply and demand
+local function UpdateItemPrices()
+    for itemName, data in pairs(Config.Items) do
+        local demand = GetItemDemand(itemName)
+        local supply = GetItemSupply(itemName)
+        
+        local priceMultiplier = 1.0
+        if demand > supply * 1.5 then
+            priceMultiplier = 1.2 -- Increase price when demand is high
+        elseif supply > demand * 1.5 then
+            priceMultiplier = 0.8 -- Decrease price when supply is high
+        end
+        
+        data.price = math.floor(data.basePrice * priceMultiplier)
+    end
+end
+```
+
+## Server Configuration Examples
+
+### Conservative Economy
+```lua
+Config.Economy = {
+    type = 'conservative',
+    startingMoney = { cash = 200, bank = 2000 },
+    jobMultiplier = 0.8,
+    itemMarkup = 35,
+    taxRate = 0.15,
+    inflationTarget = 0.015 -- 1.5% monthly
+}
+```
+
+### Balanced Economy
+```lua
+Config.Economy = {
+    type = 'balanced',
+    startingMoney = { cash = 500, bank = 5000 },
+    jobMultiplier = 1.0,
+    itemMarkup = 25,
+    taxRate = 0.10,
+    inflationTarget = 0.025 -- 2.5% monthly
+}
+```
+
+### Liberal Economy
+```lua
+Config.Economy = {
+    type = 'liberal',
+    startingMoney = { cash = 1000, bank = 10000 },
+    jobMultiplier = 1.3,
+    itemMarkup = 15,
+    taxRate = 0.05,
+    inflationTarget = 0.035 -- 3.5% monthly
+}
+```
+
+## Monitoring & Analytics
+
+### Economic Health Indicators
+```lua
+-- Track key economic metrics
+local function GetEconomicHealth()
+    return {
+        averagePlayerMoney = GetAveragePlayerMoney(),
+        unemploymentRate = GetUnemploymentRate(),
+        priceInflation = GetInflationRate(),
+        moneyVelocity = GetMoneyVelocity(),
+        giniCoefficient = GetWealthInequality()
+    }
+end
+
+-- Alert system for economic issues
+local function CheckEconomicAlerts()
+    local health = GetEconomicHealth()
+    
+    if health.unemploymentRate > 0.3 then
+        SendAdminAlert('High unemployment rate: ' .. (health.unemploymentRate * 100) .. '%')
+    end
+    
+    if health.priceInflation > 0.1 then
+        SendAdminAlert('High inflation rate: ' .. (health.priceInflation * 100) .. '%')
+    end
+    
+    if health.giniCoefficient > 0.7 then
+        SendAdminAlert('High wealth inequality detected')
+    end
+end
+```
+
+### Data Export for Analysis
+```lua
+-- Export economic data for external analysis
+RegisterCommand('economy:export', function(source, args)
+    if not QBCore.Functions.HasPermission(source, 'admin') then return end
+    
+    local data = {
+        timestamp = os.time(),
+        players = GetAllPlayerEconomicData(),
+        jobs = GetJobStatistics(),
+        items = GetItemStatistics(),
+        businesses = GetBusinessStatistics()
+    }
+    
+    TriggerClientEvent('economy:downloadData', source, json.encode(data))
+end, true)
+```
+
+## Best Practices
+
+### Regular Monitoring
+- Track daily money flow ratios
+- Monitor player wealth distribution
+- Watch for economic bottlenecks
+- Analyze job participation rates
+
+### Gradual Adjustments
+- Make small incremental changes
+- Test changes on development server first
+- Gather player feedback on economic changes
+- Allow time for markets to adjust
+
+### Emergency Interventions
+- Have plans for economic crises
+- Know how to inject or remove money quickly
+- Prepare communication for major changes
+- Monitor player reactions and adapt accordingly
+
+---
+
+**Pro Tip**: Start with conservative settings and gradually increase rewards based on player feedback and economic data. It's easier to give players more money than to take it away once the economy is established.
+
+Need help balancing your server economy? Check our [economy guide](/docs/guides/economy) or consult with experienced server administrators in our [community forums](/community).
