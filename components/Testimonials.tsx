@@ -158,22 +158,22 @@ const Testimonials = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mt-16 text-center"
         >
-          <div className="rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 p-8 text-white">
+          <div className="rounded-2xl bg-gradient-to-r from-red-600 to-red-800 p-8 text-white">
             <h3 className="mb-4 text-2xl font-bold">Join These Success Stories</h3>
-            <p className="mx-auto mb-6 max-w-2xl text-blue-100">
+            <p className="mx-auto mb-6 max-w-2xl text-red-100">
               Ready to transform your FiveM server? Join thousands of successful servers that have
               made the switch to QBCore.
             </p>
             <div className="flex flex-col justify-center gap-4 sm:flex-row">
               <a
                 href="/docs/installation/windows"
-                className="rounded-lg bg-white px-6 py-3 text-center font-semibold text-blue-600 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                className="rounded-lg bg-white px-6 py-3 text-center font-semibold text-red-600 transition-all duration-300 hover:scale-105 hover:shadow-lg"
               >
                 Start Your Success Story
               </a>
               <a
                 href="/community"
-                className="flex items-center justify-center gap-2 rounded-lg border-2 border-white bg-transparent px-6 py-3 text-center font-semibold text-white transition-all duration-300 hover:bg-white hover:text-blue-600"
+                className="flex items-center justify-center gap-2 rounded-lg border-2 border-white bg-transparent px-6 py-3 text-center font-semibold text-white transition-all duration-300 hover:bg-white hover:text-red-600"
               >
                 Join Community
               </a>
