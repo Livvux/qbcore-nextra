@@ -89,9 +89,8 @@ const config = {
     ]
   },
 
-  // Enable standalone output for Docker
-  output:
-    process.env.NODE_ENV === 'production' && !process.env.NEXT_EXPORT ? 'standalone' : undefined,
+  // Output configuration based on deployment target
+  output: process.env.NEXT_OUTPUT || 'standalone',
 
   // Webpack configuration for better performance
   webpack: (config, { isServer }) => {
@@ -105,19 +104,13 @@ const config = {
     return config
   },
 
-  // Enable experimental features for better performance
-  // experimental: {
-  //   optimizeCss: true,
-  // },
-}
-
-// Add static export configuration for production build
-if (process.env.NODE_ENV === 'production' && process.env.NEXT_EXPORT === 'true') {
-  config.output = 'export'
-  config.trailingSlash = true
-  config.images = {
-    unoptimized: true,
-  }
+  // Static export configuration for edge deployments
+  ...(process.env.NEXT_OUTPUT === 'export' && {
+    trailingSlash: true,
+    images: {
+      unoptimized: true,
+    },
+  }),
 }
 
 export default withNextra(config)

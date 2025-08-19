@@ -3,10 +3,11 @@
 import { motion } from 'framer-motion'
 import { Code, Download, Users, Zap, Copy } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 const Hero = () => {
   const [copied, setCopied] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
@@ -28,7 +29,8 @@ const Hero = () => {
         'git clone https://github.com/qbcore-framework/qb-core.git'
       )
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000)
     } catch (err) {
       // Fallback for browsers that don't support clipboard API
       const textArea = document.createElement('textarea')
@@ -38,13 +40,20 @@ const Hero = () => {
       try {
         document.execCommand('copy')
         setCopied(true)
-        setTimeout(() => setCopied(false), 2000)
+        if (timeoutRef.current) clearTimeout(timeoutRef.current)
+        timeoutRef.current = setTimeout(() => setCopied(false), 2000)
       } catch {
-        console.error('Failed to copy text: ', err)
+        // Fallback copy failed silently
       }
       document.body.removeChild(textArea)
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
 
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black pt-16">

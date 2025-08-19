@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
-const { spawn } = require('child_process')
-const { existsSync } = require('fs')
-const path = require('path')
+import { spawn } from 'child_process'
+import { existsSync } from 'fs'
+import { join } from 'path'
 
-const standaloneServerPath = path.join(process.cwd(), '.next', 'standalone', 'server.js')
+const standaloneServerPath = join(process.cwd(), '.next', 'standalone', 'server.js')
 
 if (existsSync(standaloneServerPath)) {
   console.log('🚀 Starting standalone server...')

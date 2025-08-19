@@ -2,10 +2,11 @@
 
 import { motion } from 'framer-motion'
 import { Copy, Check, Terminal, Play } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 
 const CodeExample = () => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const codeExamples = [
     {
@@ -66,11 +67,18 @@ TriggerClientEvent('qb-core:notify', source, 'Welcome to the server!', 'success'
     try {
       await navigator.clipboard.writeText(code)
       setCopiedIndex(index)
-      setTimeout(() => setCopiedIndex(null), 2000)
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      timeoutRef.current = setTimeout(() => setCopiedIndex(null), 2000)
     } catch (err) {
-      console.error('Failed to copy code:', err)
+      // Fallback for browsers that don't support clipboard API
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [])
 
   const getSyntaxHighlight = (code: string, language: string) => {
     // Simple syntax highlighting for demonstration

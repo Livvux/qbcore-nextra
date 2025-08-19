@@ -34,76 +34,74 @@ const config = {
     forcedTheme: 'dark',
   },
   useNextSeoProps() {
-    return () => {
-      const { asPath, locale } = useRouter()
+    const { asPath, locale } = useRouter()
 
-      // Default SEO props
-      const defaultProps = {
-        titleTemplate: '%s – QBCore Framework',
-        defaultTitle: 'QBCore Framework - The #1 FiveM Framework',
-        description:
-          'QBCore is the most popular and comprehensive FiveM framework. Build amazing FiveM servers with our documentation, resources, and community support.',
-        canonical: `${BASE_URL}${asPath}`,
-        openGraph: {
-          type: 'website',
-          locale: locale || 'en_US',
-          url: `${BASE_URL}${asPath}`,
-          siteName: 'QBCore Framework',
-          images: [
-            {
-              url: `${BASE_URL}/og-image.svg`,
-              width: 1200,
-              height: 630,
-              alt: 'QBCore Framework - The #1 FiveM Framework',
-            },
-          ],
-        },
-        twitter: {
-          handle: '@qbcoreframework',
-          site: '@qbcoreframework',
-          cardType: 'summary_large_image',
-        },
-      }
-
-      // Homepage specific SEO
-      if (asPath === '/') {
-        return {
-          ...defaultProps,
-          title: 'QBCore Framework - The #1 FiveM Framework',
-          description:
-            'Build amazing FiveM servers with QBCore Framework. Comprehensive documentation, resources, tutorials, and community support for FiveM server development.',
-        }
-      }
-
-      // Documentation pages
-      if (asPath.startsWith('/docs')) {
-        return {
-          ...defaultProps,
-          description:
-            'QBCore Framework documentation. Learn how to build, configure, and customize your FiveM server with our comprehensive guides and API documentation.',
-        }
-      }
-
-      // Tutorial pages
-      if (asPath.startsWith('/tutorials')) {
-        return {
-          ...defaultProps,
-          description:
-            'Step-by-step tutorials for QBCore Framework. Learn FiveM server development, scripting, and best practices.',
-        }
-      }
-
-      // Resources pages
-      if (asPath.includes('/resources')) {
-        return {
-          ...defaultProps,
-          description:
-            'QBCore Framework resources and scripts. Discover pre-built components, jobs, and features for your FiveM server.',
-        }
-      }
-
-      return defaultProps
+    // Default SEO props
+    const defaultProps = {
+      titleTemplate: '%s – QBCore Framework',
+      defaultTitle: 'QBCore Framework - The #1 FiveM Framework',
+      description:
+        'QBCore is the most popular and comprehensive FiveM framework. Build amazing FiveM servers with our documentation, resources, and community support.',
+      canonical: `${BASE_URL}${asPath}`,
+      openGraph: {
+        type: 'website',
+        locale: locale || 'en_US',
+        url: `${BASE_URL}${asPath}`,
+        siteName: 'QBCore Framework',
+        images: [
+          {
+            url: `${BASE_URL}/og-image.svg`,
+            width: 1200,
+            height: 630,
+            alt: 'QBCore Framework - The #1 FiveM Framework',
+          },
+        ],
+      },
+      twitter: {
+        handle: '@qbcoreframework',
+        site: '@qbcoreframework',
+        cardType: 'summary_large_image',
+      },
     }
+
+    // Homepage specific SEO
+    if (asPath === '/') {
+      return {
+        ...defaultProps,
+        title: 'QBCore Framework - The #1 FiveM Framework',
+        description:
+          'Build amazing FiveM servers with QBCore Framework. Comprehensive documentation, resources, tutorials, and community support for FiveM server development.',
+      }
+    }
+
+    // Documentation pages
+    if (asPath.startsWith('/docs')) {
+      return {
+        ...defaultProps,
+        description:
+          'QBCore Framework documentation. Learn how to build, configure, and customize your FiveM server with our comprehensive guides and API documentation.',
+      }
+    }
+
+    // Tutorial pages
+    if (asPath.startsWith('/tutorials')) {
+      return {
+        ...defaultProps,
+        description:
+          'Step-by-step tutorials for QBCore Framework. Learn FiveM server development, scripting, and best practices.',
+      }
+    }
+
+    // Resources pages
+    if (asPath.includes('/resources')) {
+      return {
+        ...defaultProps,
+        description:
+          'QBCore Framework resources and scripts. Discover pre-built components, jobs, and features for your FiveM server.',
+      }
+    }
+
+    return defaultProps
   },
   head: () => {
     const organizationSchema = getOrganizationSchema()
