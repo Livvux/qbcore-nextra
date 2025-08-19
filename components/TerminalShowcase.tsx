@@ -87,13 +87,13 @@ const TerminalShowcase = () => {
             {/* Terminal Window */}
             <div className="terminal-window">
               <div className="terminal-header">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <div className="terminal-dot bg-red-500"></div>
                   <div className="terminal-dot bg-yellow-500"></div>
                   <div className="terminal-dot bg-green-500"></div>
                 </div>
-                <span className="text-sm text-gray-400">qb-example/server/main.lua</span>
-                <div className="ml-auto flex items-center gap-2">
+                <span className="text-sm text-gray-400 flex-1 truncate text-center">qb-example/server/main.lua</span>
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => setIsPlaying(!isPlaying)}
                     className="flex items-center gap-1 rounded px-3 py-1 text-xs text-gray-400 transition-colors hover:text-white"

@@ -15,6 +15,9 @@ const config = {
   editLink: {
     component: null,
   },
+  feedbackLink: {
+    component: null,
+  },
   footer: {
     component: <Footer />,
   },
