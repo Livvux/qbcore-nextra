@@ -1,0 +1,920 @@
+# Vehicle Customizer
+
+Design and preview vehicle modifications, liveries, and performance upgrades with real-time visualization and export capabilities.
+
+## Overview
+
+The Vehicle Customizer provides a comprehensive interface for designing custom vehicle modifications, creating liveries, and configuring performance upgrades. Generate modification data compatible with QBCore vehicle systems and export configurations for easy implementation.
+
+import { useState } from 'react'
+import { Car, Palette, Settings, Download, Upload, Eye, RotateCcw, Save, Zap, Shield, Gauge } from 'lucide-react'
+
+export function VehicleCustomizer() {
+  const [selectedVehicle, setSelectedVehicle] = useState('adder')
+  const [activeCategory, setActiveCategory] = useState('appearance')
+  const [modifications, setModifications] = useState({
+    // Appearance
+    primaryColor: { r: 255, g: 0, b: 0 },
+    secondaryColor: { r: 0, g: 0, b: 0 },
+    pearlescent: 0,
+    metallic: 0,
+    livery: 0,
+    wheelType: 0,
+    wheelColor: 0,
+    windowTint: 0,
+    
+    // Performance
+    engine: 0,
+    transmission: 0,
+    suspension: 0,
+    brakes: 0,
+    turbo: false,
+    
+    // Extras
+    neonEnabled: false,
+    neonColor: { r: 255, g: 0, b: 255 },
+    plateText: '',
+    plateType: 0,
+    
+    // Body Modifications
+    spoiler: 0,
+    frontBumper: 0,
+    rearBumper: 0,
+    sideSkirt: 0,
+    exhaust: 0,
+    frame: 0,
+    grille: 0,
+    hood: 0,
+    fender: 0,
+    rightFender: 0,
+    roof: 0
+  })
+
+  const vehicles = [
+    { id: 'adder', name: 'Truffade Adder', class: 'Super', manufacturer: 'Truffade' },
+    { id: 'zentorno', name: 'Pegassi Zentorno', class: 'Super', manufacturer: 'Pegassi' },
+    { id: 'sultan', name: 'Karin Sultan', class: 'Sports', manufacturer: 'Karin' },
+    { id: 'elegy', name: 'Annis Elegy RH8', class: 'Sports', manufacturer: 'Annis' },
+    { id: 'police', name: 'Police Cruiser', class: 'Emergency', manufacturer: 'Vapid' },
+    { id: 'ambulance', name: 'Ambulance', class: 'Emergency', manufacturer: 'Brute' },
+    { id: 'taxi', name: 'Downtown Cab', class: 'Service', manufacturer: 'Vapid' }
+  ]
+
+  const categories = [
+    { id: 'appearance', name: 'Appearance', icon: Palette },
+    { id: 'performance', name: 'Performance', icon: Gauge },
+    { id: 'body', name: 'Body Mods', icon: Car },
+    { id: 'extras', name: 'Extras', icon: Zap }
+  ]
+
+  const colors = [
+    { name: 'Red', value: { r: 255, g: 0, b: 0 } },
+    { name: 'Blue', value: { r: 0, g: 0, b: 255 } },
+    { name: 'Green', value: { r: 0, g: 255, b: 0 } },
+    { name: 'Yellow', value: { r: 255, g: 255, b: 0 } },
+    { name: 'Purple', value: { r: 128, g: 0, b: 128 } },
+    { name: 'Orange', value: { r: 255, g: 165, b: 0 } },
+    { name: 'Pink', value: { r: 255, g: 192, b: 203 } },
+    { name: 'White', value: { r: 255, g: 255, b: 255 } },
+    { name: 'Black', value: { r: 0, g: 0, b: 0 } },
+    { name: 'Silver', value: { r: 192, g: 192, b: 192 } }
+  ]
+
+  const plateTypes = [
+    'Blue on White 1',
+    'Blue on White 2',
+    'Blue on White 3',
+    'Yellow on Blue',
+    'Yellow on Black',
+    'North Yankton'
+  ]
+
+  const performanceUpgrades = [
+    { id: 'engine', name: 'Engine', levels: ['Stock', 'Level 1', 'Level 2', 'Level 3', 'Level 4'] },
+    { id: 'transmission', name: 'Transmission', levels: ['Stock', 'Street', 'Sport', 'Race'] },
+    { id: 'suspension', name: 'Suspension', levels: ['Stock', 'Lowered', 'Street', 'Sport', 'Competition'] },
+    { id: 'brakes', name: 'Brakes', levels: ['Stock', 'Street', 'Sport', 'Race'] }
+  ]
+
+  const resetModifications = () => {
+    setModifications({
+      primaryColor: { r: 255, g: 0, b: 0 },
+      secondaryColor: { r: 0, g: 0, b: 0 },
+      pearlescent: 0,
+      metallic: 0,
+      livery: 0,
+      wheelType: 0,
+      wheelColor: 0,
+      windowTint: 0,
+      engine: 0,
+      transmission: 0,
+      suspension: 0,
+      brakes: 0,
+      turbo: false,
+      neonEnabled: false,
+      neonColor: { r: 255, g: 0, b: 255 },
+      plateText: '',
+      plateType: 0,
+      spoiler: 0,
+      frontBumper: 0,
+      rearBumper: 0,
+      sideSkirt: 0,
+      exhaust: 0,
+      frame: 0,
+      grille: 0,
+      hood: 0,
+      fender: 0,
+      rightFender: 0,
+      roof: 0
+    })
+  }
+
+  const exportConfiguration = () => {
+    const config = {
+      vehicle: selectedVehicle,
+      modifications: modifications,
+      exportDate: new Date().toISOString()
+    }
+    
+    const dataStr = JSON.stringify(config, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${selectedVehicle}_config.json`
+    link.click()
+  }
+
+  const generateLuaCode = () => {
+    const luaCode = `
+-- Vehicle: ${vehicles.find(v => v.id === selectedVehicle)?.name}
+-- Generated by QBCore Vehicle Customizer
+
+local vehicleMods = {
+    -- Appearance
+    primaryColor = {r = ${modifications.primaryColor.r}, g = ${modifications.primaryColor.g}, b = ${modifications.primaryColor.b}},
+    secondaryColor = {r = ${modifications.secondaryColor.r}, g = ${modifications.secondaryColor.g}, b = ${modifications.secondaryColor.b}},
+    livery = ${modifications.livery},
+    wheelType = ${modifications.wheelType},
+    wheelColor = ${modifications.wheelColor},
+    windowTint = ${modifications.windowTint},
+    
+    -- Performance
+    engine = ${modifications.engine},
+    transmission = ${modifications.transmission},
+    suspension = ${modifications.suspension},
+    brakes = ${modifications.brakes},
+    turbo = ${modifications.turbo},
+    
+    -- Body Modifications
+    spoiler = ${modifications.spoiler},
+    frontBumper = ${modifications.frontBumper},
+    rearBumper = ${modifications.rearBumper},
+    sideSkirt = ${modifications.sideSkirt},
+    exhaust = ${modifications.exhaust},
+    frame = ${modifications.frame},
+    grille = ${modifications.grille},
+    hood = ${modifications.hood},
+    fender = ${modifications.fender},
+    rightFender = ${modifications.rightFender},
+    roof = ${modifications.roof},
+    
+    -- Extras
+    neonEnabled = ${modifications.neonEnabled},
+    neonColor = {r = ${modifications.neonColor.r}, g = ${modifications.neonColor.g}, b = ${modifications.neonColor.b}},
+    plateText = "${modifications.plateText}",
+    plateType = ${modifications.plateType}
+}
+
+-- Apply modifications to vehicle
+local function applyVehicleMods(vehicle)
+    -- Set colors
+    SetVehicleCustomPrimaryColour(vehicle, vehicleMods.primaryColor.r, vehicleMods.primaryColor.g, vehicleMods.primaryColor.b)
+    SetVehicleCustomSecondaryColour(vehicle, vehicleMods.secondaryColor.r, vehicleMods.secondaryColor.g, vehicleMods.secondaryColor.b)
+    
+    -- Set livery
+    SetVehicleLivery(vehicle, vehicleMods.livery)
+    
+    -- Set wheels
+    SetVehicleWheelType(vehicle, vehicleMods.wheelType)
+    SetVehicleExtraColours(vehicle, 0, vehicleMods.wheelColor)
+    
+    -- Set window tint
+    SetVehicleWindowTint(vehicle, vehicleMods.windowTint)
+    
+    -- Performance mods
+    SetVehicleMod(vehicle, 11, vehicleMods.engine, false) -- Engine
+    SetVehicleMod(vehicle, 13, vehicleMods.transmission, false) -- Transmission
+    SetVehicleMod(vehicle, 15, vehicleMods.suspension, false) -- Suspension
+    SetVehicleMod(vehicle, 12, vehicleMods.brakes, false) -- Brakes
+    ToggleVehicleMod(vehicle, 18, vehicleMods.turbo) -- Turbo
+    
+    -- Body modifications
+    SetVehicleMod(vehicle, 0, vehicleMods.spoiler, false)
+    SetVehicleMod(vehicle, 1, vehicleMods.frontBumper, false)
+    SetVehicleMod(vehicle, 2, vehicleMods.rearBumper, false)
+    SetVehicleMod(vehicle, 3, vehicleMods.sideSkirt, false)
+    SetVehicleMod(vehicle, 4, vehicleMods.exhaust, false)
+    SetVehicleMod(vehicle, 5, vehicleMods.frame, false)
+    SetVehicleMod(vehicle, 6, vehicleMods.grille, false)
+    SetVehicleMod(vehicle, 7, vehicleMods.hood, false)
+    SetVehicleMod(vehicle, 8, vehicleMods.fender, false)
+    SetVehicleMod(vehicle, 9, vehicleMods.rightFender, false)
+    SetVehicleMod(vehicle, 10, vehicleMods.roof, false)
+    
+    -- Neon lights
+    if vehicleMods.neonEnabled then
+        SetVehicleNeonLightEnabled(vehicle, 0, true)
+        SetVehicleNeonLightEnabled(vehicle, 1, true)
+        SetVehicleNeonLightEnabled(vehicle, 2, true)
+        SetVehicleNeonLightEnabled(vehicle, 3, true)
+        SetVehicleNeonLightsColour(vehicle, vehicleMods.neonColor.r, vehicleMods.neonColor.g, vehicleMods.neonColor.b)
+    end
+    
+    -- License plate
+    SetVehicleNumberPlateText(vehicle, vehicleMods.plateText)
+    SetVehicleNumberPlateTextIndex(vehicle, vehicleMods.plateType)
+end
+
+return vehicleMods
+`
+    
+    const dataBlob = new Blob([luaCode], { type: 'text/plain' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${selectedVehicle}_mods.lua`
+    link.click()
+  }
+
+  const updateModification = (key, value) => {
+    setModifications(prev => ({ ...prev, [key]: value }))
+  }
+
+  const updateColor = (colorType, color) => {
+    setModifications(prev => ({ ...prev, [colorType]: color }))
+  }
+
+  return (
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Vehicle Customizer</h2>
+          <p className="text-gray-400">Design and preview vehicle modifications and liveries</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={resetModifications}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Reset
+          </button>
+          <button
+            onClick={exportConfiguration}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Download className="w-4 h-4" />
+            Export JSON
+          </button>
+          <button
+            onClick={generateLuaCode}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            <Save className="w-4 h-4" />
+            Export Lua
+          </button>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-4 gap-6">
+        {/* Vehicle Selection */}
+        <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+          <h3 className="text-lg font-semibold text-white mb-4">Vehicle Selection</h3>
+          <div className="space-y-2">
+            {vehicles.map((vehicle) => (
+              <button
+                key={vehicle.id}
+                onClick={() => setSelectedVehicle(vehicle.id)}
+                className={`w-full text-left p-3 rounded-lg transition-colors ${
+                  selectedVehicle === vehicle.id
+                    ? 'bg-blue-500/20 border border-blue-500/40 text-blue-400'
+                    : 'bg-gray-800/50 hover:bg-gray-700/50 text-gray-300'
+                }`}
+              >
+                <div className="font-medium">{vehicle.name}</div>
+                <div className="text-sm opacity-70">{vehicle.manufacturer} • {vehicle.class}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Customization Panel */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Category Tabs */}
+          <div className="border-b border-gray-800">
+            <nav className="flex gap-4">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveCategory(category.id)}
+                  className={`flex items-center gap-2 py-3 px-2 border-b-2 font-medium text-sm transition-colors ${
+                    activeCategory === category.id
+                      ? 'border-blue-500 text-blue-400'
+                      : 'border-transparent text-gray-400 hover:text-gray-300'
+                  }`}
+                >
+                  <category.icon className="w-4 h-4" />
+                  {category.name}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          {/* Customization Content */}
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+            {activeCategory === 'appearance' && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-white">Appearance</h3>
+                
+                {/* Primary Color */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-3">Primary Color</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {colors.map((color, index) => (
+                      <button
+                        key={index}
+                        onClick={() => updateColor('primaryColor', color.value)}
+                        className={`w-8 h-8 rounded border-2 transition-transform hover:scale-110 ${
+                          JSON.stringify(modifications.primaryColor) === JSON.stringify(color.value)
+                            ? 'border-white' 
+                            : 'border-gray-600'
+                        }`}
+                        style={{ backgroundColor: `rgb(${color.value.r}, ${color.value.g}, ${color.value.b})` }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Secondary Color */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-3">Secondary Color</label>
+                  <div className="grid grid-cols-5 gap-2">
+                    {colors.map((color, index) => (
+                      <button
+                        key={index}
+                        onClick={() => updateColor('secondaryColor', color.value)}
+                        className={`w-8 h-8 rounded border-2 transition-transform hover:scale-110 ${
+                          JSON.stringify(modifications.secondaryColor) === JSON.stringify(color.value)
+                            ? 'border-white' 
+                            : 'border-gray-600'
+                        }`}
+                        style={{ backgroundColor: `rgb(${color.value.r}, ${color.value.g}, ${color.value.b})` }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Other Appearance Options */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Livery</label>
+                    <select
+                      value={modifications.livery}
+                      onChange={(e) => updateModification('livery', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      {Array.from({ length: 10 }, (_, i) => (
+                        <option key={i} value={i}>Livery {i + 1}</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Window Tint</label>
+                    <select
+                      value={modifications.windowTint}
+                      onChange={(e) => updateModification('windowTint', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value={0}>None</option>
+                      <option value={1}>Dark Smoke</option>
+                      <option value={2}>Light Smoke</option>
+                      <option value={3}>Limo</option>
+                      <option value={4}>Green</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Wheel Type</label>
+                    <select
+                      value={modifications.wheelType}
+                      onChange={(e) => updateModification('wheelType', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value={0}>Sport</option>
+                      <option value={1}>Muscle</option>
+                      <option value={2}>Lowrider</option>
+                      <option value={3}>SUV</option>
+                      <option value={4}>Offroad</option>
+                      <option value={5}>Tuner</option>
+                      <option value={6}>High End</option>
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Wheel Color</label>
+                    <input
+                      type="range"
+                      min="0"
+                      max="159"
+                      value={modifications.wheelColor}
+                      onChange={(e) => updateModification('wheelColor', parseInt(e.target.value))}
+                      className="w-full"
+                    />
+                    <span className="text-gray-400 text-sm">Color: {modifications.wheelColor}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeCategory === 'performance' && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-white">Performance Upgrades</h3>
+                
+                {performanceUpgrades.map((upgrade) => (
+                  <div key={upgrade.id}>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      {upgrade.name}
+                    </label>
+                    <select
+                      value={modifications[upgrade.id]}
+                      onChange={(e) => updateModification(upgrade.id, parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      {upgrade.levels.map((level, index) => (
+                        <option key={index} value={index}>{level}</option>
+                      ))}
+                    </select>
+                  </div>
+                ))}
+                
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="turbo"
+                    checked={modifications.turbo}
+                    onChange={(e) => updateModification('turbo', e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
+                  />
+                  <label htmlFor="turbo" className="text-gray-300">Turbo</label>
+                </div>
+              </div>
+            )}
+
+            {activeCategory === 'body' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white">Body Modifications</h3>
+                
+                <div className="grid md:grid-cols-2 gap-4">
+                  {[
+                    { id: 'spoiler', name: 'Spoiler' },
+                    { id: 'frontBumper', name: 'Front Bumper' },
+                    { id: 'rearBumper', name: 'Rear Bumper' },
+                    { id: 'sideSkirt', name: 'Side Skirt' },
+                    { id: 'exhaust', name: 'Exhaust' },
+                    { id: 'frame', name: 'Frame' },
+                    { id: 'grille', name: 'Grille' },
+                    { id: 'hood', name: 'Hood' },
+                    { id: 'fender', name: 'Left Fender' },
+                    { id: 'rightFender', name: 'Right Fender' },
+                    { id: 'roof', name: 'Roof' }
+                  ].map((mod) => (
+                    <div key={mod.id}>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">
+                        {mod.name}
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="10"
+                        value={modifications[mod.id]}
+                        onChange={(e) => updateModification(mod.id, parseInt(e.target.value))}
+                        className="w-full"
+                      />
+                      <span className="text-gray-400 text-sm">Level: {modifications[mod.id]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeCategory === 'extras' && (
+              <div className="space-y-6">
+                <h3 className="text-lg font-semibold text-white">Extras</h3>
+                
+                {/* Neon Lights */}
+                <div>
+                  <div className="flex items-center gap-3 mb-3">
+                    <input
+                      type="checkbox"
+                      id="neon"
+                      checked={modifications.neonEnabled}
+                      onChange={(e) => updateModification('neonEnabled', e.target.checked)}
+                      className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
+                    />
+                    <label htmlFor="neon" className="text-gray-300">Neon Lights</label>
+                  </div>
+                  
+                  {modifications.neonEnabled && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Neon Color</label>
+                      <div className="grid grid-cols-5 gap-2">
+                        {colors.map((color, index) => (
+                          <button
+                            key={index}
+                            onClick={() => updateColor('neonColor', color.value)}
+                            className={`w-8 h-8 rounded border-2 transition-transform hover:scale-110 ${
+                              JSON.stringify(modifications.neonColor) === JSON.stringify(color.value)
+                                ? 'border-white' 
+                                : 'border-gray-600'
+                            }`}
+                            style={{ backgroundColor: `rgb(${color.value.r}, ${color.value.g}, ${color.value.b})` }}
+                            title={color.name}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* License Plate */}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Plate Text</label>
+                    <input
+                      type="text"
+                      maxLength="8"
+                      value={modifications.plateText}
+                      onChange={(e) => updateModification('plateText', e.target.value.toUpperCase())}
+                      placeholder="CUSTOM"
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Plate Type</label>
+                    <select
+                      value={modifications.plateType}
+                      onChange={(e) => updateModification('plateType', parseInt(e.target.value))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      {plateTypes.map((type, index) => (
+                        <option key={index} value={index}>{type}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Preview & Export */}
+        <div className="bg-black/50 border border-gray-800 rounded-xl backdrop-blur-md">
+          <div className="p-4 border-b border-gray-800">
+            <h3 className="text-lg font-semibold text-white">Preview & Export</h3>
+          </div>
+          
+          <div className="p-4 space-y-4">
+            {/* Vehicle Preview */}
+            <div className="aspect-video bg-gray-900/50 rounded-lg flex items-center justify-center border border-gray-700">
+              <div className="text-center">
+                <Car className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-400">3D Preview</p>
+                <p className="text-gray-500 text-sm">Coming Soon</p>
+              </div>
+            </div>
+
+            {/* Current Configuration */}
+            <div className="space-y-2">
+              <h4 className="text-white font-medium">Current Configuration</h4>
+              <div className="text-sm space-y-1">
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Vehicle:</span>
+                  <span className="text-white">{vehicles.find(v => v.id === selectedVehicle)?.name}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Primary Color:</span>
+                  <div 
+                    className="w-4 h-4 rounded border border-gray-600"
+                    style={{ backgroundColor: `rgb(${modifications.primaryColor.r}, ${modifications.primaryColor.g}, ${modifications.primaryColor.b})` }}
+                  />
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-400">Performance:</span>
+                  <span className="text-white">
+                    Engine L{modifications.engine + 1}
+                  </span>
+                </div>
+                {modifications.turbo && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Turbo:</span>
+                    <span className="text-green-400">Enabled</span>
+                  </div>
+                )}
+                {modifications.neonEnabled && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-400">Neon:</span>
+                    <div 
+                      className="w-4 h-4 rounded border border-gray-600"
+                      style={{ backgroundColor: `rgb(${modifications.neonColor.r}, ${modifications.neonColor.g}, ${modifications.neonColor.b})` }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="space-y-2">
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(JSON.stringify(modifications, null, 2))
+                }}
+                className="w-full px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 text-sm"
+              >
+                Copy Config JSON
+              </button>
+              
+              <button 
+                onClick={() => {
+                  const luaString = `{engine = ${modifications.engine}, transmission = ${modifications.transmission}, suspension = ${modifications.suspension}, brakes = ${modifications.brakes}, turbo = ${modifications.turbo}}`
+                  navigator.clipboard.writeText(luaString)
+                }}
+                className="w-full px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-600 text-sm"
+              >
+                Copy Lua Table
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+<VehicleCustomizer />
+
+## Vehicle Modification Features
+
+### Visual Customization
+- **Paint System**: Primary, secondary, pearlescent, and metallic colors
+- **Livery Design**: Custom liveries and decal applications
+- **Wheel Customization**: Types, colors, and rim modifications
+- **Window Tinting**: Various tint levels and colors
+- **Lighting Effects**: Neon underglow with color selection
+
+### Performance Tuning
+- **Engine Upgrades**: Multiple performance levels for increased power
+- **Transmission**: Street, sport, and race transmission options
+- **Suspension**: Lowered, sport, and competition suspension setups
+- **Braking System**: Enhanced brake performance and stopping power
+- **Turbo System**: Forced induction for maximum performance
+
+### Body Modifications
+- **Aerodynamic Parts**: Spoilers, splitters, and diffusers
+- **Bumper Kits**: Front and rear bumper modifications
+- **Side Skirts**: Enhanced side body panels
+- **Hood Options**: Vented, carbon fiber, and custom hood designs
+- **Fender Flares**: Widebody kits and fender modifications
+
+## Configuration Export
+
+### JSON Format
+```json
+{
+  "vehicle": "adder",
+  "modifications": {
+    "primaryColor": { "r": 255, "g": 0, "b": 0 },
+    "secondaryColor": { "r": 0, "g": 0, "b": 0 },
+    "engine": 4,
+    "transmission": 3,
+    "turbo": true,
+    "spoiler": 2,
+    "neonEnabled": true,
+    "neonColor": { "r": 255, "g": 0, "b": 255 }
+  }
+}
+```
+
+### Lua Integration
+```lua
+-- Apply vehicle modifications
+function ApplyVehicleMods(vehicle, mods)
+    -- Colors
+    SetVehicleCustomPrimaryColour(vehicle, mods.primaryColor.r, mods.primaryColor.g, mods.primaryColor.b)
+    SetVehicleCustomSecondaryColour(vehicle, mods.secondaryColor.r, mods.secondaryColor.g, mods.secondaryColor.b)
+    
+    -- Performance
+    SetVehicleMod(vehicle, 11, mods.engine, false) -- Engine
+    SetVehicleMod(vehicle, 13, mods.transmission, false) -- Transmission
+    SetVehicleMod(vehicle, 15, mods.suspension, false) -- Suspension
+    SetVehicleMod(vehicle, 12, mods.brakes, false) -- Brakes
+    ToggleVehicleMod(vehicle, 18, mods.turbo) -- Turbo
+    
+    -- Body mods
+    SetVehicleMod(vehicle, 0, mods.spoiler, false) -- Spoiler
+    SetVehicleMod(vehicle, 1, mods.frontBumper, false) -- Front Bumper
+    SetVehicleMod(vehicle, 2, mods.rearBumper, false) -- Rear Bumper
+    
+    -- Neon
+    if mods.neonEnabled then
+        for i = 0, 3 do
+            SetVehicleNeonLightEnabled(vehicle, i, true)
+        end
+        SetVehicleNeonLightsColour(vehicle, mods.neonColor.r, mods.neonColor.g, mods.neonColor.b)
+    end
+end
+```
+
+## QBCore Integration
+
+### Vehicle Shop Integration
+```lua
+-- qb-vehicleshop integration
+Config.VehicleCustomizations = {
+    ['adder'] = {
+        price = 2500000,
+        modifications = {
+            engine = 4,
+            transmission = 3,
+            suspension = 4,
+            brakes = 3,
+            turbo = true
+        }
+    }
+}
+```
+
+### Garage System
+```lua
+-- Save vehicle modifications to database
+local function SaveVehicleMods(plate, mods)
+    MySQL.update('UPDATE player_vehicles SET mods = ? WHERE plate = ?', {
+        json.encode(mods),
+        plate
+    })
+end
+
+-- Load vehicle modifications from database
+local function LoadVehicleMods(plate)
+    local result = MySQL.scalar.await('SELECT mods FROM player_vehicles WHERE plate = ?', { plate })
+    if result then
+        return json.decode(result)
+    end
+    return {}
+end
+```
+
+### Custom Vehicle Script
+```lua
+-- Custom vehicle spawning with mods
+RegisterNetEvent('customs:spawnVehicle', function(model, mods)
+    local ped = PlayerPedId()
+    local coords = GetEntityCoords(ped)
+    
+    RequestModel(model)
+    while not HasModelLoaded(model) do
+        Wait(0)
+    end
+    
+    local vehicle = CreateVehicle(model, coords.x, coords.y, coords.z, GetEntityHeading(ped), true, false)
+    
+    -- Apply modifications
+    ApplyVehicleMods(vehicle, mods)
+    
+    -- Set player as driver
+    TaskWarpPedIntoVehicle(ped, vehicle, -1)
+    
+    SetModelAsNoLongerNeeded(model)
+end)
+```
+
+## Advanced Features
+
+### Performance Calculations
+```lua
+-- Calculate vehicle performance rating
+local function CalculatePerformanceRating(mods)
+    local baseRating = 50
+    local engineBonus = mods.engine * 10
+    local transmissionBonus = mods.transmission * 5
+    local suspensionBonus = mods.suspension * 3
+    local brakesBonus = mods.brakes * 3
+    local turboBonus = mods.turbo and 15 or 0
+    
+    return baseRating + engineBonus + transmissionBonus + suspensionBonus + brakesBonus + turboBonus
+end
+```
+
+### Cost Calculation
+```lua
+-- Calculate modification costs
+local function CalculateModificationCost(mods)
+    local costs = {
+        engine = { 5000, 10000, 15000, 20000, 25000 },
+        transmission = { 3000, 6000, 9000, 12000 },
+        suspension = { 2000, 4000, 6000, 8000, 10000 },
+        brakes = { 2500, 5000, 7500, 10000 },
+        turbo = 15000
+    }
+    
+    local totalCost = 0
+    for mod, level in pairs(mods) do
+        if costs[mod] then
+            if type(level) == 'boolean' then
+                totalCost = totalCost + (level and costs[mod] or 0)
+            else
+                totalCost = totalCost + (costs[mod][level + 1] or 0)
+            end
+        end
+    end
+    
+    return totalCost
+end
+```
+
+### Preset Configurations
+```lua
+-- Performance presets
+Config.PerformancePresets = {
+    ['street'] = {
+        engine = 1,
+        transmission = 1,
+        suspension = 1,
+        brakes = 1,
+        turbo = false
+    },
+    ['sport'] = {
+        engine = 2,
+        transmission = 2,
+        suspension = 2,
+        brakes = 2,
+        turbo = true
+    },
+    ['race'] = {
+        engine = 4,
+        transmission = 3,
+        suspension = 4,
+        brakes = 3,
+        turbo = true
+    }
+}
+```
+
+## Livery System
+
+### Custom Livery Creation
+```lua
+-- Custom livery system
+RegisterNetEvent('customs:applyCustomLivery', function(vehicle, liveryData)
+    -- Apply base livery
+    SetVehicleLivery(vehicle, liveryData.base)
+    
+    -- Apply custom decals
+    for _, decal in pairs(liveryData.decals) do
+        -- Custom decal application logic
+        ApplyCustomDecal(vehicle, decal)
+    end
+end)
+```
+
+### Livery Templates
+- **Racing Liveries**: Professional racing designs
+- **Police Liveries**: Law enforcement themes
+- **Emergency Services**: Fire, EMS, and rescue designs
+- **Corporate Branding**: Business and company themes
+- **Street Art**: Urban and graffiti styles
+
+## Troubleshooting
+
+### Common Issues
+1. **Modifications Not Applying**: Ensure vehicle model supports the modification type
+2. **Color Issues**: Verify RGB values are within 0-255 range
+3. **Performance Problems**: Check for conflicting modifications
+4. **Export Errors**: Validate JSON format before exporting
+
+### Compatibility Notes
+- Some modifications may not be available for all vehicle models
+- Performance modifications affect vehicle handling characteristics
+- Custom colors may appear differently in various lighting conditions
+- Liveries depend on the vehicle's texture mapping
+
+---
+
+**Pro Tip**: Save multiple configuration templates for different vehicle types (sports cars, SUVs, motorcycles) to streamline the customization process. Use the export feature to share configurations with other server administrators.
+
+Need help with vehicle customization? Check our [vehicle guide](/docs/guides/vehicles) or visit our [tuning community](/community).

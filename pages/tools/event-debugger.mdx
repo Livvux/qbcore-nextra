@@ -1,0 +1,612 @@
+# Event Debugger
+
+Debug and monitor QBCore events in real-time with advanced filtering, logging, and analysis capabilities.
+
+## Overview
+
+The Event Debugger provides comprehensive monitoring of QBCore events, allowing developers to track event flow, debug issues, and optimize event handling. Monitor client/server events, network events, and custom triggers with detailed logging and performance metrics.
+
+import { useState, useEffect } from 'react'
+import { Play, Pause, Trash2, Filter, Download, Search, Clock, Activity, Zap, AlertCircle, Info } from 'lucide-react'
+
+export function EventDebugger() {
+  const [isMonitoring, setIsMonitoring] = useState(false)
+  const [events, setEvents] = useState([])
+  const [filteredEvents, setFilteredEvents] = useState([])
+  const [searchFilter, setSearchFilter] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
+  const [selectedEvent, setSelectedEvent] = useState(null)
+  const [eventStats, setEventStats] = useState({
+    total: 0,
+    clientEvents: 0,
+    serverEvents: 0,
+    networkEvents: 0,
+    avgResponseTime: 0
+  })
+
+  // Mock event data
+  const mockEvents = [
+    {
+      id: 1,
+      timestamp: new Date().toISOString(),
+      name: 'QBCore:Client:OnPlayerLoaded',
+      type: 'client',
+      source: 'qb-core',
+      data: { citizenid: 'ABC12345', job: 'police' },
+      responseTime: 12,
+      status: 'success'
+    },
+    {
+      id: 2,
+      timestamp: new Date(Date.now() - 1000).toISOString(),
+      name: 'inventory:server:OpenInventory',
+      type: 'server',
+      source: 'qb-inventory',
+      data: { type: 'stash', id: 'policelocker' },
+      responseTime: 24,
+      status: 'success'
+    },
+    {
+      id: 3,
+      timestamp: new Date(Date.now() - 2000).toISOString(),
+      name: 'banking:client:openBankingApp',
+      type: 'client',
+      source: 'qb-banking',
+      data: { account: '12345678' },
+      responseTime: 8,
+      status: 'warning'
+    },
+    {
+      id: 4,
+      timestamp: new Date(Date.now() - 3000).toISOString(),
+      name: 'police:server:SetDuty',
+      type: 'network',
+      source: 'qb-policejob',
+      data: { onDuty: true, player: 1 },
+      responseTime: 156,
+      status: 'error'
+    }
+  ]
+
+  // Simulate real-time events
+  useEffect(() => {
+    if (!isMonitoring) return
+
+    const interval = setInterval(() => {
+      const newEvent = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        name: ['QBCore:Player:UpdatePlayerData', 'inventory:client:ItemBox', 'banking:server:Transaction', 'police:client:VehicleSpawn'][Math.floor(Math.random() * 4)],
+        type: ['client', 'server', 'network'][Math.floor(Math.random() * 3)],
+        source: ['qb-core', 'qb-inventory', 'qb-banking', 'qb-policejob'][Math.floor(Math.random() * 4)],
+        data: { example: 'data' },
+        responseTime: Math.floor(Math.random() * 200) + 5,
+        status: ['success', 'warning', 'error'][Math.floor(Math.random() * 3)]
+      }
+
+      setEvents(prev => [newEvent, ...prev.slice(0, 99)]) // Keep last 100 events
+    }, 2000)
+
+    return () => clearInterval(interval)
+  }, [isMonitoring])
+
+  // Initialize with mock data
+  useEffect(() => {
+    setEvents(mockEvents)
+  }, [])
+
+  // Filter events
+  useEffect(() => {
+    let filtered = events
+    
+    if (searchFilter) {
+      filtered = filtered.filter(event => 
+        event.name.toLowerCase().includes(searchFilter.toLowerCase()) ||
+        event.source.toLowerCase().includes(searchFilter.toLowerCase())
+      )
+    }
+    
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter(event => event.type === typeFilter)
+    }
+    
+    setFilteredEvents(filtered)
+  }, [events, searchFilter, typeFilter])
+
+  // Update stats
+  useEffect(() => {
+    setEventStats({
+      total: events.length,
+      clientEvents: events.filter(e => e.type === 'client').length,
+      serverEvents: events.filter(e => e.type === 'server').length,
+      networkEvents: events.filter(e => e.type === 'network').length,
+      avgResponseTime: events.length > 0 ? Math.round(events.reduce((acc, e) => acc + e.responseTime, 0) / events.length) : 0
+    })
+  }, [events])
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'success': return 'text-green-400 bg-green-400/10 border-green-400/20'
+      case 'warning': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20'
+      case 'error': return 'text-red-400 bg-red-400/10 border-red-400/20'
+      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20'
+    }
+  }
+
+  const getTypeColor = (type) => {
+    switch (type) {
+      case 'client': return 'text-blue-400 bg-blue-400/10'
+      case 'server': return 'text-purple-400 bg-purple-400/10'
+      case 'network': return 'text-cyan-400 bg-cyan-400/10'
+      default: return 'text-gray-400 bg-gray-400/10'
+    }
+  }
+
+  const clearEvents = () => {
+    setEvents([])
+    setSelectedEvent(null)
+  }
+
+  const exportEvents = () => {
+    const dataStr = JSON.stringify(events, null, 2)
+    const dataBlob = new Blob([dataStr], { type: 'application/json' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `qbcore-events-${new Date().toISOString().split('T')[0]}.json`
+    link.click()
+  }
+
+  return (
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Event Debugger</h2>
+          <p className="text-gray-400">Monitor and debug QBCore events in real-time</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsMonitoring(!isMonitoring)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+              isMonitoring 
+                ? 'bg-red-600 hover:bg-red-700 text-white' 
+                : 'bg-green-600 hover:bg-green-700 text-white'
+            }`}
+          >
+            {isMonitoring ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+            {isMonitoring ? 'Stop' : 'Start'} Monitoring
+          </button>
+          <button
+            onClick={clearEvents}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+          >
+            <Trash2 className="w-4 h-4" />
+            Clear
+          </button>
+          <button
+            onClick={exportEvents}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Download className="w-4 h-4" />
+            Export
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="bg-black/50 border border-gray-800 rounded-xl p-4 backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-2">
+            <Activity className="w-5 h-5 text-blue-400" />
+            <span className="text-gray-400 text-sm">Total Events</span>
+          </div>
+          <div className="text-2xl font-bold text-white">{eventStats.total}</div>
+        </div>
+        
+        <div className="bg-black/50 border border-gray-800 rounded-xl p-4 backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full bg-blue-400" />
+            <span className="text-gray-400 text-sm">Client</span>
+          </div>
+          <div className="text-2xl font-bold text-white">{eventStats.clientEvents}</div>
+        </div>
+        
+        <div className="bg-black/50 border border-gray-800 rounded-xl p-4 backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full bg-purple-400" />
+            <span className="text-gray-400 text-sm">Server</span>
+          </div>
+          <div className="text-2xl font-bold text-white">{eventStats.serverEvents}</div>
+        </div>
+        
+        <div className="bg-black/50 border border-gray-800 rounded-xl p-4 backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-3 h-3 rounded-full bg-cyan-400" />
+            <span className="text-gray-400 text-sm">Network</span>
+          </div>
+          <div className="text-2xl font-bold text-white">{eventStats.networkEvents}</div>
+        </div>
+        
+        <div className="bg-black/50 border border-gray-800 rounded-xl p-4 backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-2">
+            <Clock className="w-5 h-5 text-green-400" />
+            <span className="text-gray-400 text-sm">Avg Response</span>
+          </div>
+          <div className="text-2xl font-bold text-white">{eventStats.avgResponseTime}ms</div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex items-center gap-4 p-4 bg-black/50 border border-gray-800 rounded-xl backdrop-blur-md">
+        <div className="flex items-center gap-2">
+          <Search className="w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search events..."
+            value={searchFilter}
+            onChange={(e) => setSearchFilter(e.target.value)}
+            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-gray-400" />
+          <select
+            value={typeFilter}
+            onChange={(e) => setTypeFilter(e.target.value)}
+            className="px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="all">All Types</option>
+            <option value="client">Client Events</option>
+            <option value="server">Server Events</option>
+            <option value="network">Network Events</option>
+          </select>
+        </div>
+        
+        <div className="flex items-center gap-2 text-sm text-gray-400">
+          <span>Monitoring:</span>
+          <div className={`w-2 h-2 rounded-full ${isMonitoring ? 'bg-green-500' : 'bg-gray-500'}`} />
+          <span>{isMonitoring ? 'Active' : 'Inactive'}</span>
+        </div>
+      </div>
+
+      {/* Events List */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Events Table */}
+        <div className="lg:col-span-2 bg-black/50 border border-gray-800 rounded-xl backdrop-blur-md overflow-hidden">
+          <div className="p-4 border-b border-gray-800">
+            <h3 className="text-lg font-semibold text-white">Events ({filteredEvents.length})</h3>
+          </div>
+          
+          <div className="max-h-96 overflow-y-auto">
+            {filteredEvents.length === 0 ? (
+              <div className="p-8 text-center">
+                <Activity className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-400">No events to display</p>
+                <p className="text-gray-500 text-sm mt-1">
+                  {isMonitoring ? 'Waiting for events...' : 'Start monitoring to see events'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {filteredEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    onClick={() => setSelectedEvent(event)}
+                    className={`p-3 border-b border-gray-800/50 hover:bg-gray-800/30 cursor-pointer transition-colors ${
+                      selectedEvent?.id === event.id ? 'bg-blue-500/10 border-blue-500/20' : ''
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-mono text-sm">{event.name}</span>
+                        <span className={`px-2 py-1 rounded-full text-xs ${getTypeColor(event.type)}`}>
+                          {event.type}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-gray-400 text-xs">{event.responseTime}ms</span>
+                        <span className={`px-2 py-1 rounded-full text-xs border ${getStatusColor(event.status)}`}>
+                          {event.status}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-400">{event.source}</span>
+                      <span className="text-gray-500">
+                        {new Date(event.timestamp).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Event Details */}
+        <div className="bg-black/50 border border-gray-800 rounded-xl backdrop-blur-md">
+          <div className="p-4 border-b border-gray-800">
+            <h3 className="text-lg font-semibold text-white">Event Details</h3>
+          </div>
+          
+          {selectedEvent ? (
+            <div className="p-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Event Name</label>
+                <p className="text-white font-mono text-sm">{selectedEvent.name}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Type</label>
+                  <span className={`px-2 py-1 rounded text-xs ${getTypeColor(selectedEvent.type)}`}>
+                    {selectedEvent.type}
+                  </span>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-1">Status</label>
+                  <span className={`px-2 py-1 rounded text-xs border ${getStatusColor(selectedEvent.status)}`}>
+                    {selectedEvent.status}
+                  </span>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Source</label>
+                <p className="text-white text-sm">{selectedEvent.source}</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Response Time</label>
+                <p className="text-white text-sm">{selectedEvent.responseTime}ms</p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Timestamp</label>
+                <p className="text-white text-sm">
+                  {new Date(selectedEvent.timestamp).toLocaleString()}
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-1">Event Data</label>
+                <div className="bg-gray-900/50 p-3 rounded-lg">
+                  <pre className="text-green-400 text-xs overflow-x-auto">
+                    {JSON.stringify(selectedEvent.data, null, 2)}
+                  </pre>
+                </div>
+              </div>
+              
+              {selectedEvent.status === 'error' && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle className="w-4 h-4 text-red-400" />
+                    <span className="text-red-400 font-medium text-sm">Error Details</span>
+                  </div>
+                  <p className="text-red-200 text-xs">
+                    Event execution failed with timeout. Check server logs for more details.
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <Info className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-400">Select an event to view details</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+<EventDebugger />
+
+## Debugging Features
+
+### Real-Time Monitoring
+- **Live Event Stream**: Monitor events as they happen in real-time
+- **Event Filtering**: Filter by event type, source, or search terms
+- **Performance Tracking**: Monitor response times and performance metrics
+- **Status Monitoring**: Track success, warning, and error states
+
+### Event Analysis
+- **Event Details**: Inspect event data, parameters, and responses
+- **Source Tracking**: Identify which resource triggered each event
+- **Response Time Analysis**: Monitor event execution performance
+- **Error Detection**: Automatically highlight failed or slow events
+
+### Advanced Filtering
+```lua
+-- Filter events by pattern
+EventDebugger.filter({
+    pattern = "police:*",        -- All police events
+    type = "server",             -- Server-side events only
+    minResponseTime = 100,       -- Events slower than 100ms
+    status = "error"             -- Failed events only
+})
+```
+
+### Data Export
+- **JSON Export**: Export events for external analysis
+- **CSV Format**: Import into spreadsheet applications
+- **Log Integration**: Compatible with standard logging tools
+- **Report Generation**: Generate debugging reports
+
+## Common Event Patterns
+
+### QBCore Core Events
+```lua
+-- Player events
+'QBCore:Client:OnPlayerLoaded'
+'QBCore:Client:OnPlayerUnload'
+'QBCore:Client:OnJobUpdate'
+'QBCore:Client:OnGangUpdate'
+
+-- Server events
+'QBCore:Server:PlayerLoaded'
+'QBCore:Server:OnPlayerUnload'
+'QBCore:Server:SetPlayerData'
+'QBCore:Server:OnJobUpdate'
+```
+
+### Inventory Events
+```lua
+-- Client events
+'inventory:client:openInventory'
+'inventory:client:closeInventory'
+'inventory:client:ItemBox'
+
+-- Server events
+'inventory:server:OpenInventory'
+'inventory:server:UseItem'
+'inventory:server:AddItem'
+'inventory:server:RemoveItem'
+```
+
+### Banking Events
+```lua
+-- Client events
+'banking:client:openBankingApp'
+'banking:client:doTransaction'
+
+-- Server events
+'banking:server:Transaction'
+'banking:server:GetAccount'
+'banking:server:CreateAccount'
+```
+
+## Performance Analysis
+
+### Response Time Monitoring
+```lua
+-- Typical response times by event type
+local performanceThresholds = {
+    ['client'] = 50,      -- Client events should be < 50ms
+    ['server'] = 100,     -- Server events should be < 100ms
+    ['network'] = 200     -- Network events should be < 200ms
+}
+```
+
+### Memory Usage Tracking
+```lua
+-- Monitor memory usage during events
+RegisterNetEvent('event:monitor:memory', function()
+    local memBefore = collectgarbage('count')
+    -- Event execution
+    local memAfter = collectgarbage('count')
+    local memDiff = memAfter - memBefore
+    
+    if memDiff > 100 then -- More than 100KB
+        print(('Memory spike detected: %d KB'):format(memDiff))
+    end
+end)
+```
+
+### Event Frequency Analysis
+```lua
+-- Track event frequency
+local eventCounts = {}
+local function trackEventFrequency(eventName)
+    eventCounts[eventName] = (eventCounts[eventName] or 0) + 1
+    
+    -- Alert if event fires too frequently
+    if eventCounts[eventName] > 100 then
+        print(('High frequency event detected: %s (%d times)'):format(eventName, eventCounts[eventName]))
+    end
+end
+```
+
+## Debugging Strategies
+
+### Event Flow Tracing
+1. **Start Monitoring**: Begin event capture before reproducing the issue
+2. **Reproduce Issue**: Perform the action that causes the problem
+3. **Analyze Sequence**: Review the event sequence leading to the issue
+4. **Identify Bottleneck**: Find slow or failing events in the chain
+
+### Performance Debugging
+1. **Baseline Measurement**: Establish normal performance metrics
+2. **Load Testing**: Monitor events under various load conditions
+3. **Bottleneck Identification**: Find events with high response times
+4. **Optimization**: Implement fixes and measure improvements
+
+### Error Tracking
+1. **Error Categorization**: Group errors by type and frequency
+2. **Root Cause Analysis**: Trace errors back to their source
+3. **Pattern Recognition**: Identify common error conditions
+4. **Prevention**: Implement checks to prevent recurring errors
+
+## Integration Examples
+
+### Custom Event Logging
+```lua
+-- Client-side event logging
+local function logEvent(eventName, data, responseTime)
+    TriggerServerEvent('eventDebugger:logEvent', {
+        name = eventName,
+        type = 'client',
+        source = GetCurrentResourceName(),
+        data = data,
+        responseTime = responseTime,
+        timestamp = os.time()
+    })
+end
+
+-- Server-side event logging
+RegisterNetEvent('eventDebugger:logEvent', function(eventData)
+    -- Store in database or send to monitoring service
+    MySQL.insert('INSERT INTO event_logs (name, type, source, data, response_time, timestamp) VALUES (?, ?, ?, ?, ?, ?)', {
+        eventData.name,
+        eventData.type,
+        eventData.source,
+        json.encode(eventData.data),
+        eventData.responseTime,
+        eventData.timestamp
+    })
+end)
+```
+
+### Automated Alerting
+```lua
+-- Alert on performance issues
+local function checkPerformance(eventName, responseTime)
+    local threshold = performanceThresholds[eventType] or 100
+    
+    if responseTime > threshold then
+        -- Send alert to Discord/Slack
+        sendAlert(('Performance Alert: %s took %dms (threshold: %dms)'):format(
+            eventName, responseTime, threshold
+        ))
+    end
+end
+```
+
+## Troubleshooting
+
+### High Response Times
+1. **Check Server Load**: Monitor CPU and memory usage
+2. **Database Performance**: Analyze database query execution times
+3. **Network Issues**: Check for network latency or packet loss
+4. **Resource Conflicts**: Identify conflicting resources
+
+### Event Failures
+1. **Parameter Validation**: Ensure correct event parameters
+2. **Resource Dependencies**: Verify all required resources are loaded
+3. **Permission Checks**: Confirm proper player permissions
+4. **Error Logs**: Check server console for detailed error messages
+
+### Memory Leaks
+1. **Event Cleanup**: Ensure events are properly unregistered
+2. **Data References**: Check for circular references in event data
+3. **Garbage Collection**: Monitor garbage collection patterns
+4. **Resource Restart**: Identify resources that need periodic restarts
+
+---
+
+**Pro Tip**: Use the Event Debugger during development to optimize event handling and catch issues before they reach production. Set up automated monitoring in production for ongoing performance tracking.
+
+Need help with event debugging? Check our [debugging guide](/docs/guides/debugging) or visit our [developer forum](/community).

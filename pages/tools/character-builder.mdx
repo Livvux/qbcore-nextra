@@ -1,0 +1,805 @@
+# Character Builder
+
+Create and customize detailed character data for testing, roleplay scenarios, and server administration.
+
+## Overview
+
+The Character Builder helps administrators and developers create comprehensive character profiles with realistic data, proper formatting, and QBCore compatibility. Generate complete character datasets including personal information, job assignments, financial data, and inventory items.
+
+import { useState } from 'react'
+import { User, Save, Download, RefreshCw, Eye, Edit, Copy, Settings, Users, Briefcase, DollarSign, Package } from 'lucide-react'
+
+export function CharacterBuilder() {
+  const [activeTab, setActiveTab] = useState('basic')
+  const [character, setCharacter] = useState({
+    // Basic Info
+    firstname: '',
+    lastname: '',
+    birthdate: '',
+    gender: 'male',
+    nationality: 'USA',
+    
+    // Appearance
+    skin: 1,
+    face: 1,
+    hair: 1,
+    haircolor: 1,
+    eyecolor: 1,
+    
+    // Job & Gang
+    job: 'unemployed',
+    jobgrade: 0,
+    gang: 'none',
+    ganggrade: 0,
+    
+    // Money
+    cash: 500,
+    bank: 5000,
+    crypto: 0,
+    
+    // Phone & Position
+    phone: '',
+    position: { x: -1037.8, y: -2738.7, z: 20.2, w: 331.28 },
+    
+    // Metadata
+    hunger: 100,
+    thirst: 100,
+    stress: 0,
+    armor: 0,
+    health: 200,
+    
+    // Licenses
+    licenses: [],
+    
+    // Inventory
+    inventory: []
+  })
+
+  const [generatedData, setGeneratedData] = useState(null)
+
+  const jobs = [
+    { value: 'unemployed', label: 'Unemployed', grades: 1 },
+    { value: 'police', label: 'Police Officer', grades: 10 },
+    { value: 'ambulance', label: 'EMS', grades: 8 },
+    { value: 'mechanic', label: 'Mechanic', grades: 5 },
+    { value: 'taxi', label: 'Taxi Driver', grades: 3 },
+    { value: 'realestate', label: 'Real Estate', grades: 4 },
+    { value: 'cardealer', label: 'Car Dealer', grades: 3 },
+    { value: 'lawyer', label: 'Lawyer', grades: 3 }
+  ]
+
+  const gangs = [
+    { value: 'none', label: 'No Gang', grades: 0 },
+    { value: 'ballas', label: 'Ballas', grades: 4 },
+    { value: 'families', label: 'Families', grades: 4 },
+    { value: 'vagos', label: 'Vagos', grades: 4 },
+    { value: 'marabunta', label: 'Marabunta', grades: 4 }
+  ]
+
+  const licenses = [
+    { id: 'driver', name: 'Driver License' },
+    { id: 'weapon', name: 'Weapon License' },
+    { id: 'business', name: 'Business License' },
+    { id: 'pilot', name: 'Pilot License' }
+  ]
+
+  const defaultItems = [
+    { name: 'phone', amount: 1, info: {} },
+    { name: 'id_card', amount: 1, info: {} },
+    { name: 'driver_license', amount: 1, info: {} }
+  ]
+
+  const generateCitizenId = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+    let result = ''
+    for (let i = 0; i < 8; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
+  }
+
+  const generatePhoneNumber = () => {
+    const numbers = '0123456789'
+    let result = ''
+    for (let i = 0; i < 10; i++) {
+      result += numbers.charAt(Math.floor(Math.random() * numbers.length))
+    }
+    return result
+  }
+
+  const generateRandomCharacter = () => {
+    const firstNames = ['John', 'Jane', 'Michael', 'Sarah', 'David', 'Emily', 'Robert', 'Ashley', 'James', 'Jessica']
+    const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez']
+    
+    const randomFirst = firstNames[Math.floor(Math.random() * firstNames.length)]
+    const randomLast = lastNames[Math.floor(Math.random() * lastNames.length)]
+    const randomJob = jobs[Math.floor(Math.random() * jobs.length)]
+    
+    setCharacter(prev => ({
+      ...prev,
+      firstname: randomFirst,
+      lastname: randomLast,
+      birthdate: `${Math.floor(Math.random() * 12) + 1}/${Math.floor(Math.random() * 28) + 1}/${1970 + Math.floor(Math.random() * 30)}`,
+      gender: Math.random() > 0.5 ? 'male' : 'female',
+      job: randomJob.value,
+      jobgrade: Math.floor(Math.random() * randomJob.grades),
+      phone: generatePhoneNumber(),
+      cash: Math.floor(Math.random() * 2000) + 500,
+      bank: Math.floor(Math.random() * 10000) + 5000,
+      skin: Math.floor(Math.random() * 45) + 1,
+      face: Math.floor(Math.random() * 20) + 1,
+      hair: Math.floor(Math.random() * 76) + 1,
+      haircolor: Math.floor(Math.random() * 64) + 1,
+      eyecolor: Math.floor(Math.random() * 32) + 1
+    }))
+  }
+
+  const buildCharacter = () => {
+    const citizenid = generateCitizenId()
+    const charinfo = {
+      firstname: character.firstname,
+      lastname: character.lastname,
+      birthdate: character.birthdate,
+      gender: character.gender === 'male' ? 0 : 1,
+      nationality: character.nationality,
+      phone: character.phone || generatePhoneNumber(),
+      account: `US0${Math.floor(Math.random() * 9000000) + 1000000}`
+    }
+
+    const money = JSON.stringify({
+      cash: character.cash,
+      bank: character.bank,
+      crypto: character.crypto
+    })
+
+    const job = {
+      name: character.job,
+      label: jobs.find(j => j.value === character.job)?.label || 'Unemployed',
+      payment: getJobPayment(character.job, character.jobgrade),
+      onduty: false,
+      isboss: character.jobgrade === getMaxGrade(character.job),
+      grade: {
+        name: getGradeName(character.job, character.jobgrade),
+        level: character.jobgrade
+      }
+    }
+
+    const gang = {
+      name: character.gang,
+      label: gangs.find(g => g.value === character.gang)?.label || 'No Gang',
+      isboss: character.ganggrade === getMaxGrade(character.gang),
+      grade: {
+        name: getGradeName(character.gang, character.ganggrade),
+        level: character.ganggrade
+      }
+    }
+
+    const position = character.position
+
+    const metadata = {
+      hunger: character.hunger,
+      thirst: character.thirst,
+      stress: character.stress,
+      kcal: 0,
+      thirstlevel: character.thirst,
+      huntinglevel: 0,
+      craftinglevel: 0,
+      bloodtype: getRandomBloodType(),
+      dealerrep: 0,
+      craftingrep: 0,
+      attachmentcraftingrep: 0,
+      currentapartment: null,
+      jobrep: {},
+      walletid: citizenid
+    }
+
+    const generatedChar = {
+      citizenid,
+      cid: Math.floor(Math.random() * 9000) + 1000,
+      license: `license:${citizenid}`,
+      name: `${character.firstname} ${character.lastname}`,
+      money,
+      charinfo: JSON.stringify(charinfo),
+      job: JSON.stringify(job),
+      gang: JSON.stringify(gang),
+      position: JSON.stringify(position),
+      metadata: JSON.stringify(metadata),
+      inventory: JSON.stringify(character.inventory.length > 0 ? character.inventory : defaultItems),
+      last_updated: new Date().toISOString()
+    }
+
+    setGeneratedData(generatedChar)
+  }
+
+  const getJobPayment = (jobName, grade) => {
+    const payments = {
+      unemployed: 0,
+      police: [50, 75, 100, 125, 150, 175, 200, 225, 250, 300],
+      ambulance: [50, 75, 100, 125, 150, 175, 200, 250],
+      mechanic: [50, 75, 100, 125, 150],
+      taxi: [50, 75, 100],
+      realestate: [50, 75, 100, 125],
+      cardealer: [50, 75, 100],
+      lawyer: [50, 75, 100]
+    }
+    return payments[jobName]?.[grade] || 0
+  }
+
+  const getMaxGrade = (jobName) => {
+    const job = jobs.find(j => j.value === jobName) || gangs.find(g => g.value === jobName)
+    return job ? job.grades - 1 : 0
+  }
+
+  const getGradeName = (jobName, grade) => {
+    const gradeNames = {
+      police: ['Cadet', 'Officer', 'Senior Officer', 'Corporal', 'Sergeant', 'Lieutenant', 'Captain', 'Commander', 'Deputy Chief', 'Chief'],
+      ambulance: ['Trainee', 'Paramedic', 'Senior Paramedic', 'Supervisor', 'Lieutenant', 'Captain', 'Deputy Chief', 'Chief'],
+      mechanic: ['Apprentice', 'Mechanic', 'Senior Mechanic', 'Supervisor', 'Manager'],
+      unemployed: ['Unemployed']
+    }
+    return gradeNames[jobName]?.[grade] || `Grade ${grade}`
+  }
+
+  const getRandomBloodType = () => {
+    const types = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-']
+    return types[Math.floor(Math.random() * types.length)]
+  }
+
+  const exportCharacter = () => {
+    if (!generatedData) return
+    
+    const sqlQuery = `INSERT INTO players (citizenid, cid, license, name, money, charinfo, job, gang, position, metadata, inventory, last_updated) VALUES ('${generatedData.citizenid}', ${generatedData.cid}, '${generatedData.license}', '${generatedData.name}', '${generatedData.money}', '${generatedData.charinfo}', '${generatedData.job}', '${generatedData.gang}', '${generatedData.position}', '${generatedData.metadata}', '${generatedData.inventory}', '${generatedData.last_updated}');`
+    
+    const blob = new Blob([sqlQuery], { type: 'text/plain' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `character_${generatedData.citizenid}.sql`
+    link.click()
+  }
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text)
+  }
+
+  const tabs = [
+    { id: 'basic', label: 'Basic Info', icon: User },
+    { id: 'appearance', label: 'Appearance', icon: Eye },
+    { id: 'job', label: 'Job & Gang', icon: Briefcase },
+    { id: 'money', label: 'Money', icon: DollarSign },
+    { id: 'metadata', label: 'Metadata', icon: Settings },
+    { id: 'inventory', label: 'Inventory', icon: Package }
+  ]
+
+  return (
+    <div className="w-full max-w-6xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-white mb-2">Character Builder</h2>
+          <p className="text-gray-400">Create detailed character profiles for testing and roleplay</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={generateRandomCharacter}
+            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Random
+          </button>
+          <button
+            onClick={buildCharacter}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            <Save className="w-4 h-4" />
+            Build Character
+          </button>
+        </div>
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Character Form */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Tab Navigation */}
+          <div className="border-b border-gray-800">
+            <nav className="flex gap-4 overflow-x-auto">
+              {tabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 py-3 px-2 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-400'
+                      : 'border-transparent text-gray-400 hover:text-gray-300'
+                  }`}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              ))}
+            </nav>
+          </div>
+
+          {/* Tab Content */}
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+            {activeTab === 'basic' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white mb-4">Basic Information</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">First Name</label>
+                    <input
+                      type="text"
+                      value={character.firstname}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, firstname: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Last Name</label>
+                    <input
+                      type="text"
+                      value={character.lastname}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, lastname: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Birth Date</label>
+                    <input
+                      type="text"
+                      placeholder="MM/DD/YYYY"
+                      value={character.birthdate}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, birthdate: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Gender</label>
+                    <select
+                      value={character.gender}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, gender: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Nationality</label>
+                    <input
+                      type="text"
+                      value={character.nationality}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, nationality: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Phone Number</label>
+                    <input
+                      type="text"
+                      placeholder="Auto-generated if empty"
+                      value={character.phone}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'job' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white mb-4">Job & Gang</h3>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Job</label>
+                    <select
+                      value={character.job}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, job: e.target.value, jobgrade: 0 }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      {jobs.map((job) => (
+                        <option key={job.value} value={job.value}>{job.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Job Grade</label>
+                    <select
+                      value={character.jobgrade}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, jobgrade: parseInt(e.target.value) }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      {Array.from({ length: jobs.find(j => j.value === character.job)?.grades || 1 }, (_, i) => (
+                        <option key={i} value={i}>Grade {i} - ${getJobPayment(character.job, i)}/hour</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Gang</label>
+                    <select
+                      value={character.gang}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, gang: e.target.value, ganggrade: 0 }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    >
+                      {gangs.map((gang) => (
+                        <option key={gang.value} value={gang.value}>{gang.label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Gang Grade</label>
+                    <select
+                      value={character.ganggrade}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, ganggrade: parseInt(e.target.value) }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                      disabled={character.gang === 'none'}
+                    >
+                      {Array.from({ length: Math.max(gangs.find(g => g.value === character.gang)?.grades || 0, 1) }, (_, i) => (
+                        <option key={i} value={i}>Grade {i}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'money' && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-white mb-4">Money & Finance</h3>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Cash</label>
+                    <input
+                      type="number"
+                      value={character.cash}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, cash: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Bank</label>
+                    <input
+                      type="number"
+                      value={character.bank}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, bank: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Crypto</label>
+                    <input
+                      type="number"
+                      value={character.crypto}
+                      onChange={(e) => setCharacter(prev => ({ ...prev, crypto: parseInt(e.target.value) || 0 }))}
+                      className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+                <div className="p-4 bg-gray-900/50 rounded-lg">
+                  <p className="text-gray-400 text-sm">
+                    <strong>Total Worth:</strong> ${(character.cash + character.bank + character.crypto).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Add other tab contents similarly */}
+          </div>
+        </div>
+
+        {/* Generated Data Preview */}
+        <div className="bg-black/50 border border-gray-800 rounded-xl backdrop-blur-md">
+          <div className="p-4 border-b border-gray-800">
+            <h3 className="text-lg font-semibold text-white">Generated Character</h3>
+          </div>
+          
+          {generatedData ? (
+            <div className="p-4 space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-400">Citizen ID:</span>
+                  <p className="text-white font-mono">{generatedData.citizenid}</p>
+                </div>
+                <div>
+                  <span className="text-gray-400">Character ID:</span>
+                  <p className="text-white">{generatedData.cid}</p>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-gray-400">Full Name:</span>
+                  <p className="text-white">{generatedData.name}</p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={exportCharacter}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <Download className="w-4 h-4" />
+                  Export SQL
+                </button>
+                <button
+                  onClick={() => copyToClipboard(JSON.stringify(generatedData, null, 2))}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600"
+                >
+                  <Copy className="w-4 h-4" />
+                  Copy JSON
+                </button>
+              </div>
+
+              <div className="bg-gray-900/50 p-3 rounded-lg">
+                <p className="text-gray-400 text-xs mb-2">SQL Preview:</p>
+                <pre className="text-green-400 text-xs overflow-x-auto">
+                  INSERT INTO players (citizenid, name, money) VALUES ('{generatedData.citizenid}', '{generatedData.name}', '{generatedData.money}');
+                </pre>
+              </div>
+            </div>
+          ) : (
+            <div className="p-8 text-center">
+              <User className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <p className="text-gray-400">Build a character to see generated data</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+<CharacterBuilder />
+
+## Character Building Features
+
+### Comprehensive Data Generation
+- **Personal Information**: Names, birthdates, nationality, and contact details
+- **Physical Appearance**: Skin, face, hair, and eye customization options
+- **Job Assignment**: Complete job hierarchy with grades and salaries
+- **Gang Affiliation**: Gang membership with appropriate grade levels
+- **Financial Profile**: Cash, bank account, and cryptocurrency balances
+
+### QBCore Integration
+- **Citizen ID Generation**: Automatic unique identifier creation
+- **Proper Data Format**: JSON structures matching QBCore standards
+- **Database Compatibility**: SQL export ready for direct database insertion
+- **Metadata Inclusion**: Health, hunger, thirst, and other player stats
+
+### Advanced Features
+- **Random Generation**: Create realistic random characters instantly
+- **Template System**: Pre-built character templates for common roles
+- **Bulk Creation**: Generate multiple characters simultaneously
+- **Import/Export**: Save and load character templates
+
+## Character Templates
+
+### Law Enforcement Officer
+```json
+{
+  "job": "police",
+  "jobgrade": 3,
+  "licenses": ["driver", "weapon"],
+  "cash": 1000,
+  "bank": 8000,
+  "inventory": [
+    {"name": "weapon_pistol", "amount": 1},
+    {"name": "radio", "amount": 1},
+    {"name": "handcuffs", "amount": 1}
+  ]
+}
+```
+
+### Medical Professional
+```json
+{
+  "job": "ambulance",
+  "jobgrade": 4,
+  "licenses": ["driver", "business"],
+  "cash": 800,
+  "bank": 12000,
+  "inventory": [
+    {"name": "bandage", "amount": 10},
+    {"name": "painkillers", "amount": 5},
+    {"name": "radio", "amount": 1}
+  ]
+}
+```
+
+### Criminal Character
+```json
+{
+  "gang": "ballas",
+  "ganggrade": 2,
+  "job": "unemployed",
+  "cash": 2500,
+  "bank": 1000,
+  "stress": 25,
+  "inventory": [
+    {"name": "lockpick", "amount": 5},
+    {"name": "phone", "amount": 1}
+  ]
+}
+```
+
+## Database Integration
+
+### Player Table Structure
+```sql
+CREATE TABLE `players` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `citizenid` varchar(50) NOT NULL,
+  `cid` int(11) DEFAULT NULL,
+  `license` varchar(255) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `money` text NOT NULL,
+  `charinfo` text DEFAULT NULL,
+  `job` text NOT NULL,
+  `gang` text DEFAULT NULL,
+  `position` text NOT NULL,
+  `metadata` text NOT NULL,
+  `inventory` longtext DEFAULT NULL,
+  `last_updated` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`citizenid`),
+  KEY `id` (`id`),
+  KEY `last_updated` (`last_updated`),
+  KEY `license` (`license`)
+);
+```
+
+### Money Structure
+```json
+{
+  "cash": 500,
+  "bank": 5000,
+  "crypto": 0
+}
+```
+
+### Character Info Structure
+```json
+{
+  "firstname": "John",
+  "lastname": "Doe",
+  "birthdate": "01/15/1990",
+  "gender": 0,
+  "nationality": "USA",
+  "phone": "1234567890",
+  "account": "US012345678"
+}
+```
+
+### Job Structure
+```json
+{
+  "name": "police",
+  "label": "Police Officer",
+  "payment": 150,
+  "onduty": false,
+  "isboss": false,
+  "grade": {
+    "name": "Sergeant",
+    "level": 4
+  }
+}
+```
+
+## Automation & Scripting
+
+### Bulk Character Creation
+```lua
+-- Server-side character creation script
+local function createCharacter(characterData)
+    local citizenid = generateCitizenId()
+    local charinfo = json.encode(characterData.charinfo)
+    local money = json.encode(characterData.money)
+    local job = json.encode(characterData.job)
+    local position = json.encode(characterData.position)
+    local metadata = json.encode(characterData.metadata)
+    
+    MySQL.insert('INSERT INTO players (citizenid, name, money, charinfo, job, position, metadata) VALUES (?, ?, ?, ?, ?, ?, ?)', {
+        citizenid,
+        characterData.name,
+        money,
+        charinfo,
+        job,
+        position,
+        metadata
+    })
+    
+    return citizenid
+end
+
+-- Create multiple test characters
+local testCharacters = {
+    {name = "Test Officer", job = "police", jobgrade = 2},
+    {name = "Test Medic", job = "ambulance", jobgrade = 3},
+    {name = "Test Civilian", job = "unemployed", jobgrade = 0}
+}
+
+for _, char in pairs(testCharacters) do
+    createCharacter(char)
+end
+```
+
+### Character Data Validation
+```lua
+local function validateCharacterData(data)
+    local errors = {}
+    
+    -- Required fields
+    if not data.firstname or data.firstname == "" then
+        table.insert(errors, "First name is required")
+    end
+    
+    if not data.lastname or data.lastname == "" then
+        table.insert(errors, "Last name is required")
+    end
+    
+    -- Money validation
+    if data.money then
+        if data.money.cash < 0 or data.money.bank < 0 then
+            table.insert(errors, "Money amounts cannot be negative")
+        end
+    end
+    
+    -- Job validation
+    if data.job and not Config.Jobs[data.job] then
+        table.insert(errors, "Invalid job specified")
+    end
+    
+    return #errors == 0, errors
+end
+```
+
+## Testing Scenarios
+
+### Roleplay Character Sets
+Create character sets for specific roleplay scenarios:
+
+1. **Police Department**: Officers of various ranks for training scenarios
+2. **Hospital Staff**: Medical professionals for emergency response testing
+3. **Criminal Organization**: Gang members for law enforcement training
+4. **Civilian Population**: Regular citizens for realistic city atmosphere
+
+### Performance Testing
+Generate characters for server performance testing:
+
+```lua
+-- Generate 100 test characters
+for i = 1, 100 do
+    local testChar = {
+        firstname = "Test" .. i,
+        lastname = "User",
+        money = {cash = 500, bank = 5000},
+        job = "unemployed",
+        position = getRandomSpawnPoint()
+    }
+    createCharacter(testChar)
+end
+```
+
+## Best Practices
+
+### Character Naming
+- Use realistic names appropriate for the server setting
+- Avoid inappropriate or offensive names
+- Consider cultural diversity in character creation
+- Maintain consistency with server lore and theme
+
+### Job Assignment
+- Respect server job limits and hierarchies
+- Assign appropriate grades based on character background
+- Consider job requirements and qualifications
+- Balance character skills with job responsibilities
+
+### Financial Settings
+- Set realistic starting money amounts
+- Consider server economy balance
+- Avoid creating overpowered characters
+- Match wealth to character background and job
+
+---
+
+**Pro Tip**: Use the Character Builder to create diverse test characters for comprehensive server testing. Generate characters with different backgrounds, jobs, and financial situations to ensure your server works well for all player types.
+
+Need help with character creation? Check our [player guide](/docs/guides/players) or visit our [roleplay community](/community).

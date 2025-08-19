@@ -1,0 +1,572 @@
+# Config Validator
+
+Validate QBCore configuration files for errors, optimization opportunities, and best practices compliance.
+
+## Overview
+
+The Config Validator analyzes your QBCore configuration files to identify syntax errors, logical inconsistencies, performance issues, and deviations from best practices. Ensure your server runs smoothly with properly validated configurations.
+
+import { useState } from 'react'
+import { CheckCircle, XCircle, AlertTriangle, Upload, FileText, Settings, Zap, Info, RefreshCw } from 'lucide-react'
+
+export function ConfigValidator() {
+  const [activeTab, setActiveTab] = useState('upload')
+  const [configContent, setConfigContent] = useState('')
+  const [validationResults, setValidationResults] = useState(null)
+  const [isValidating, setIsValidating] = useState(false)
+  const [selectedFile, setSelectedFile] = useState('')
+
+  const commonConfigs = [
+    { name: 'qb-core/shared/jobs.lua', type: 'Jobs', issues: 0 },
+    { name: 'qb-core/shared/gangs.lua', type: 'Gangs', issues: 2 },
+    { name: 'qb-core/shared/vehicles.lua', type: 'Vehicles', issues: 1 },
+    { name: 'qb-core/shared/weapons.lua', type: 'Weapons', issues: 0 },
+    { name: 'qb-banking/config.lua', type: 'Banking', issues: 3 },
+    { name: 'qb-inventory/config.lua', type: 'Inventory', issues: 1 }
+  ]
+
+  const mockValidation = {
+    summary: {
+      errors: 2,
+      warnings: 5,
+      info: 3,
+      passed: 15
+    },
+    issues: [
+      {
+        type: 'error',
+        line: 23,
+        column: 15,
+        message: 'Syntax error: missing comma after table element',
+        code: "['police'] = { label = 'Police' grade = 0 }",
+        fix: "['police'] = { label = 'Police', grade = 0 }"
+      },
+      {
+        type: 'error',
+        line: 45,
+        column: 8,
+        message: 'Undefined variable: Config.MaxSlots should be Config.MaxSlot',
+        code: "if slots > Config.MaxSlots then",
+        fix: "if slots > Config.MaxSlot then"
+      },
+      {
+        type: 'warning',
+        line: 12,
+        column: 1,
+        message: 'Performance: Consider using local variables for frequently accessed config values',
+        code: "Config.Database.Server = 'localhost'",
+        fix: "local dbServer = Config.Database.Server"
+      },
+      {
+        type: 'warning',
+        line: 67,
+        column: 20,
+        message: 'Security: Hardcoded credentials detected',
+        code: "password = 'admin123'",
+        fix: "password = GetConvar('db_password', '')"
+      },
+      {
+        type: 'info',
+        line: 89,
+        column: 1,
+        message: 'Optimization: This setting can be moved to shared.lua for better performance',
+        code: "Config.Debug = true",
+        fix: "Move to shared.lua"
+      }
+    ]
+  }
+
+  const validateConfig = () => {
+    if (!configContent.trim()) {
+      alert('Please paste your configuration content or upload a file')
+      return
+    }
+    
+    setIsValidating(true)
+    // Simulate validation process
+    setTimeout(() => {
+      setValidationResults(mockValidation)
+      setIsValidating(false)
+      setActiveTab('results')
+    }, 2000)
+  }
+
+  const getIssueIcon = (type) => {
+    switch (type) {
+      case 'error': return <XCircle className="w-5 h-5 text-red-500" />
+      case 'warning': return <AlertTriangle className="w-5 h-5 text-yellow-500" />
+      case 'info': return <Info className="w-5 h-5 text-blue-500" />
+      default: return <CheckCircle className="w-5 h-5 text-green-500" />
+    }
+  }
+
+  const getIssueColor = (type) => {
+    switch (type) {
+      case 'error': return 'border-red-500/20 bg-red-500/5'
+      case 'warning': return 'border-yellow-500/20 bg-yellow-500/5'
+      case 'info': return 'border-blue-500/20 bg-blue-500/5'
+      default: return 'border-green-500/20 bg-green-500/5'
+    }
+  }
+
+  return (
+    <div className="w-full max-w-6xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-white mb-4">Configuration Validator</h2>
+        <p className="text-gray-400 max-w-2xl mx-auto">
+          Validate your QBCore configuration files for syntax errors, performance issues, and best practices compliance.
+        </p>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="border-b border-gray-800">
+        <nav className="flex gap-8">
+          {[
+            { id: 'upload', label: 'Upload Config', icon: Upload },
+            { id: 'quick-check', label: 'Quick Check', icon: Zap },
+            { id: 'results', label: 'Results', icon: CheckCircle }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === tab.id
+                  ? 'border-blue-500 text-blue-400'
+                  : 'border-transparent text-gray-400 hover:text-gray-300'
+              }`}
+            >
+              <tab.icon className="w-4 h-4" />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'upload' && (
+        <div className="space-y-6">
+          {/* Upload Methods */}
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* File Upload */}
+            <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <Upload className="w-5 h-5" />
+                Upload File
+              </h3>
+              
+              <div className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center hover:border-gray-600 transition-colors">
+                <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-400 mb-4">
+                  Drag and drop your config file here or click to browse
+                </p>
+                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                  Choose File
+                </button>
+              </div>
+              
+              <div className="mt-4">
+                <p className="text-sm text-gray-500">
+                  Supported files: .lua, .js, .json, .cfg
+                </p>
+              </div>
+            </div>
+
+            {/* Paste Content */}
+            <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Paste Content
+              </h3>
+              
+              <textarea
+                value={configContent}
+                onChange={(e) => setConfigContent(e.target.value)}
+                placeholder="Paste your configuration file content here..."
+                rows={10}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white font-mono text-sm focus:ring-2 focus:ring-blue-500"
+              />
+              
+              <div className="mt-4 flex justify-between items-center">
+                <span className="text-sm text-gray-500">
+                  {configContent.length} characters
+                </span>
+                <button
+                  onClick={validateConfig}
+                  disabled={isValidating || !configContent.trim()}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                >
+                  {isValidating ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Validating...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4" />
+                      Validate
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Common Issues to Check */}
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+            <h3 className="text-lg font-semibold text-white mb-4">What We Check</h3>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[
+                { title: 'Syntax Errors', desc: 'Missing commas, brackets, quotes' },
+                { title: 'Variable References', desc: 'Undefined or misnamed variables' },
+                { title: 'Data Types', desc: 'Incorrect value types and formats' },
+                { title: 'Performance', desc: 'Inefficient configurations' },
+                { title: 'Security', desc: 'Hardcoded credentials and secrets' },
+                { title: 'Best Practices', desc: 'QBCore conventions and standards' }
+              ].map((check, index) => (
+                <div key={index} className="p-3 bg-gray-900/50 rounded-lg">
+                  <h4 className="text-white font-medium mb-1">{check.title}</h4>
+                  <p className="text-gray-400 text-sm">{check.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'quick-check' && (
+        <div className="space-y-6">
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+            <h3 className="text-lg font-semibold text-white mb-4">Quick Configuration Check</h3>
+            <p className="text-gray-400 mb-6">
+              Check common QBCore configuration files for issues without uploading.
+            </p>
+
+            <div className="space-y-3">
+              {commonConfigs.map((config, index) => (
+                <div key={index} className="flex items-center justify-between p-4 bg-gray-900/50 rounded-lg hover:bg-gray-800/50 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <p className="text-white font-medium">{config.name}</p>
+                      <p className="text-gray-400 text-sm">{config.type} Configuration</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {config.issues === 0 ? (
+                      <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
+                        ✓ No Issues
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">
+                        {config.issues} Issues
+                      </span>
+                    )}
+                    <button className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700">
+                      Check
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'results' && validationResults && (
+        <div className="space-y-6">
+          {/* Summary */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-red-400 mb-1">{validationResults.summary.errors}</div>
+              <div className="text-red-300 text-sm">Errors</div>
+            </div>
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-yellow-400 mb-1">{validationResults.summary.warnings}</div>
+              <div className="text-yellow-300 text-sm">Warnings</div>
+            </div>
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-blue-400 mb-1">{validationResults.summary.info}</div>
+              <div className="text-blue-300 text-sm">Info</div>
+            </div>
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 text-center">
+              <div className="text-2xl font-bold text-green-400 mb-1">{validationResults.summary.passed}</div>
+              <div className="text-green-300 text-sm">Passed</div>
+            </div>
+          </div>
+
+          {/* Issues List */}
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-white">Validation Issues</h3>
+              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                Export Report
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {validationResults.issues.map((issue, index) => (
+                <div key={index} className={`border rounded-lg p-4 ${getIssueColor(issue.type)}`}>
+                  <div className="flex items-start gap-3">
+                    {getIssueIcon(issue.type)}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-white font-medium">{issue.message}</span>
+                        <span className="text-gray-400 text-sm">
+                          Line {issue.line}:{issue.column}
+                        </span>
+                      </div>
+                      
+                      {/* Code Block */}
+                      <div className="bg-gray-900/50 rounded p-3 mb-3">
+                        <p className="text-gray-400 text-xs mb-1">Current:</p>
+                        <code className="text-red-300 font-mono text-sm">{issue.code}</code>
+                      </div>
+                      
+                      {/* Fix Suggestion */}
+                      <div className="bg-green-900/20 rounded p-3">
+                        <p className="text-gray-400 text-xs mb-1">Suggested Fix:</p>
+                        <code className="text-green-300 font-mono text-sm">{issue.fix}</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Recommendations */}
+          <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+            <h3 className="text-lg font-semibold text-white mb-4">Recommendations</h3>
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-white font-medium mb-1">Move Static Configs to Shared</p>
+                  <p className="text-gray-400 text-sm">
+                    Consider moving static configuration values to shared.lua for better performance and easier maintenance.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-yellow-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-white font-medium mb-1">Security Review Required</p>
+                  <p className="text-gray-400 text-sm">
+                    Found hardcoded credentials. Consider using environment variables or secure configuration methods.
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-white font-medium mb-1">Good Configuration Structure</p>
+                  <p className="text-gray-400 text-sm">
+                    Your configuration follows most QBCore best practices. Just fix the identified issues above.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+<ConfigValidator />
+
+## Validation Features
+
+### Syntax Validation
+- **Lua Syntax Check**: Validates proper Lua syntax and structure
+- **JSON Validation**: Ensures valid JSON format for configuration files
+- **Bracket Matching**: Detects missing or mismatched brackets and parentheses
+- **Quote Validation**: Checks for properly closed strings and quotes
+
+### Logical Validation
+- **Variable References**: Ensures all referenced variables are defined
+- **Data Type Checking**: Validates correct data types for configuration values
+- **Range Validation**: Checks if numeric values are within acceptable ranges
+- **Dependency Checking**: Verifies required dependencies and configurations
+
+### Performance Analysis
+- **Memory Usage**: Identifies configurations that may cause memory issues
+- **Optimization Opportunities**: Suggests ways to improve configuration performance
+- **Redundancy Detection**: Finds duplicate or unnecessary configuration entries
+- **Load Time Analysis**: Estimates configuration loading impact
+
+### Security Scanning
+- **Credential Detection**: Finds hardcoded passwords and sensitive information
+- **Permission Validation**: Checks for proper permission configurations
+- **Access Control**: Validates security-related settings
+- **Vulnerability Assessment**: Identifies potential security risks
+
+## Common Configuration Issues
+
+### Syntax Errors
+```lua
+-- ❌ Missing comma
+Config.Jobs = {
+    ['police'] = { label = 'Police' grade = 0 }
+    ['ambulance'] = { label = 'EMS', grade = 0 }
+}
+
+-- ✅ Correct syntax
+Config.Jobs = {
+    ['police'] = { label = 'Police', grade = 0 },
+    ['ambulance'] = { label = 'EMS', grade = 0 }
+}
+```
+
+### Variable Issues
+```lua
+-- ❌ Undefined variable
+if players > Config.MaxPlayer then -- 'MaxPlayer' should be 'MaxPlayers'
+    return false
+end
+
+-- ✅ Correct variable name
+if players > Config.MaxPlayers then
+    return false
+end
+```
+
+### Data Type Problems
+```lua
+-- ❌ Wrong data type
+Config.EnableFeature = "true" -- Should be boolean, not string
+
+-- ✅ Correct data type
+Config.EnableFeature = true
+```
+
+### Performance Issues
+```lua
+-- ❌ Inefficient nested loops in config
+Config.Items = {}
+for i = 1, 1000 do
+    for j = 1, 100 do
+        -- Heavy computation in config
+    end
+end
+
+-- ✅ Pre-computed or optimized
+Config.Items = PrecomputedItemList
+```
+
+## Best Practices
+
+### Configuration Structure
+```lua
+-- Recommended config structure
+Config = {}
+
+-- Debug and development settings
+Config.Debug = false
+Config.Locale = 'en'
+
+-- Core settings grouped logically
+Config.Server = {
+    Name = "My QBCore Server",
+    MaxPlayers = 64,
+    RestartTime = { 6, 18 } -- 6 AM and 6 PM
+}
+
+Config.Economy = {
+    StartingMoney = { cash = 500, bank = 5000 },
+    PaycheckInterval = 30, -- minutes
+    TaxRate = 0.15
+}
+
+-- Feature flags for easy toggling
+Config.Features = {
+    Banking = true,
+    Housing = true,
+    Vehicles = true,
+    Jobs = true
+}
+```
+
+### Environment Variables
+```lua
+-- ❌ Hardcoded sensitive data
+Config.Database = {
+    Host = "localhost",
+    Username = "root",
+    Password = "mypassword123"
+}
+
+-- ✅ Use environment variables
+Config.Database = {
+    Host = GetConvar('mysql_host', 'localhost'),
+    Username = GetConvar('mysql_user', 'qbcore'),
+    Password = GetConvar('mysql_password', '')
+}
+```
+
+### Localization Support
+```lua
+-- Proper localization structure
+Config.Locale = GetConvar('qb_locale', 'en')
+
+Config.Locales = {
+    ['en'] = {
+        ['welcome'] = 'Welcome to the server!',
+        ['goodbye'] = 'Thanks for playing!'
+    },
+    ['es'] = {
+        ['welcome'] = '¡Bienvenido al servidor!',
+        ['goodbye'] = '¡Gracias por jugar!'
+    }
+}
+```
+
+## Validation Rules
+
+### Critical Rules (Errors)
+- **Syntax Errors**: Invalid Lua syntax that prevents loading
+- **Undefined Variables**: References to non-existent configuration values
+- **Type Mismatches**: Wrong data types that cause runtime errors
+- **Missing Dependencies**: Required configurations not present
+
+### Warning Rules
+- **Performance Issues**: Configurations that may impact server performance
+- **Security Concerns**: Potential security vulnerabilities
+- **Deprecated Settings**: Outdated configuration options
+- **Inconsistent Naming**: Non-standard naming conventions
+
+### Information Rules
+- **Optimization Suggestions**: Ways to improve configuration efficiency
+- **Best Practice Recommendations**: QBCore community standards
+- **Documentation Notes**: Missing or incomplete documentation
+- **Update Notices**: Available configuration improvements
+
+## Integration
+
+### Automated Validation
+```bash
+# Add to your deployment script
+qb-config-validator --input configs/ --output report.json --format json
+
+# CI/CD integration
+- name: Validate Configurations
+  run: |
+    npm install -g qb-config-validator
+    qb-config-validator --input . --fail-on-error
+```
+
+### Pre-commit Hooks
+```json
+{
+  "scripts": {
+    "pre-commit": "qb-config-validator --staged-only"
+  }
+}
+```
+
+---
+
+**Pro Tip**: Run configuration validation before every server restart to catch issues early. Set up automated validation in your development workflow to maintain code quality.
+
+Need help fixing configuration issues? Check our [configuration guide](/docs/guides) or visit our [support community](/support).

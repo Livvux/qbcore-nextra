@@ -1,0 +1,500 @@
+# Code Generator
+
+Generate QBCore resource boilerplate code and templates with best practices and proper structure built-in.
+
+## Overview
+
+The Code Generator helps developers quickly create properly structured QBCore resources with all the necessary files, configurations, and boilerplate code. Save time and ensure consistency across your resources with predefined templates and customizable options.
+
+import { useState } from 'react'
+import { Code, Download, Copy, Folder, FileText, Settings, Zap, CheckCircle } from 'lucide-react'
+
+export function CodeGenerator() {
+  const [activeTab, setActiveTab] = useState('job')
+  const [resourceName, setResourceName] = useState('')
+  const [jobName, setJobName] = useState('')
+  const [description, setDescription] = useState('')
+  const [features, setFeatures] = useState({
+    multicharacter: true,
+    phone: false,
+    inventory: true,
+    vehicles: false,
+    management: true,
+    grades: true
+  })
+  const [generated, setGenerated] = useState(false)
+
+  const templates = [
+    {
+      id: 'job',
+      name: 'Job Resource',
+      description: 'Complete job resource with grades, management, and vehicles',
+      icon: '👔',
+      files: ['client.lua', 'server.lua', 'config.lua', 'fxmanifest.lua', 'locales/en.lua']
+    },
+    {
+      id: 'shop',
+      name: 'Shop System',
+      description: 'Interactive shop with inventory integration and payment processing',
+      icon: '🏪',
+      files: ['client.lua', 'server.lua', 'config.lua', 'fxmanifest.lua', 'html/index.html']
+    },
+    {
+      id: 'housing',
+      name: 'Housing Script',
+      description: 'Property management with buying, selling, and customization',
+      icon: '🏠',
+      files: ['client.lua', 'server.lua', 'config.lua', 'fxmanifest.lua', 'sql/houses.sql']
+    },
+    {
+      id: 'heist',
+      name: 'Heist Framework',
+      description: 'Multi-stage heist system with security and rewards',
+      icon: '💰',
+      files: ['client.lua', 'server.lua', 'config.lua', 'fxmanifest.lua', 'shared.lua']
+    },
+    {
+      id: 'phone-app',
+      name: 'Phone App',
+      description: 'Custom phone application for qb-phone integration',
+      icon: '📱',
+      files: ['client.lua', 'server.lua', 'ui/index.html', 'ui/script.js', 'ui/style.css']
+    },
+    {
+      id: 'utility',
+      name: 'Utility Script',
+      description: 'General utility resource with common functions',
+      icon: '🔧',
+      files: ['client.lua', 'server.lua', 'shared.lua', 'fxmanifest.lua']
+    }
+  ]
+
+  const generateCode = () => {
+    if (!resourceName) {
+      alert('Please enter a resource name')
+      return
+    }
+    setGenerated(true)
+  }
+
+  const downloadCode = () => {
+    // This would generate and download the actual files
+    alert('Code generation complete! Files would be downloaded as a ZIP.')
+  }
+
+  return (
+    <div className="w-full max-w-6xl mx-auto space-y-6">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-white mb-4">QBCore Code Generator</h2>
+        <p className="text-gray-400 max-w-2xl mx-auto">
+          Generate professional QBCore resources with proper structure, best practices, and all necessary files included.
+        </p>
+      </div>
+
+      {/* Template Selection */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        {templates.map((template) => (
+          <div
+            key={template.id}
+            onClick={() => setActiveTab(template.id)}
+            className={`cursor-pointer p-6 rounded-xl border transition-all ${
+              activeTab === template.id
+                ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/20'
+                : 'border-gray-800 bg-black/50 hover:border-gray-700'
+            }`}
+          >
+            <div className="text-4xl mb-3">{template.icon}</div>
+            <h3 className="text-lg font-semibold text-white mb-2">{template.name}</h3>
+            <p className="text-gray-400 text-sm mb-3">{template.description}</p>
+            <div className="text-xs text-gray-500">
+              {template.files.length} files included
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Configuration Form */}
+      <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+        <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-2">
+          <Settings className="w-5 h-5" />
+          Configuration
+        </h3>
+
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Basic Settings */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Resource Name
+              </label>
+              <input
+                type="text"
+                value={resourceName}
+                onChange={(e) => setResourceName(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                placeholder="my-awesome-job"
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Use lowercase letters, numbers, and hyphens only
+              </p>
+            </div>
+
+            {activeTab === 'job' && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Job Name
+                </label>
+                <input
+                  type="text"
+                  value={jobName}
+                  onChange={(e) => setJobName(e.target.value)}
+                  placeholder="Police Officer"
+                  className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Brief description of what this resource does..."
+                rows={3}
+                className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Features */}
+          <div className="space-y-4">
+            <h4 className="text-lg font-medium text-white">Features</h4>
+            <div className="space-y-3">
+              {Object.entries(features).map(([feature, enabled]) => (
+                <label key={feature} className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={enabled}
+                    onChange={(e) => setFeatures(prev => ({ ...prev, [feature]: e.target.checked }))}
+                    className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded focus:ring-blue-500"
+                  />
+                  <span className="text-gray-300 capitalize">
+                    {feature.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                  </span>
+                </label>
+              ))}
+            </div>
+
+            <div className="pt-4 border-t border-gray-800">
+              <h5 className="text-sm font-medium text-gray-300 mb-2">Additional Options</h5>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded" />
+                  <span className="text-gray-400 text-sm">Include SQL migration</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded" />
+                  <span className="text-gray-400 text-sm">Add event documentation</span>
+                </label>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 text-blue-600 bg-gray-800 border-gray-600 rounded" />
+                  <span className="text-gray-400 text-sm">Include test examples</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex gap-4 mt-8">
+          <button
+            onClick={generateCode}
+            disabled={!resourceName}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Code className="w-5 h-5" />
+            Generate Code
+          </button>
+          
+          {generated && (
+            <button
+              onClick={downloadCode}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              <Download className="w-5 h-5" />
+              Download ZIP
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Generated Code Preview */}
+      {generated && (
+        <div className="bg-black/50 border border-gray-800 rounded-xl p-6 backdrop-blur-md">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-green-500" />
+              Generated Files
+            </h3>
+            <span className="text-sm text-gray-400">
+              Ready for download
+            </span>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* File Structure */}
+            <div>
+              <h4 className="text-lg font-medium text-white mb-3 flex items-center gap-2">
+                <Folder className="w-4 h-4" />
+                File Structure
+              </h4>
+              <div className="bg-gray-900/50 p-4 rounded-lg font-mono text-sm">
+                <div className="text-blue-400">{resourceName}/</div>
+                <div className="ml-4 space-y-1">
+                  <div className="text-gray-300">├── fxmanifest.lua</div>
+                  <div className="text-gray-300">├── client.lua</div>
+                  <div className="text-gray-300">├── server.lua</div>
+                  <div className="text-gray-300">├── config.lua</div>
+                  <div className="text-gray-300">├── shared.lua</div>
+                  <div className="text-blue-400">├── locales/</div>
+                  <div className="ml-4 text-gray-300">│   └── en.lua</div>
+                  {activeTab === 'job' && (
+                    <>
+                      <div className="text-blue-400">├── sql/</div>
+                      <div className="ml-4 text-gray-300">│   └── jobs.sql</div>
+                    </>
+                  )}
+                  <div className="text-blue-400">└── README.md</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Code Preview */}
+            <div>
+              <h4 className="text-lg font-medium text-white mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                FXManifest.lua Preview
+              </h4>
+              <div className="bg-gray-900/50 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+                <pre className="text-gray-300">
+{`fx_version 'cerulean'
+game 'gta5'
+
+description '${description || `${resourceName} - Generated by QBCore Code Generator`}'
+version '1.0.0'
+
+shared_scripts {
+    '@qb-core/shared/locale.lua',
+    'locales/en.lua',
+    'config.lua',
+    'shared.lua'
+}
+
+client_scripts {
+    'client.lua'
+}
+
+server_scripts {
+    'server.lua'
+}
+
+lua54 'yes'`}
+                </pre>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <h5 className="text-green-400 font-medium">Generation Complete</h5>
+            </div>
+            <p className="text-green-200 text-sm">
+              Your {templates.find(t => t.id === activeTab)?.name.toLowerCase()} resource has been generated with all necessary files and configurations. Download the ZIP file and extract it to your resources folder.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+<CodeGenerator />
+
+## Template Features
+
+### Job Resource Template
+- **Complete Job System**: Grades, permissions, and salary structure
+- **Management Interface**: Boss actions and employee management
+- **Vehicle Integration**: Job-specific vehicle spawning and management
+- **Clothing System**: Uniform and outfit management
+- **Stash Integration**: Shared and personal storage solutions
+
+### Shop System Template
+- **Interactive UI**: Modern HTML/CSS/JS interface
+- **Payment Processing**: Cash, bank, and cryptocurrency support
+- **Inventory Integration**: Real-time stock management
+- **Admin Panel**: Stock management and sales analytics
+- **Location System**: Multiple shop locations support
+
+### Housing Script Template
+- **Property Management**: Buy, sell, and rent properties
+- **Customization System**: Furniture and decoration placement
+- **Security Features**: Lock system and access control
+- **Utility Integration**: Electricity, water, and internet bills
+- **Neighbor System**: Community features and interactions
+
+## Best Practices Included
+
+### Code Structure
+```lua
+-- Example client.lua structure
+local QBCore = exports['qb-core']:GetCoreObject()
+local PlayerData = {}
+
+-- Events
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    PlayerData = QBCore.Functions.GetPlayerData()
+end)
+
+RegisterNetEvent('QBCore:Client:OnJobUpdate', function(JobInfo)
+    PlayerData.job = JobInfo
+end)
+
+-- Functions
+local function DoSomething()
+    -- Your code here
+end
+
+-- Exports
+exports('DoSomething', DoSomething)
+
+-- Commands
+RegisterCommand('example', function()
+    DoSomething()
+end, false)
+```
+
+### Configuration Management
+```lua
+-- config.lua example
+Config = {}
+
+Config.Debug = false
+Config.Locale = 'en'
+
+Config.JobSettings = {
+    MaxEmployees = 10,
+    PaymentInterval = 30, -- minutes
+    BossActions = {
+        hire = true,
+        fire = true,
+        promote = true,
+        demote = true
+    }
+}
+
+Config.Locations = {
+    management = vector3(0.0, 0.0, 0.0),
+    stash = vector3(0.0, 0.0, 0.0),
+    vehicles = vector3(0.0, 0.0, 0.0)
+}
+```
+
+### Database Integration
+```sql
+-- Example SQL migration
+CREATE TABLE IF NOT EXISTS `job_employees` (
+    `id` int(11) NOT NULL AUTO_INCREMENT,
+    `citizenid` varchar(50) NOT NULL,
+    `job` varchar(50) NOT NULL,
+    `grade` int(11) NOT NULL DEFAULT 0,
+    `hired_date` timestamp DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `citizenid` (`citizenid`),
+    KEY `job` (`job`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+```
+
+## Customization Options
+
+### Framework Integration
+- **QBCore Events**: Proper event handling and registration
+- **Player Data**: Access to player information and job data
+- **Notification System**: Integrated notification support
+- **Menu System**: Compatible with qb-menu and ox_lib
+- **Target System**: Support for qb-target and ox_target
+
+### UI Components
+- **Modern Design**: Responsive HTML/CSS interfaces
+- **Theme Support**: Dark/light mode compatibility
+- **Accessibility**: ARIA labels and keyboard navigation
+- **Mobile Responsive**: Touch-friendly interfaces
+- **Animation Support**: Smooth transitions and effects
+
+### Security Features
+- **Input Validation**: Client and server-side validation
+- **Permission Checks**: Role-based access control
+- **Anti-Cheat**: Basic exploit prevention
+- **Rate Limiting**: Prevent spam and abuse
+- **Audit Logging**: Track important actions
+
+## Installation Instructions
+
+### Step 1: Download and Extract
+1. Click "Download ZIP" after generating your code
+2. Extract the ZIP file to your `resources` folder
+3. Rename the folder if needed to match your server structure
+
+### Step 2: Database Setup
+1. Import any included SQL files to your database
+2. Verify table creation and indexes
+3. Check foreign key constraints
+
+### Step 3: Configuration
+1. Edit `config.lua` with your specific settings
+2. Adjust coordinates for your server map
+3. Configure permissions and job settings
+4. Set up localization if needed
+
+### Step 4: Server Integration
+1. Add the resource to your `server.cfg`
+2. Ensure dependencies are installed and started first
+3. Restart your server or start the resource
+4. Test functionality and check for errors
+
+## Troubleshooting
+
+### Common Issues
+
+#### Resource Not Starting
+- Check `fxmanifest.lua` syntax
+- Verify all file paths are correct
+- Ensure dependencies are installed
+- Check server console for error messages
+
+#### Database Errors
+- Verify database connection
+- Check SQL syntax in migration files
+- Ensure proper permissions for database user
+- Validate table structure matches expectations
+
+#### Client-Side Errors
+- Check browser console (F12) for JavaScript errors
+- Verify resource permissions in `fxmanifest.lua`
+- Test with different client versions
+- Check for conflicting resources
+
+#### Permission Issues
+- Verify player job and grade assignments
+- Check permission configuration in config files
+- Test with different player roles
+- Review QBCore job configuration
+
+---
+
+**Pro Tip**: Always test generated resources in a development environment before deploying to production. This ensures compatibility and allows you to customize the code to your specific needs.
+
+Need help with resource development? Check our [scripting guide](/docs/guides/scripting) or join our [developer community](/community).

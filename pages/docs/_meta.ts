@@ -5,6 +5,7 @@ const meta = {
   resources: '📦 Resources',
   api: '🔌 API Reference',
   development: '💻 Development',
+  guides: '📚 Guides & Tutorials',
   migration: '🔄 Migration Guides',
   advanced: '📚 Advanced Topics',
   database: '🗄️ Database',
