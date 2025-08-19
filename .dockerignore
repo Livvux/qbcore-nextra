@@ -60,7 +60,10 @@ LICENSE
 # Test files
 **/*.test.*
 **/*.spec.*
-__tests__
+**/__tests__/**
+test-utils.tsx
+vitest.config.ts
+vitest.setup.ts
 
 # Backup content
 content-backup/

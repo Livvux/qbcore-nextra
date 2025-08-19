@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "type": "module",
+  "packageManager": "pnpm@9.12.0",
   "scripts": {
     "dev": "next dev",
     "build": "pnpm run typecheck && next build",
+    "build:production": "next build",
     "build:static": "pnpm run typecheck && NEXT_OUTPUT=export next build",
     "export": "pnpm run build:static",
     "build:seo": "pnpm run build && pnpm run seo:validate",

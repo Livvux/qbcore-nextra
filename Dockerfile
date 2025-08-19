@@ -9,7 +9,7 @@ WORKDIR /app
 
 # Install dependencies based on the preferred package manager
 COPY package.json pnpm-lock.yaml* ./
-RUN corepack enable pnpm && pnpm i --frozen-lockfile
+RUN corepack enable pnpm && pnpm i --frozen-lockfile --prod=false
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -25,8 +25,8 @@ ENV NEXT_TELEMETRY_DISABLED 1
 # Enable pnpm
 RUN corepack enable pnpm
 
-# Build the application
-RUN pnpm run build
+# Build the application (skip typecheck in Docker for faster builds)
+RUN pnpm run build:production
 
 # Production image, copy all the files and run next
 FROM base AS runner
