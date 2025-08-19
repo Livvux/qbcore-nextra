@@ -1,0 +1,284 @@
+# QBCore Architecture
+
+Understanding QBCore's architecture is essential for any developer working with the framework. This tutorial will give you a comprehensive overview of how QBCore is structured and how its components work together.
+
+import { Callout } from 'nextra/components'
+
+## Learning Objectives
+
+By the end of this tutorial, you will understand:
+- The overall structure of QBCore framework
+- Key components and their responsibilities
+- How different parts of the system interact
+- The resource system and dependencies
+
+**⏱️ Estimated Time**: 15 minutes  
+**🎯 Skill Level**: Beginner  
+**📋 Prerequisites**: Basic programming knowledge
+
+## QBCore Framework Overview
+
+QBCore is a comprehensive framework built for FiveM that provides:
+- **Player Management**: Character creation, data persistence, and session handling
+- **Job System**: Employment, salary, and role-based functionality
+- **Economy**: Money management, banking, and transactions
+- **Inventory**: Item management and interactions
+- **Vehicle System**: Ownership, keys, and modifications
+- **Housing**: Property ownership and management
+
+### Core Philosophy
+
+QBCore follows these key principles:
+- **Modular Design**: Each feature is separate and can be modified independently
+- **Event-Driven**: Communication happens through events for loose coupling
+- **Database-Centric**: Player data persists in MySQL database
+- **Extensible**: Easy to add new features and modifications
+
+## Framework Structure
+
+```
+qbcore-framework/
+├── qb-core/                 # Core framework
+├── qb-multicharacter/       # Character selection
+├── qb-spawn/               # Player spawning
+├── qb-inventory/           # Inventory management
+├── qb-houses/              # Housing system
+├── qb-jobs/                # Job resources
+│   ├── qb-ambulancejob/
+│   ├── qb-policejob/
+│   └── qb-mechanicjob/
+└── qb-vehicles/            # Vehicle-related resources
+```
+
+## Core Components
+
+### 1. QB-Core (qb-core)
+
+The heart of the framework that provides:
+
+```lua
+-- Core player object
+QB.Player = {
+    PlayerData = {},      -- All player information
+    Functions = {},       -- Player-specific functions
+    Events = {}          -- Player event handlers
+}
+
+-- Core functions
+QB.Functions = {
+    GetPlayer = function(source) end,
+    GetPlayers = function() end,
+    CreateCallback = function() end,
+    TriggerCallback = function() end
+}
+```
+
+<Callout type="info">
+  **Key Point**: The QB-Core resource must always be running first as all other resources depend on it.
+</Callout>
+
+### 2. Player Data Structure
+
+Every player in QBCore has a structured data object:
+
+```lua
+PlayerData = {
+    source = 1,              -- Server ID
+    citizenid = "ABC12345",  -- Unique character ID
+    cid = 1,                 -- Character database ID
+    money = {                -- Money accounts
+        cash = 500,
+        bank = 2000,
+        crypto = 0
+    },
+    job = {                  -- Current job
+        name = "unemployed",
+        label = "Unemployed",
+        payment = 10,
+        onduty = false,
+        grade = {}
+    },
+    gang = {},               -- Gang information
+    position = {},           -- Last known position
+    metadata = {},           -- Custom data storage
+    items = {},             -- Inventory items
+    charinfo = {}           -- Character details
+}
+```
+
+### 3. Event System
+
+QBCore uses FiveM's event system for communication:
+
+```lua
+-- Server to Client
+TriggerClientEvent('eventName', source, data)
+
+-- Client to Server  
+TriggerServerEvent('eventName', data)
+
+-- Resource to Resource
+TriggerEvent('eventName', data)
+```
+
+### 4. Database Integration
+
+QBCore integrates with MySQL through oxmysql:
+
+```lua
+-- Database queries in QBCore
+local result = MySQL.Sync.fetchAll('SELECT * FROM players WHERE citizenid = ?', {citizenid})
+MySQL.Async.execute('UPDATE players SET money = ? WHERE citizenid = ?', {money, citizenid})
+```
+
+## Resource Dependencies
+
+Understanding how QBCore resources depend on each other:
+
+### Dependency Chain
+```
+qb-core (Always first)
+├── qb-multicharacter
+├── qb-spawn  
+├── qb-inventory
+└── All other resources
+```
+
+### Resource Manifest Structure
+
+Every QBCore resource has a `fxmanifest.lua`:
+
+```lua
+fx_version 'cerulean'
+game 'gta5'
+
+description 'QB-ResourceName'
+version '1.0.0'
+
+shared_scripts {
+    '@qb-core/shared/locale.lua',
+    'locales/*.lua',
+    'config.lua'
+}
+
+client_scripts {
+    'client/main.lua'
+}
+
+server_scripts {
+    '@oxmysql/lib/MySQL.lua',
+    'server/main.lua'
+}
+
+dependency 'qb-core'  -- Always depends on qb-core
+```
+
+## File Organization
+
+### Standard QBCore Resource Structure
+```
+resource-name/
+├── fxmanifest.lua      # Resource manifest
+├── config.lua          # Configuration settings
+├── client/             # Client-side code
+│   └── main.lua
+├── server/             # Server-side code
+│   └── main.lua
+├── shared/             # Shared between client/server
+│   └── main.lua
+└── locales/            # Translation files
+    ├── en.lua
+    └── es.lua
+```
+
+## Data Flow
+
+Understanding how data flows through QBCore:
+
+1. **Player Connection**: MultiCharacter → Character Selection → Spawn
+2. **Data Loading**: Database → PlayerData Object → Client Sync
+3. **Event Handling**: User Action → Client Event → Server Processing → Database Update
+4. **Resource Communication**: Resource A → QB-Core → Resource B
+
+<Callout type="warning">
+  **Important**: Always validate data on the server side. Never trust client-side data completely.
+</Callout>
+
+## Common Patterns
+
+### 1. Getting Player Data
+```lua
+-- Server-side
+local Player = QB.Functions.GetPlayer(source)
+if Player then
+    local money = Player.PlayerData.money.cash
+    local job = Player.PlayerData.job.name
+end
+```
+
+### 2. Using Callbacks
+```lua
+-- Server-side callback creation
+QB.Functions.CreateCallback('resource:getData', function(source, cb)
+    local data = GetSomeData()
+    cb(data)
+end)
+
+-- Client-side callback usage  
+QB.Functions.TriggerCallback('resource:getData', function(data)
+    -- Use the data
+end)
+```
+
+### 3. Event Handling
+```lua
+-- Register event handler
+RegisterNetEvent('resource:eventName', function(data)
+    -- Handle the event
+end)
+
+-- Trigger the event
+TriggerEvent('resource:eventName', data)
+```
+
+## Best Practices
+
+### Code Organization
+- Keep client and server code separate
+- Use shared files for common data/functions
+- Follow QBCore naming conventions
+- Comment your code thoroughly
+
+### Performance
+- Cache player data when possible
+- Use callbacks for data requests
+- Avoid excessive database queries
+- Clean up unused variables and events
+
+### Security
+- Always validate server-side
+- Use source validation for player actions
+- Sanitize user inputs
+- Check player permissions before actions
+
+## What's Next?
+
+Now that you understand QBCore's architecture:
+
+1. **[Setting Up Your First Server](/tutorials/beginner/first-server)** - Get hands-on experience
+2. **[Basic Commands & Admin Setup](/tutorials/beginner/admin-setup)** - Learn essential tools
+3. **Study Existing Resources** - Look at qb-core and other default resources
+
+## Summary
+
+QBCore is a modular, event-driven framework that provides:
+- Structured player data management
+- Event-based communication system
+- Database integration for persistence
+- Extensible resource system
+
+Understanding this architecture is crucial for effective QBCore development!
+
+---
+
+**Next Tutorial**: [Setting Up Your First Server](/tutorials/beginner/first-server)

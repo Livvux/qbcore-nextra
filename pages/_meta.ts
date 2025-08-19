@@ -7,6 +7,10 @@ const meta = {
     title: 'Documentation',
     type: 'page',
   },
+  tutorials: {
+    title: 'Tutorials',
+    type: 'page',
+  },
   resources: {
     title: 'Resources',
     type: 'page',
