@@ -1,3 +1,4 @@
+import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import { describe, it, expect, vi } from 'vitest'
 import Navigation from '../Navigation'
@@ -5,8 +6,8 @@ import Navigation from '../Navigation'
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    header: ({ children, ...props }: any) => <header {...props}>{children}</header>,
-    nav: ({ children, ...props }: any) => <nav {...props}>{children}</nav>,
+    header: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => <header {...props}>{children}</header>,
+    nav: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => <nav {...props}>{children}</nav>,
   },
   useScroll: () => ({ scrollY: { get: () => 0 } }),
   useTransform: () => 0,
@@ -14,17 +15,17 @@ vi.mock('framer-motion', () => ({
 
 // Mock Next.js Link
 vi.mock('next/link', () => ({
-  default: ({ children, href, ...props }: any) => <a href={href} {...props}>{children}</a>,
+  default: ({ children, href, ...props }: { children: React.ReactNode; href: string; [key: string]: unknown }) => <a href={href} {...props}>{children}</a>,
 }))
 
 // Mock child components
 vi.mock('../MobileMenu', () => ({
-  default: ({ isOpen, onClose }: any) => 
+  default: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => 
     isOpen ? <div data-testid="mobile-menu">Mobile Menu <button onClick={onClose}>Close</button></div> : null
 }))
 
 vi.mock('../MobileMenuButton', () => ({
-  default: ({ onClick }: any) => <button data-testid="mobile-menu-button" onClick={onClick}>Menu</button>
+  default: ({ onClick }: { onClick: () => void }) => <button data-testid="mobile-menu-button" onClick={onClick}>Menu</button>
 }))
 
 describe('Navigation', () => {

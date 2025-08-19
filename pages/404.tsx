@@ -1,6 +1,7 @@
 import React from 'react'
 import Head from 'next/head'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/router'
 
 export default function Custom404() {
@@ -86,26 +87,19 @@ export default function Custom404() {
 
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center px-4">
         <div className="max-w-2xl text-center">
-          {/* 404 Icon */}
+          {/* QBCore Logo */}
           <div className="mb-8">
-            <div className="inline-flex items-center justify-center w-32 h-32 bg-blue-600/10 rounded-full mb-6">
-              <svg
-                className="w-16 h-16 text-blue-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-3-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
+            <div className="inline-flex items-center justify-center w-32 h-32 bg-red-600/10 rounded-full mb-6">
+              <Image
+                src="/qblogo.webp"
+                alt="QBCore Logo"
+                width={64}
+                height={64}
+                className="w-16 h-16"
+              />
             </div>
             
-            <h1 className="text-8xl font-bold text-blue-500 mb-4">404</h1>
+            <h1 className="text-8xl font-bold text-red-500 mb-4">404</h1>
             <h2 className="text-2xl font-semibold mb-4">Page Not Found</h2>
             <p className="text-lg text-gray-400 mb-8">
               The page you&apos;re looking for doesn&apos;t exist or has been moved.
@@ -116,7 +110,7 @@ export default function Custom404() {
           <div className="mb-8">
             <Link
               href="/"
-              className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors mr-4"
+              className="inline-flex items-center px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors mr-4"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -143,9 +137,9 @@ export default function Custom404() {
                 <Link
                   key={index}
                   href={suggestion.href}
-                  className="block p-4 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700 hover:border-blue-500"
+                  className="block p-4 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700 hover:border-red-500"
                 >
-                  <h4 className="font-medium text-blue-400 mb-1">{suggestion.title}</h4>
+                  <h4 className="font-medium text-red-400 mb-1">{suggestion.title}</h4>
                   <p className="text-sm text-gray-400">{suggestion.description}</p>
                 </Link>
               ))}
@@ -158,13 +152,13 @@ export default function Custom404() {
             <div className="flex flex-wrap gap-4 justify-center">
               <Link
                 href="/support"
-                className="text-blue-400 hover:text-blue-300 transition-colors"
+                className="text-red-400 hover:text-red-300 transition-colors"
               >
                 Support Center
               </Link>
               <Link
                 href="/docs"
-                className="text-blue-400 hover:text-blue-300 transition-colors"
+                className="text-red-400 hover:text-red-300 transition-colors"
               >
                 Documentation
               </Link>
@@ -172,13 +166,13 @@ export default function Custom404() {
                 href="https://github.com/qbcore-framework"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-400 hover:text-blue-300 transition-colors"
+                className="text-red-400 hover:text-red-300 transition-colors"
               >
                 GitHub
               </a>
               <Link
                 href="/community"
-                className="text-blue-400 hover:text-blue-300 transition-colors"
+                className="text-red-400 hover:text-red-300 transition-colors"
               >
                 Community
               </Link>

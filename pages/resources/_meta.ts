@@ -1,5 +1,3 @@
-const meta = {
-  inventory: '🎒 Inventory',
-}
+const meta = {}
 
 export default meta

@@ -1,5 +1,3 @@
-const meta = {
-  'server-functions': 'Server Functions',
-}
+const meta = {}
 
 export default meta

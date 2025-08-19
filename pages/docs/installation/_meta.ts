@@ -1,7 +1,5 @@
 const meta = {
-  index: 'Installation Overview',
-  windows: 'Windows Installation',
-  linux: 'Linux Installation',
+  index: 'Overview',
 }
 
 export default meta

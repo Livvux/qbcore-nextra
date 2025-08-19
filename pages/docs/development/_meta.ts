@@ -1,5 +1,3 @@
-const meta = {
-  'vscode-setup': 'VS Code Setup',
-}
+const meta = {}
 
 export default meta

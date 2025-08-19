@@ -1,7 +1,5 @@
-const migrationMeta = {
-  index: '📋 Migration Overview',
-  'v1-to-v2': '🔄 QBCore v1 to v2',
-  tools: '🛠️ Migration Tools',
+const meta = {
+  index: 'Overview',
 }
 
-export default migrationMeta
+export default meta

@@ -1,5 +1,5 @@
-const toolsMeta = {
-  index: 'Migration Tools Overview',
+const meta = {
+  index: 'Overview',
 }
 
-export default toolsMeta
+export default meta
