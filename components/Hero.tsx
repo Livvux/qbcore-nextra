@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Code, Download, Users, Zap, Copy } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
+import { DotPattern } from './magicui/dot-pattern'
 
 const Hero = () => {
   const [copied, setCopied] = useState(false)
@@ -58,8 +59,11 @@ const Hero = () => {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black pt-16">
       {/* Background Elements */}
-      <div className="grid-pattern absolute inset-0 opacity-40"></div>
-      <div className="bg-mesh absolute inset-0 opacity-60"></div>
+      <DotPattern
+        glow={true}
+        className="absolute inset-0 opacity-50 [mask-image:radial-gradient(400px_circle_at_center,white,transparent)]"
+      />
+      <div className="bg-mesh absolute inset-0 opacity-40"></div>
       <div className="absolute inset-0">
         <div
           className="animate-float absolute left-1/4 top-1/4 h-96 w-96 rounded-full opacity-30 mix-blend-multiply blur-3xl filter"

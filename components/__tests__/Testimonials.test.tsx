@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, act } from '../../test-utils'
+import { render, screen } from '../../test-utils'
 import Testimonials from '../Testimonials'
 
 // Mock the intersection observer for motion components
@@ -37,37 +37,40 @@ describe('Testimonials Component', () => {
   it('renders testimonial cards', () => {
     render(<Testimonials />)
 
-    // Should show first 3 testimonials initially
-    expect(screen.getByText('Alex Rivera')).toBeInTheDocument()
-    expect(screen.getByText('Sarah Chen')).toBeInTheDocument()
-    expect(screen.getByText('Marcus Johnson')).toBeInTheDocument()
+    // With marquee, all testimonials should be visible (may appear multiple times)
+    expect(screen.getAllByText('Alex Rivera')).toHaveLength(4)
+    expect(screen.getAllByText('Sarah Chen')).toHaveLength(4)
+    expect(screen.getAllByText('Marcus Johnson')).toHaveLength(4)
+    expect(screen.getAllByText('Emma Thompson')).toHaveLength(4)
+    expect(screen.getAllByText('David Park')).toHaveLength(4)
+    expect(screen.getAllByText('Lisa Rodriguez')).toHaveLength(4)
   })
 
   it('displays testimonial roles and servers', () => {
     render(<Testimonials />)
 
-    expect(screen.getByText('Server Owner')).toBeInTheDocument()
-    expect(screen.getByText('Lead Developer')).toBeInTheDocument()
-    expect(screen.getByText('Community Manager')).toBeInTheDocument()
-    expect(screen.getByText('Los Santos RP')).toBeInTheDocument()
-    expect(screen.getByText('Liberty City Life')).toBeInTheDocument()
-    expect(screen.getByText('Vice City Stories')).toBeInTheDocument()
+    expect(screen.getAllByText('Server Owner').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Lead Developer').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Community Manager').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Los Santos RP').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Liberty City Life').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Vice City Stories').length).toBeGreaterThan(0)
   })
 
   it('shows testimonial text content', () => {
     render(<Testimonials />)
 
-    expect(screen.getByText(/QBCore transformed our server completely/)).toBeInTheDocument()
-    expect(screen.getByText(/As a developer, I love how clean/)).toBeInTheDocument()
-    expect(screen.getByText(/The stability and performance improvements/)).toBeInTheDocument()
+    expect(screen.getAllByText(/QBCore transformed our server completely/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/As a developer, I love how clean/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/The stability and performance improvements/).length).toBeGreaterThan(0)
   })
 
   it('displays highlight badges', () => {
     render(<Testimonials />)
 
-    expect(screen.getByText(/Player count doubled/)).toBeInTheDocument()
-    expect(screen.getByText(/Clean and well-documented/)).toBeInTheDocument()
-    expect(screen.getByText(/Zero server crashes/)).toBeInTheDocument()
+    expect(screen.getAllByText(/Player count doubled/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Clean and well-documented/).length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Zero server crashes/).length).toBeGreaterThan(0)
   })
 
   it('renders star ratings', () => {
@@ -75,43 +78,16 @@ describe('Testimonials Component', () => {
 
     // Check for SVG star elements instead of img role
     const svgElements = document.querySelectorAll('svg.lucide-star')
-    // Should have stars for the visible testimonials
-    expect(svgElements.length).toBeGreaterThanOrEqual(15) // 3 testimonials × 5 stars each
+    // Should have many stars (multiple testimonials × 5 stars × repeats × 2 rows)
+    expect(svgElements.length).toBeGreaterThan(50)
   })
 
-  it('shows slide indicators', () => {
+  it('displays marquee animation', () => {
     render(<Testimonials />)
 
-    // Should have slide indicator buttons
-    const indicators = screen.getAllByRole('button')
-    expect(indicators.length).toBeGreaterThan(0)
-  })
-
-  it('handles slide navigation', () => {
-    render(<Testimonials />)
-
-    // Get all slide indicator buttons
-    const indicators = screen.getAllByRole('button')
-
-    if (indicators.length > 1) {
-      // Click second indicator
-      fireEvent.click(indicators[1])
-
-      // Should change testimonials (this is a basic test since we can't easily verify exact content change)
-      expect(indicators[1]).toBeInTheDocument()
-    }
-  })
-
-  it('auto-advances slides', () => {
-    render(<Testimonials />)
-
-    // Fast-forward timer by 5 seconds
-    act(() => {
-      vi.advanceTimersByTime(5000)
-    })
-
-    // Component should still be rendered (basic test since auto-advance logic is internal)
-    expect(screen.getByText(/What the Community/)).toBeInTheDocument()
+    // Check that marquee containers exist
+    const marqueeElements = document.querySelectorAll('[class*="animate-marquee"]')
+    expect(marqueeElements.length).toBeGreaterThan(0)
   })
 
   it('renders CTA section', () => {
@@ -141,54 +117,42 @@ describe('Testimonials Component', () => {
     expect(testimonialHeadings).toHaveLength(1) // CTA section
 
     const nameHeadings = screen.getAllByRole('heading', { level: 4 })
-    expect(nameHeadings).toHaveLength(3) // 3 visible testimonial names
+    expect(nameHeadings.length).toBeGreaterThan(10) // Many testimonial name headings
   })
 
   it('displays testimonial avatars', () => {
     render(<Testimonials />)
 
-    // Check for emoji avatars in the text content
-    expect(screen.getByText('👨‍💼')).toBeInTheDocument()
-    expect(screen.getByText('👩‍💻')).toBeInTheDocument()
-    expect(screen.getByText('👨‍🎮')).toBeInTheDocument()
+    // Check for emoji avatars in the text content (should appear multiple times in marquee)
+    const businessEmojis = screen.getAllByText('👨‍💼')
+    const devEmojis = screen.getAllByText('👩‍💻')
+    const gameEmojis = screen.getAllByText('👨‍🎮')
+    
+    expect(businessEmojis.length).toBeGreaterThan(0)
+    expect(devEmojis.length).toBeGreaterThan(0)
+    expect(gameEmojis.length).toBeGreaterThan(0)
   })
 
   it('displays testimonial text content correctly', () => {
     render(<Testimonials />)
 
     // Verify that testimonial text is properly displayed
-    const testimonialText = screen.getByText(/QBCore transformed our server completely/i)
-    expect(testimonialText).toBeInTheDocument()
+    const testimonialTexts = screen.getAllByText(/QBCore transformed our server completely/i)
+    expect(testimonialTexts.length).toBeGreaterThan(0)
 
     // Verify that testimonial includes the quoted formatting
-    expect(testimonialText.textContent).toBeTruthy()
+    expect(testimonialTexts[0].textContent).toBeTruthy()
   })
 
-  it('renders with proper grid layout', () => {
+  it('renders with marquee layout', () => {
     render(<Testimonials />)
 
-    // Should show exactly 3 testimonials at a time (based on component logic)
-    const testimonialNames = [
-      screen.queryByText('Alex Rivera'),
-      screen.queryByText('Sarah Chen'),
-      screen.queryByText('Marcus Johnson'),
-    ]
-
-    testimonialNames.forEach((name) => {
-      expect(name).toBeInTheDocument()
-    })
-  })
-
-  it('shows correct number of testimonials per slide', () => {
-    render(<Testimonials />)
-
-    // First slide should show first 3 testimonials
-    expect(screen.getByText('Alex Rivera')).toBeInTheDocument()
-    expect(screen.getByText('Sarah Chen')).toBeInTheDocument()
-    expect(screen.getByText('Marcus Johnson')).toBeInTheDocument()
-
-    // Later testimonials should not be visible on first slide
-    expect(screen.queryByText('Emma Thompson')).not.toBeInTheDocument()
-    expect(screen.queryByText('David Park')).not.toBeInTheDocument()
+    // All testimonials should be visible in marquee (appear multiple times)
+    expect(screen.getAllByText('Alex Rivera')).toHaveLength(4)
+    expect(screen.getAllByText('Sarah Chen')).toHaveLength(4)
+    expect(screen.getAllByText('Marcus Johnson')).toHaveLength(4)
+    expect(screen.getAllByText('Emma Thompson')).toHaveLength(4)
+    expect(screen.getAllByText('David Park')).toHaveLength(4)
+    expect(screen.getAllByText('Lisa Rodriguez')).toHaveLength(4)
   })
 })

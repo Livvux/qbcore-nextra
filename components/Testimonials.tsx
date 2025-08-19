@@ -2,10 +2,9 @@
 
 import { motion } from 'framer-motion'
 import { Star, Quote } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Marquee } from './magicui/marquee'
 
 const Testimonials = () => {
-  const [currentSlide, setCurrentSlide] = useState(0)
 
   const testimonials = [
     {
@@ -64,21 +63,59 @@ const Testimonials = () => {
     },
   ]
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % Math.ceil(testimonials.length / 3))
-    }, 5000)
+  // Split testimonials into two rows for different scroll directions
+  const firstRow = testimonials.slice(0, testimonials.length / 2)
+  const secondRow = testimonials.slice(testimonials.length / 2)
 
-    return () => clearInterval(timer)
-  }, [testimonials.length])
+  const ReviewCard = ({ testimonial }: { testimonial: typeof testimonials[0] }) => (
+    <div className="group mx-4">
+      <div className="relative overflow-hidden rounded-2xl border border-gray-700 bg-black p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl w-80">
+        {/* Quote Icon */}
+        <div className="absolute right-4 top-4 opacity-10">
+          <Quote className="h-12 w-12 text-blue-500" />
+        </div>
 
-  const getVisibleTestimonials = () => {
-    const startIndex = currentSlide * 3
-    return testimonials.slice(startIndex, startIndex + 3)
-  }
+        {/* Rating */}
+        <div className="mb-4 flex items-center gap-1">
+          {[...Array(testimonial.rating)].map((_, i) => (
+            <Star key={i} className="h-4 w-4 fill-current text-yellow-500" />
+          ))}
+        </div>
+
+        {/* Testimonial Text */}
+        <p className="relative z-10 mb-6 leading-relaxed text-gray-300">
+          &ldquo;{testimonial.text}&rdquo;
+        </p>
+
+        {/* Highlight Badge */}
+        <div className="mb-4 inline-block rounded-full bg-blue-900/30 px-3 py-1 text-sm font-medium text-blue-400">
+          ✨ {testimonial.highlight}
+        </div>
+
+        {/* Author Info */}
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-2xl">
+            {testimonial.avatar}
+          </div>
+          <div>
+            <h4 className="font-semibold text-white">
+              {testimonial.name}
+            </h4>
+            <p className="text-sm text-gray-400">{testimonial.role}</p>
+            <p className="text-xs font-medium text-blue-400">
+              {testimonial.server}
+            </p>
+          </div>
+        </div>
+
+        {/* Hover Effect Border */}
+        <div className="absolute inset-0 rounded-2xl border-2 border-transparent transition-colors duration-300 group-hover:border-blue-500/50"></div>
+      </div>
+    </div>
+  )
 
   return (
-    <section className="bg-gradient-to-br from-white to-blue-50 py-24 dark:from-gray-900 dark:to-slate-900">
+    <section className="bg-black py-24">
       <div className="container mx-auto px-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -87,94 +124,30 @@ const Testimonials = () => {
           transition={{ duration: 0.6 }}
           className="mb-16 text-center"
         >
-          <h2 className="mb-6 text-4xl font-bold text-gray-900 dark:text-white md:text-5xl">
+          <h2 className="mb-6 text-4xl font-bold text-white md:text-5xl">
             What the Community
             <span className="text-gradient block">Says About QBCore</span>
           </h2>
-          <p className="mx-auto max-w-3xl text-xl text-gray-600 dark:text-gray-300">
+          <p className="mx-auto max-w-3xl text-xl text-gray-300">
             Don&apos;t just take our word for it. Here&apos;s what server owners, developers, and
             community leaders are saying about their QBCore experience.
           </p>
         </motion.div>
 
-        {/* Testimonials Grid */}
-        <div className="mx-auto max-w-7xl">
-          <motion.div
-            key={currentSlide}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.5 }}
-            className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3"
-          >
-            {getVisibleTestimonials().map((testimonial, index) => (
-              <motion.div
-                key={`${currentSlide}-${index}`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: index * 0.1 }}
-                className="group"
-              >
-                <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-white p-6 shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-2xl dark:border-gray-700 dark:bg-gray-800">
-                  {/* Quote Icon */}
-                  <div className="absolute right-4 top-4 opacity-10">
-                    <Quote className="h-12 w-12 text-blue-500" />
-                  </div>
-
-                  {/* Rating */}
-                  <div className="mb-4 flex items-center gap-1">
-                    {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-4 w-4 fill-current text-yellow-500" />
-                    ))}
-                  </div>
-
-                  {/* Testimonial Text */}
-                  <p className="relative z-10 mb-6 leading-relaxed text-gray-700 dark:text-gray-300">
-                    &ldquo;{testimonial.text}&rdquo;
-                  </p>
-
-                  {/* Highlight Badge */}
-                  <div className="mb-4 inline-block rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-600 dark:bg-blue-900/30 dark:text-blue-400">
-                    ✨ {testimonial.highlight}
-                  </div>
-
-                  {/* Author Info */}
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-2xl">
-                      {testimonial.avatar}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white">
-                        {testimonial.name}
-                      </h4>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{testimonial.role}</p>
-                      <p className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                        {testimonial.server}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Hover Effect Border */}
-                  <div className="absolute inset-0 rounded-2xl border-2 border-transparent transition-colors duration-300 group-hover:border-blue-500/20"></div>
-                </div>
-              </motion.div>
+        {/* Testimonials Marquee */}
+        <div className="relative">
+          <Marquee pauseOnHover className="[--duration:20s]">
+            {firstRow.map((testimonial) => (
+              <ReviewCard key={testimonial.name} testimonial={testimonial} />
             ))}
-          </motion.div>
-        </div>
-
-        {/* Slide Indicators */}
-        <div className="mt-8 flex justify-center gap-2">
-          {Array.from({ length: Math.ceil(testimonials.length / 3) }).map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`h-3 w-3 rounded-full transition-colors duration-300 ${
-                index === currentSlide
-                  ? 'bg-blue-500'
-                  : 'bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500'
-              }`}
-            />
-          ))}
+          </Marquee>
+          <Marquee reverse pauseOnHover className="[--duration:20s]">
+            {secondRow.map((testimonial) => (
+              <ReviewCard key={testimonial.name} testimonial={testimonial} />
+            ))}
+          </Marquee>
+          <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-black"></div>
+          <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-black"></div>
         </div>
 
         {/* Bottom CTA */}
