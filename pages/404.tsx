@@ -176,14 +176,12 @@ export default function Custom404() {
               >
                 GitHub
               </a>
-              <a
-                href="https://discord.gg/qbcore"
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/community"
                 className="text-blue-400 hover:text-blue-300 transition-colors"
               >
-                Discord Community
-              </a>
+                Community
+              </Link>
             </div>
           </div>
         </div>

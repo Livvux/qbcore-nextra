@@ -103,15 +103,15 @@ const TerminalShowcase = () => {
                   </button>
                 </div>
               </div>
-              <div className="terminal-content min-h-[400px]">
+              <div className="terminal-content h-[680px] overflow-hidden">
                 <div className="space-y-1">
                   {codeLines.map((line, index) => (
-                    <div key={index} className="flex items-start gap-4">
-                      <span className="w-6 select-none text-right text-xs text-gray-600">
+                    <div key={index} className="flex items-start gap-4 min-h-[18px] mb-1">
+                      <span className="w-6 select-none text-right text-xs text-gray-600 leading-[18px] pt-0.5">
                         {line ? index + 1 : ''}
                       </span>
                       <div
-                        className={`flex-1 transition-all duration-300 ${
+                        className={`flex-1 transition-all duration-300 leading-[18px] break-words ${
                           index <= currentLine
                             ? 'translate-x-0 transform opacity-100'
                             : 'translate-x-2 transform opacity-30'
@@ -133,7 +133,7 @@ const TerminalShowcase = () => {
                           <span className="text-gray-300">{line}</span>
                         )}
                         {index === currentLine && isPlaying && (
-                          <span className="bg-qbcore ml-1 inline-block h-5 w-2 animate-pulse"></span>
+                          <span className="bg-qbcore ml-1 inline-block h-4 w-2 animate-pulse align-text-top"></span>
                         )}
                       </div>
                     </div>

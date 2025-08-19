@@ -161,7 +161,6 @@ export function getOrganizationSchema() {
     image: `${BASE_URL}/og-image.svg`,
     sameAs: [
       'https://github.com/qbcore-framework',
-      'https://discord.gg/qbcore',
       'https://twitter.com/qbcoreframework'
     ],
     contactPoint: {

@@ -1,0 +1,52 @@
+---
+title: "QBCore Scripts & Resources"
+description: "Browse our collection of free QBCore scripts, resources, and add-ons for your FiveM roleplay server."
+---
+
+import { redirect } from 'next/navigation'
+
+{/* Redirect to resources page since that's where scripts are located */}
+<script dangerouslySetInnerHTML={{
+  __html: `
+    if (typeof window !== 'undefined') {
+      window.location.replace('/resources');
+    }
+  `
+}} />
+
+# QBCore Scripts & Resources
+
+You're being redirected to our [Resources page](/resources) where you'll find all available QBCore scripts and add-ons.
+
+If you're not redirected automatically, [click here to visit the Resources page](/resources).
+
+## What You'll Find:
+
+- **Free Scripts** - Essential QBCore resources
+- **Job Scripts** - Police, EMS, Mechanic, and more
+- **Economy Scripts** - Banking, shops, and trading systems
+- **Vehicle Scripts** - Garages, fuel, and vehicle management
+- **Housing Scripts** - Apartments and property systems
+
+## External Script Collections:
+
+- **[FivemX.com](https://fivemx.com/qbcore-scripts)** - Premium QBCore scripts and resources
+
+---
+
+<div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-6 rounded-lg my-8 text-center">
+  <h3 className="text-xl font-bold mb-2">🚀 Ready-to-Go QBCore Server Packs</h3>
+  <p className="mb-4 opacity-90">Get a complete QBCore server setup with scripts, configs, and resources pre-configured</p>
+  <a 
+    href="https://fivemx.com/qbcore-server-packs/" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    className="inline-block bg-white text-blue-600 font-semibold px-6 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+  >
+    View Server Packs →
+  </a>
+</div>
+
+---
+
+[Browse All Resources →](/resources)
