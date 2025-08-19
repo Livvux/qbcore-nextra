@@ -26,6 +26,7 @@
     "test:watch": "vitest --watch",
     "precommit": "pnpm run lint && pnpm run typecheck && pnpm run test --run",
     "clean": "rm -rf .next node_modules coverage",
+    "check": "pnpm run lint && pnpm run typecheck",
     "check-all": "pnpm run lint && pnpm run typecheck && pnpm run test --run",
     "analyze": "ANALYZE=true pnpm build",
     "seo:validate": "tsx scripts/validate-seo.ts",

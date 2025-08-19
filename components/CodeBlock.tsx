@@ -23,7 +23,7 @@ const CodeBlock = ({ children, className, ...props }: CodeBlockProps) => {
       setIsCopied(true)
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       timeoutRef.current = setTimeout(() => setIsCopied(false), 2000)
-    } catch (err) {
+    } catch {
       // Fallback for browsers that don't support clipboard API
       setIsCopied(false)
     }

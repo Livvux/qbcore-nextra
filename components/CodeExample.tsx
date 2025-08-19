@@ -69,7 +69,7 @@ TriggerClientEvent('qb-core:notify', source, 'Welcome to the server!', 'success'
       setCopiedIndex(index)
       if (timeoutRef.current) clearTimeout(timeoutRef.current)
       timeoutRef.current = setTimeout(() => setCopiedIndex(null), 2000)
-    } catch (err) {
+    } catch {
       // Fallback for browsers that don't support clipboard API
     }
   }
