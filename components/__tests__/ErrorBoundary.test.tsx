@@ -1,5 +1,5 @@
-import { render, screen, fireEvent } from '@testing-library/react'
-import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest'
 import ErrorBoundary from '../ErrorBoundary'
 
 // Mock console.error to avoid noise in tests
@@ -43,7 +43,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('Try again')).toBeInTheDocument()
   })
 
-  it('allows error reset via try again button', () => {
+  it('allows error reset via try again button', async () => {
     const { rerender } = render(
       <ErrorBoundary>
         <ThrowError shouldThrow={true} />
@@ -53,18 +53,20 @@ describe('ErrorBoundary', () => {
     // Error state should be shown
     expect(screen.getByText('Something went wrong')).toBeInTheDocument()
 
-    // Click try again button
-    fireEvent.click(screen.getByText('Try again'))
-
-    // Re-render with no error
+    // Re-render first with no error before clicking reset
     rerender(
       <ErrorBoundary>
         <ThrowError shouldThrow={false} />
       </ErrorBoundary>
     )
 
+    // Click try again button
+    fireEvent.click(screen.getByText('Try again'))
+
     // Should show normal content again
-    expect(screen.getByText('No error')).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('No error')).toBeInTheDocument()
+    })
   })
 
   it('renders custom fallback component when provided', () => {

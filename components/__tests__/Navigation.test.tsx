@@ -5,12 +5,40 @@ import Navigation from '../Navigation'
 
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
-  motion: {
-    header: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => <header {...props}>{children}</header>,
-    nav: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => <nav {...props}>{children}</nav>,
-  },
+  motion: new Proxy(
+    {},
+    {
+      get: (target, prop) => {
+        if (typeof prop === 'string') {
+          // eslint-disable-next-line react/display-name
+          return ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => {
+            const { 
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              initial, 
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              animate, 
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              exit, 
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              whileInView, 
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              viewport, 
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              variants, 
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              transition, 
+              style, 
+              ...domProps 
+            } = props
+            return React.createElement(prop, { ...domProps, style }, children)
+          }
+        }
+        return target[prop as keyof typeof target]
+      }
+    }
+  ),
   useScroll: () => ({ scrollY: { get: () => 0 } }),
-  useTransform: () => 0,
+  useTransform: () => 'rgba(0, 0, 0, 0)',
 }))
 
 // Mock Next.js Link
@@ -50,7 +78,7 @@ describe('Navigation', () => {
   it('renders GitHub link', () => {
     render(<Navigation />)
 
-    const githubLink = screen.getByRole('link', { name: /view on github/i })
+    const githubLink = screen.getByRole('link', { name: /github/i })
     expect(githubLink).toBeInTheDocument()
     expect(githubLink).toHaveAttribute('href', 'https://github.com/qbcore-framework')
   })

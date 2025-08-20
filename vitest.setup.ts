@@ -35,69 +35,40 @@ vi.mock('next/link', () => ({
 
 // Mock framer-motion for simpler testing
 vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
-      // Filter out framer-motion specific props
-      const {
-        initial,
-        animate,
-        exit,
-        whileInView,
-        viewport,
-        variants,
-        transition,
-        onViewportEnter,
-        onViewportLeave,
-        ...domProps
-      } = props
-      return React.createElement('div', domProps, children)
-    },
-    section: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
-      const {
-        initial,
-        animate,
-        exit,
-        whileInView,
-        viewport,
-        variants,
-        transition,
-        onViewportEnter,
-        onViewportLeave,
-        ...domProps
-      } = props
-      return React.createElement('section', domProps, children)
-    },
-    h1: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
-      const {
-        initial,
-        animate,
-        exit,
-        whileInView,
-        viewport,
-        variants,
-        transition,
-        onViewportEnter,
-        onViewportLeave,
-        ...domProps
-      } = props
-      return React.createElement('h1', domProps, children)
-    },
-    p: ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
-      const {
-        initial,
-        animate,
-        exit,
-        whileInView,
-        viewport,
-        variants,
-        transition,
-        onViewportEnter,
-        onViewportLeave,
-        ...domProps
-      } = props
-      return React.createElement('p', domProps, children)
-    },
-  },
+  motion: new Proxy(
+    {},
+    {
+      get: (target, prop) => {
+        if (typeof prop === 'string') {
+          return ({ children, ...props }: { children?: React.ReactNode; [key: string]: any }) => {
+            // Filter out framer-motion specific props
+            const {
+              initial,
+              animate,
+              exit,
+              whileInView,
+              viewport,
+              variants,
+              transition,
+              onViewportEnter,
+              onViewportLeave,
+              style,
+              ...domProps
+            } = props
+            return React.createElement(prop, { ...domProps, style }, children)
+          }
+        }
+        return target[prop as keyof typeof target]
+      }
+    }
+  ),
+  useTransform: vi.fn(() => ({
+    get: () => 'rgba(0, 0, 0, 0)',
+    on: vi.fn(),
+    off: vi.fn(),
+  })),
+  useScroll: vi.fn(() => ({ scrollY: { get: () => 0, on: vi.fn(), off: vi.fn() } })),
+  AnimatePresence: ({ children }: { children?: React.ReactNode }) => React.createElement('div', {}, children),
 }))
 
 // Clean up after each test
