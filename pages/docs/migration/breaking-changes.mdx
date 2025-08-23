@@ -1,0 +1,364 @@
+# Breaking Changes Reference
+
+This document provides a comprehensive list of breaking changes across QBCore versions. Use this as a quick reference when updating your resources or debugging compatibility issues.
+
+## QBCore v2.0 Breaking Changes
+
+### Player Data Structure Changes
+
+#### Money System Overhaul
+
+**Before (v1.x):**
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local cash = Player.PlayerData.money['cash']
+local bank = Player.PlayerData.money['bank']
+local crypto = Player.PlayerData.money['crypto']
+
+-- Direct money manipulation (deprecated)
+Player.PlayerData.money['cash'] = 1000
+```
+
+**After (v2.0+):**
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local cash = Player.Functions.GetMoney('cash')
+local bank = Player.Functions.GetMoney('bank') 
+local crypto = Player.Functions.GetMoney('crypto')
+
+-- Use proper functions
+Player.Functions.AddMoney('cash', 1000)
+Player.Functions.RemoveMoney('cash', 500)
+```
+
+#### Player Metadata Changes
+
+**Before (v1.x):**
+```lua
+-- Limited metadata support
+Player.PlayerData.metadata = Player.PlayerData.metadata or {}
+Player.PlayerData.metadata.hunger = 100
+```
+
+**After (v2.0+):**
+```lua
+-- Enhanced metadata system
+Player.Functions.SetMetaData('hunger', 100)
+local hunger = Player.Functions.GetMetaData('hunger')
+
+-- Batch metadata updates
+Player.Functions.SetMetaData({
+    hunger = 100,
+    thirst = 100,
+    stress = 0
+})
+```
+
+### Event System Changes
+
+#### Event Name Standardization
+
+| Category | Before (v1.x) | After (v2.0+) |
+|----------|---------------|---------------|
+| Player Load | `QBCore:PlayerLoaded` | `QBCore:Client:OnPlayerLoaded` |
+| Player Logout | `QBCore:PlayerLogout` | `QBCore:Client:OnPlayerUnload` |
+| Money Update | `QBCore:PlayerMoneyChanged` | `QBCore:Client:OnMoneyChange` |
+| Job Update | `QBCore:ClientJobUpdate` | `QBCore:Client:OnJobUpdate` |
+| Gang Update | `QBCore:ClientGangUpdate` | `QBCore:Client:OnGangUpdate` |
+
+#### Updated Event Handlers
+
+**Before (v1.x):**
+```lua
+RegisterNetEvent('QBCore:PlayerLoaded', function()
+    -- Player loaded logic
+end)
+
+AddEventHandler('QBCore:PlayerLogout', function()
+    -- Player logout logic  
+end)
+```
+
+**After (v2.0+):**
+```lua
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
+    -- Player loaded logic
+end)
+
+RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
+    -- Player logout logic
+end)
+```
+
+### Database Schema Changes
+
+#### Required Table Updates
+
+**Players Table:**
+```sql
+-- New columns required in v2.0
+ALTER TABLE `players` 
+ADD COLUMN `phone_number` VARCHAR(20) DEFAULT NULL,
+ADD COLUMN `last_updated` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ADD COLUMN `metadata` LONGTEXT DEFAULT NULL;
+
+-- Indexes for performance
+CREATE INDEX `idx_phone_number` ON `players` (`phone_number`);
+CREATE INDEX `idx_last_updated` ON `players` (`last_updated`);
+```
+
+**Deprecated Tables:**
+- `player_contacts` → Moved to metadata system
+- `player_vehicles_old` → Restructured as `player_vehicles`
+
+### Function Signature Changes
+
+#### QBCore.Functions Changes
+
+**Before (v1.x):**
+```lua
+-- Old function signatures
+QBCore.Functions.GetPlayer(source)
+QBCore.Functions.GetPlayerByCitizenId(citizenid)
+QBCore.Functions.CreateCallback(name, cb)
+```
+
+**After (v2.0+):**
+```lua
+-- Enhanced function signatures with validation
+QBCore.Functions.GetPlayer(source) -- No change
+QBCore.Functions.GetPlayerByCitizenId(citizenid) -- No change
+QBCore.Functions.CreateCallback(name, cb) -- Enhanced error handling
+
+-- New functions
+QBCore.Functions.GetPlayerByPhone(phoneNumber)
+QBCore.Functions.GetOnlinePlayers()
+QBCore.Functions.GetPlayersByJob(jobName)
+```
+
+#### Player Object Method Changes
+
+**Before (v1.x):**
+```lua
+-- Limited player methods
+Player.Functions.AddMoney(moneytype, amount)
+Player.Functions.RemoveMoney(moneytype, amount)
+Player.Functions.SetJob(job, grade)
+```
+
+**After (v2.0+):**
+```lua
+-- Enhanced player methods with validation
+Player.Functions.AddMoney(moneytype, amount, reason) -- Added reason parameter
+Player.Functions.RemoveMoney(moneytype, amount, reason) -- Added reason parameter  
+Player.Functions.SetJob(job, grade, duty) -- Added duty parameter
+
+-- New methods
+Player.Functions.GetMoney(moneytype)
+Player.Functions.SetMetaData(key, value)
+Player.Functions.GetMetaData(key)
+Player.Functions.UpdatePlayerData()
+```
+
+### Configuration Changes
+
+#### Core Configuration
+
+**Before (v1.x) - `qb-core/config/config.lua`:**
+```lua
+QBConfig = {
+    MaxPlayers = 32,
+    DefaultSpawn = {
+        x = -1035.71,
+        y = -2731.87, 
+        z = 12.86,
+        w = 0.0
+    }
+}
+```
+
+**After (v2.0+) - `qb-core/config/config.lua`:**
+```lua
+Config = {
+    MaxPlayers = 64, -- Increased default
+    DefaultSpawn = vector4(-1035.71, -2731.87, 12.86, 0.0), -- Vector4 format
+    UpdateInterval = 5, -- New: Data update interval
+    UseDebug = false, -- New: Debug mode toggle
+    ServerTimezone = 'UTC', -- New: Timezone setting
+    
+    -- New configuration sections
+    ServerCallbacks = {},
+    Logging = {
+        Webhook = '',
+        Level = 'info'
+    }
+}
+```
+
+#### Resource Configuration Changes
+
+**Job System:**
+```lua
+-- Before (v1.x)
+QBShared.Jobs = {
+    ['police'] = {
+        label = 'Police',
+        grades = {
+            ['0'] = { name = 'Cadet', payment = 50 }
+        }
+    }
+}
+
+-- After (v2.0+)  
+QBShared.Jobs = {
+    ['police'] = {
+        label = 'Police',
+        type = 'leo', -- New: Job type classification
+        defaultDuty = true, -- New: Default duty status
+        grades = {
+            ['0'] = {
+                name = 'Cadet',
+                payment = 50,
+                isboss = false, -- New: Boss designation
+                bankAuth = false -- New: Bank authorization
+            }
+        }
+    }
+}
+```
+
+### Removed Features
+
+#### Deprecated Functions
+
+**Completely Removed:**
+```lua
+-- These functions no longer exist in v2.0
+QBCore.Functions.GetRPName(source) -- Use Player.PlayerData.charinfo instead
+QBCore.Functions.IsWhitelisted(source) -- Removed whitelist system
+QBCore.Functions.AddPermission(source, permission) -- Use job/gang system
+```
+
+**Deprecated (Still work but will be removed):**
+```lua
+-- These functions are deprecated, use alternatives
+Player.PlayerData.money['cash'] -- Use Player.Functions.GetMoney('cash')
+TriggerEvent('QBCore:PlayerLoaded') -- Use QBCore:Client:OnPlayerLoaded
+```
+
+#### Removed Configuration Options
+
+```lua
+-- These config options are no longer supported
+QBConfig.UseTarget = true -- Removed, always uses target
+QBConfig.UseDebug = true -- Moved to Config.UseDebug
+QBConfig.Webhooks = {} -- Moved to Config.Logging
+```
+
+## Migration Checklist
+
+### For Resource Developers
+
+- [ ] Update all event names to new format
+- [ ] Replace direct money access with function calls
+- [ ] Update player data access patterns
+- [ ] Add metadata system integration
+- [ ] Test with new configuration structure
+- [ ] Update database queries if needed
+- [ ] Validate all callback functions
+- [ ] Check for removed function usage
+
+### For Server Owners
+
+- [ ] Backup everything before migration
+- [ ] Run database migration scripts
+- [ ] Update core configuration files
+- [ ] Test all essential resources
+- [ ] Update custom resources
+- [ ] Verify job/gang configurations
+- [ ] Check webhook integrations
+- [ ] Performance test after migration
+
+## Common Migration Errors
+
+### Error: "attempt to index a nil value (field 'money')"
+
+**Cause:** Direct access to money data structure
+```lua
+-- Problematic code
+local cash = Player.PlayerData.money['cash']
+```
+
+**Fix:** Use proper money functions
+```lua
+-- Correct approach
+local cash = Player.Functions.GetMoney('cash')
+```
+
+### Error: "Event 'QBCore:PlayerLoaded' not found"
+
+**Cause:** Using old event names
+```lua
+-- Problematic code  
+RegisterNetEvent('QBCore:PlayerLoaded')
+```
+
+**Fix:** Update to new event names
+```lua
+-- Correct approach
+RegisterNetEvent('QBCore:Client:OnPlayerLoaded')
+```
+
+### Error: "QBConfig is not defined"
+
+**Cause:** Configuration namespace changed
+```lua
+-- Problematic code
+local maxPlayers = QBConfig.MaxPlayers
+```
+
+**Fix:** Use new Config namespace
+```lua
+-- Correct approach
+local maxPlayers = Config.MaxPlayers
+```
+
+## Version Compatibility Matrix
+
+| Resource | v1.x Compatible | v2.0 Compatible | Migration Required |
+|----------|-----------------|-----------------|-------------------|
+| qb-core | ✅ | ✅ | Auto-update |
+| qb-multicharacter | ✅ | ✅ | Minor updates |
+| qb-spawn | ✅ | ✅ | Configuration |
+| qb-inventory | ✅ | ✅ | Event names |
+| qb-garages | ✅ | ✅ | Database schema |
+| Custom Resources | ⚠️ | ⚠️ | Case-by-case |
+
+## Getting Help
+
+If you encounter issues during migration:
+
+1. **Check the logs** - Most errors are clearly indicated
+2. **Review this reference** - Common issues are documented here  
+3. **Test incrementally** - Migrate one resource at a time
+4. **Use development environment** - Never test on production
+5. **Join community** - Get help from other developers
+
+---
+
+<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 mt-8">
+  <h4 className="text-lg font-semibold text-red-900 dark:text-red-100 mb-2">
+    ⚠️ Important Migration Note
+  </h4>
+  <p className="text-red-800 dark:text-red-200">
+    Always test migrations in a development environment first. Breaking changes can cause data loss 
+    or server instability if not handled properly. Have a rollback plan ready.
+  </p>
+</div>
+
+## Additional Resources
+
+- [Complete Migration Guide](/docs/migration/v1-to-v2)
+- [Resource Update Guide](/docs/migration/resource-updates)
+- [Database Migration Tools](/docs/migration/tools/migration-script)
+- [Troubleshooting](/docs/troubleshooting)

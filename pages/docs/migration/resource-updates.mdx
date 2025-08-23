@@ -1,0 +1,539 @@
+# Resource Update Guide
+
+This guide provides step-by-step instructions for updating custom resources to work with newer versions of QBCore. Whether you're updating your own resources or third-party resources, this guide will help you navigate the process safely.
+
+## Pre-Update Checklist
+
+Before updating any resource:
+
+- [ ] **Backup the resource** - Always backup before making changes
+- [ ] **Review changelogs** - Check what has changed in the new version
+- [ ] **Test environment** - Never update directly on production
+- [ ] **Dependency check** - Ensure all dependencies are compatible
+- [ ] **Documentation review** - Read the resource's migration notes
+
+## Update Process Overview
+
+### 1. **Assessment Phase**
+
+Determine what type of update you're performing:
+
+<div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-6">
+  <div className="border rounded-lg p-4">
+    <h4 className="font-semibold text-green-700 dark:text-green-300 mb-2">🟢 Minor Update</h4>
+    <p className="text-sm text-gray-600 dark:text-gray-400">
+      Bug fixes, small features, no breaking changes. Usually safe to update directly.
+    </p>
+  </div>
+  <div className="border rounded-lg p-4">
+    <h4 className="font-semibold text-yellow-700 dark:text-yellow-300 mb-2">🟡 Major Update</h4>
+    <p className="text-sm text-gray-600 dark:text-gray-400">
+      New features, possible configuration changes. Requires testing and review.
+    </p>
+  </div>
+  <div className="border rounded-lg p-4">
+    <h4 className="font-semibold text-red-700 dark:text-red-300 mb-2">🔴 Breaking Changes</h4>
+    <p className="text-sm text-gray-600 dark:text-gray-400">
+      API changes, structure changes. Requires migration work and thorough testing.
+    </p>
+  </div>
+</div>
+
+### 2. **Update Strategies**
+
+#### Strategy A: Clean Update (Recommended)
+
+Best for resources with minimal customization:
+
+```bash
+# 1. Backup current resource
+cp -r resources/[qb]/qb-example resources/backups/qb-example-backup
+
+# 2. Remove old version
+rm -rf resources/[qb]/qb-example
+
+# 3. Install new version
+git clone https://github.com/qbcore-framework/qb-example.git resources/[qb]/qb-example
+
+# 4. Restore custom configurations
+cp resources/backups/qb-example-backup/config.lua resources/[qb]/qb-example/config.lua
+```
+
+#### Strategy B: Incremental Update
+
+Best for heavily customized resources:
+
+```bash
+# 1. Create update branch
+cd resources/[qb]/qb-example
+git checkout -b update-v2
+
+# 2. Pull latest changes
+git pull origin main
+
+# 3. Resolve conflicts manually
+git status
+# Edit conflicted files
+
+# 4. Test changes
+# Extensive testing required
+```
+
+#### Strategy C: Manual Merge
+
+Best for resources with extensive custom modifications:
+
+```bash
+# 1. Download new version to temporary location
+git clone https://github.com/qbcore-framework/qb-example.git /tmp/qb-example-new
+
+# 2. Compare files and manually merge changes
+# Use diff tools or IDE comparison features
+
+# 3. Apply changes selectively
+# Keep your customizations while adding new features
+```
+
+## Common Update Patterns
+
+### Updating Configuration Files
+
+**Before (v1.x) - Simple config:**
+```lua
+Config = {}
+Config.EnableSomething = true
+Config.MaxAmount = 100
+```
+
+**After (v2.0+) - Enhanced config:**
+```lua
+Config = {}
+
+-- Enhanced settings
+Config.EnableSomething = true
+Config.MaxAmount = 100
+
+-- New configuration sections
+Config.Database = {
+    UpdateInterval = 300000,
+    AutoSave = true
+}
+
+Config.Notifications = {
+    Type = 'qb-core', -- 'qb-core', 'mythic_notify', 'custom'
+    Position = 'top-right'
+}
+
+-- New feature toggles
+Config.Features = {
+    UseNewSystem = true,
+    EnableLogging = false,
+    AllowMultiple = true
+}
+```
+
+**Migration Steps:**
+1. Compare old and new config structure
+2. Keep your custom values
+3. Add new configuration options with default values
+4. Test functionality with new config
+
+### Updating Event Handlers
+
+**Common Event Updates:**
+
+```lua
+-- Before (v1.x)
+RegisterNetEvent('resource:oldEvent')
+AddEventHandler('resource:oldEvent', function(data)
+    -- Handle event
+end)
+
+-- After (v2.0+)
+RegisterNetEvent('resource:newEvent', function(data)
+    -- Handle event with same logic
+    -- Possible parameter changes
+end)
+```
+
+**Update Process:**
+1. Find all `RegisterNetEvent` calls in your code
+2. Check for renamed events in the changelog
+3. Update event names and parameter handling
+4. Test event flow thoroughly
+
+### Updating Database Interactions
+
+**Before (v1.x) - Direct queries:**
+```lua
+local result = MySQL.Sync.fetchAll('SELECT * FROM users WHERE citizenid = ?', {citizenid})
+```
+
+**After (v2.0+) - Enhanced with error handling:**
+```lua
+local result = MySQL.query.await('SELECT * FROM users WHERE citizenid = ?', {citizenid})
+if not result then
+    print('Database query failed')
+    return false
+end
+```
+
+**Migration Steps:**
+1. Update MySQL syntax if changed
+2. Add proper error handling
+3. Test database connectivity
+4. Verify data integrity
+
+### Updating Player Data Access
+
+**Before (v1.x):**
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local money = Player.PlayerData.money['cash']
+local job = Player.PlayerData.job.name
+```
+
+**After (v2.0+):**
+```lua
+local Player = QBCore.Functions.GetPlayer(source)
+local money = Player.Functions.GetMoney('cash')
+local job = Player.PlayerData.job.name
+
+-- New metadata system
+local hunger = Player.Functions.GetMetaData('hunger')
+```
+
+## Resource-Specific Update Guides
+
+### QBCore Framework Resources
+
+#### qb-inventory Updates
+
+**Key Changes in v2.0:**
+- Enhanced item metadata support
+- New inventory events
+- Updated configuration structure
+
+**Update Steps:**
+```lua
+-- Update item definitions
+['phone'] = {
+    name = 'phone',
+    label = 'Phone',
+    weight = 700,
+    type = 'item',
+    image = 'phone.png',
+    unique = true,
+    useable = true,
+    shouldClose = true,
+    combinable = nil,
+    -- New in v2.0
+    metadata = {
+        quality = 100,
+        durability = 100
+    },
+    description = 'Expensive phone'
+}
+```
+
+#### qb-garages Updates
+
+**Key Changes in v2.0:**
+- New garage types support
+- Enhanced vehicle metadata
+- Updated spawn system
+
+**Configuration Updates:**
+```lua
+-- Before
+Config.Garages = {
+    ['legion'] = {
+        label = 'Legion Square',
+        coords = vector4(215.9499, -790.066, 30.646, 320.57),
+        type = 'public'
+    }
+}
+
+-- After  
+Config.Garages = {
+    ['legion'] = {
+        label = 'Legion Square',
+        coords = vector4(215.9499, -790.066, 30.646, 320.57),
+        type = 'public',
+        -- New options
+        vehicle_class = 'all', -- 'all', 'car', 'bike', 'boat', 'air'
+        max_slots = 50,
+        allow_storing = true,
+        spawn_distance = 5.0
+    }
+}
+```
+
+### Custom Resource Updates
+
+#### Updating Third-Party Resources
+
+**Assessment Process:**
+1. Check if official v2.0 version exists
+2. Look for community forks with updates
+3. Review change requirements
+4. Plan custom update if needed
+
+**Common Third-Party Issues:**
+- Outdated event names
+- Deprecated function calls
+- Configuration structure changes
+- Database schema differences
+
+**Resolution Steps:**
+```lua
+-- 1. Update event registrations
+-- Old
+RegisterNetEvent('qb-customs:server:updateVehicle')
+
+-- New (check resource documentation)
+RegisterNetEvent('qb-customs:server:updateVehicle')
+
+-- 2. Update function calls
+-- Old
+local Player = QBCore.Functions.GetPlayer(src)
+local cash = Player.PlayerData.money['cash']
+
+-- New
+local Player = QBCore.Functions.GetPlayer(src)  
+local cash = Player.Functions.GetMoney('cash')
+
+-- 3. Update configuration references
+-- Old
+if QBConfig.EnableSomething then
+
+-- New
+if Config.EnableSomething then
+```
+
+## Testing Your Updates
+
+### Functionality Testing
+
+Create a comprehensive test plan:
+
+```lua
+-- Test checklist for resource updates
+local TestPlan = {
+    basic_functionality = {
+        'Resource starts without errors',
+        'Configuration loads properly', 
+        'Database connections work',
+        'Events trigger correctly'
+    },
+    
+    player_interactions = {
+        'Player data access works',
+        'Money transactions function',
+        'Inventory interactions work',
+        'Job/gang systems function'
+    },
+    
+    integration_testing = {
+        'Other resources still work',
+        'No event conflicts',
+        'Shared functions accessible',
+        'Database integrity maintained'
+    }
+}
+```
+
+### Performance Testing
+
+Monitor resource performance after updates:
+
+```bash
+# Check resource performance
+monitor # In FiveM console
+
+# Look for:
+# - Increased memory usage
+# - Longer execution times  
+# - Database query performance
+# - Event handling delays
+```
+
+## Rollback Procedures
+
+If updates cause issues:
+
+### Quick Rollback
+```bash
+# Stop server
+pkill -f FXServer
+
+# Restore backup
+rm -rf resources/[qb]/qb-example
+cp -r resources/backups/qb-example-backup resources/[qb]/qb-example
+
+# Start server
+./run.sh
+```
+
+### Selective Rollback
+```bash
+# Rollback specific files only
+cp resources/backups/qb-example-backup/specific_file.lua resources/[qb]/qb-example/
+```
+
+## Update Automation
+
+### Creating Update Scripts
+
+```bash
+#!/bin/bash
+# update-resource.sh
+
+RESOURCE_NAME=$1
+BACKUP_DIR="resources/backups"
+RESOURCE_DIR="resources/[qb]"
+
+echo "Starting update for $RESOURCE_NAME..."
+
+# Create backup
+mkdir -p $BACKUP_DIR
+cp -r $RESOURCE_DIR/$RESOURCE_NAME $BACKUP_DIR/$RESOURCE_NAME-$(date +%Y%m%d)
+
+# Download updates
+cd /tmp
+git clone https://github.com/qbcore-framework/$RESOURCE_NAME.git
+
+# Safety check
+if [ -d "$RESOURCE_NAME" ]; then
+    echo "Update downloaded successfully"
+    echo "Please review changes before applying"
+else
+    echo "Failed to download updates"
+    exit 1
+fi
+```
+
+### Version Tracking
+
+Keep track of resource versions:
+
+```lua
+-- version.lua
+return {
+    resource_name = 'qb-example',
+    version = '2.1.0',
+    qbcore_version = '2.0.0',
+    last_updated = '2024-01-15',
+    custom_modifications = {
+        'Added custom notification system',
+        'Modified spawn points',
+        'Custom item configurations'
+    }
+}
+```
+
+## Best Practices
+
+### Before Updating
+1. **Read everything** - Changelogs, documentation, community discussions
+2. **Plan thoroughly** - Map out changes needed and test procedures
+3. **Backup everything** - Files, database, configurations
+4. **Test incrementally** - One resource at a time
+
+### During Updates
+1. **Document changes** - Keep notes of what you modify
+2. **Test frequently** - Don't update everything at once
+3. **Monitor logs** - Watch for errors and warnings
+4. **Validate data** - Ensure no data corruption
+
+### After Updates
+1. **Performance monitoring** - Check for resource usage spikes
+2. **User feedback** - Monitor for player-reported issues
+3. **Regular maintenance** - Schedule regular update checks
+4. **Documentation updates** - Update your internal documentation
+
+## Common Issues and Solutions
+
+### Issue: "Resource failed to start after update"
+
+**Diagnosis:**
+- Check server console for error messages
+- Verify file permissions
+- Check configuration syntax
+
+**Solutions:**
+```bash
+# Check file permissions
+chmod -R 755 resources/[qb]/resource-name
+
+# Validate configuration
+lua -l config config.lua # If config is pure Lua
+
+# Check dependencies
+# Ensure all required resources are running
+```
+
+### Issue: "Database errors after resource update"
+
+**Diagnosis:**
+- Check database schema compatibility
+- Verify table structure matches requirements
+- Check for new column requirements
+
+**Solutions:**
+```sql
+-- Add missing columns
+ALTER TABLE table_name ADD COLUMN new_column VARCHAR(255);
+
+-- Update existing data format
+UPDATE table_name SET column_name = JSON_OBJECT('key', old_value);
+```
+
+### Issue: "Events not firing after update"
+
+**Diagnosis:**
+- Check event name changes
+- Verify event registration syntax
+- Check for deprecated events
+
+**Solutions:**
+```lua
+-- Update event names
+RegisterNetEvent('old:event:name') -- Remove
+RegisterNetEvent('new:event:name', function() -- Add
+    -- Event logic
+end)
+```
+
+## Getting Help
+
+### Community Resources
+- [QBCore Discord](https://discord.gg/qbcore) - Official support
+- [GitHub Issues](https://github.com/qbcore-framework) - Report bugs
+- [Community Forums](/community) - Ask questions
+- [Documentation](/docs) - Official guides
+
+### Professional Services
+- **Custom Development** - Hire developers for complex updates
+- **Migration Services** - Professional migration assistance
+- **Consulting** - Get expert advice on update strategies
+
+---
+
+<div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6 mt-8">
+  <h4 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">
+    💡 Pro Tip: Staged Updates
+  </h4>
+  <p className="text-blue-800 dark:text-blue-200">
+    Instead of updating everything at once, update resources in stages. Start with core resources, 
+    then move to essential features, and finally update custom/third-party resources. This approach 
+    makes it easier to identify and fix issues.
+  </p>
+</div>
+
+## Additional Resources
+
+- [Breaking Changes Reference](/docs/migration/breaking-changes)
+- [Database Migration Tools](/docs/migration/tools/migration-script)
+- [Version Compatibility Matrix](/docs/migration/compatibility)
+- [Troubleshooting Guide](/docs/troubleshooting)

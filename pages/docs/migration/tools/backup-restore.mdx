@@ -1,0 +1,832 @@
+# Backup & Restore Guide
+
+Comprehensive backup and restore procedures for QBCore servers. This guide covers everything from routine backups to disaster recovery, ensuring your server data is always protected during migrations and daily operations.
+
+## Overview
+
+A robust backup strategy is essential for any QBCore server. This guide provides automated scripts, best practices, and recovery procedures to protect your valuable server data including:
+
+- **Player data** and character information
+- **Database** content and structure  
+- **Server files** and configurations
+- **Custom resources** and modifications
+- **Logs** and historical data
+
+<div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-6">
+  <h4 className="text-red-900 dark:text-red-100 font-semibold mb-2">🚨 Critical Reminder</h4>
+  <p className="text-red-800 dark:text-red-200">
+    Never perform migrations or major changes without a complete, tested backup. Data loss can be irreversible and devastating to your community.
+  </p>
+</div>
+
+## Quick Backup Commands
+
+### Essential Backup Commands
+
+```bash
+# Complete server backup (recommended before any changes)
+./scripts/backup-complete.sh
+
+# Database-only backup  
+mysqldump -u username -p database_name > backup-$(date +%Y%m%d-%H%M%S).sql
+
+# Resources-only backup
+tar -czf resources-backup-$(date +%Y%m%d).tar.gz resources/
+
+# Configuration backup
+tar -czf config-backup-$(date +%Y%m%d).tar.gz server.cfg txAdmin/config/
+```
+
+### Quick Restore Commands
+
+```bash
+# Restore database
+mysql -u username -p database_name < backup-file.sql
+
+# Restore resources
+tar -xzf resources-backup.tar.gz
+
+# Restore complete server
+./scripts/restore-complete.sh backup-folder-name
+```
+
+## Comprehensive Backup Strategy
+
+### 1. Automated Backup System
+
+#### Complete Backup Script
+
+```bash
+#!/bin/bash
+# backup-complete.sh - Complete QBCore server backup
+
+# Configuration
+BACKUP_BASE_DIR="/backups"
+SERVER_DIR="/opt/fivem-server"
+DB_USER="your_db_user"
+DB_PASS="your_db_password"
+DB_NAME="your_database"
+RETENTION_DAYS=30
+
+# Create backup directory with timestamp
+BACKUP_DIR="$BACKUP_BASE_DIR/qbcore-backup-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
+
+echo "🚀 Starting QBCore Complete Backup"
+echo "Backup location: $BACKUP_DIR"
+
+# Function to log with timestamp
+log() {
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+}
+
+# Function to handle errors
+handle_error() {
+    log "❌ ERROR: $1"
+    exit 1
+}
+
+# 1. Stop server gracefully
+log "Stopping FiveM server..."
+if pgrep -f "FXServer" > /dev/null; then
+    pkill -TERM -f "FXServer"
+    sleep 10
+    if pgrep -f "FXServer" > /dev/null; then
+        log "⚠️  Force stopping server..."
+        pkill -KILL -f "FXServer"
+    fi
+    log "✅ Server stopped"
+else
+    log "ℹ️  Server was not running"
+fi
+
+# 2. Database backup
+log "📊 Backing up database..."
+if ! mysqldump -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" > "$BACKUP_DIR/database.sql"; then
+    handle_error "Database backup failed"
+fi
+log "✅ Database backup completed ($(du -h "$BACKUP_DIR/database.sql" | cut -f1))"
+
+# 3. Server files backup
+log "📁 Backing up server files..."
+SERVER_BACKUP_DIR="$BACKUP_DIR/server-files"
+mkdir -p "$SERVER_BACKUP_DIR"
+
+# Essential directories and files
+BACKUP_ITEMS=(
+    "resources"
+    "server.cfg"
+    "run.sh"
+    "txAdmin"
+    "cache"
+    "logs"
+)
+
+for item in "${BACKUP_ITEMS[@]}"; do
+    if [ -e "$SERVER_DIR/$item" ]; then
+        log "  📦 Backing up $item..."
+        cp -r "$SERVER_DIR/$item" "$SERVER_BACKUP_DIR/"
+    else
+        log "  ⚠️  $item not found, skipping..."
+    fi
+done
+
+# 4. Custom configurations
+log "⚙️  Backing up custom configurations..."
+CONFIG_DIR="$BACKUP_DIR/configs"
+mkdir -p "$CONFIG_DIR"
+
+# Find and backup all config files
+find "$SERVER_DIR/resources" -name "config*.lua" -exec cp {} "$CONFIG_DIR/" \;
+find "$SERVER_DIR/resources" -name "*.cfg" -exec cp {} "$CONFIG_DIR/" \;
+
+# 5. Player data extraction (JSON format for easy inspection)
+log "👥 Extracting player data..."
+mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -e "
+    SELECT 
+        citizenid,
+        license,
+        name,
+        money,
+        charinfo,
+        job,
+        gang,
+        position,
+        metadata,
+        last_updated
+    FROM players 
+    INTO OUTFILE '$BACKUP_DIR/players-data.csv' 
+    FIELDS TERMINATED BY ',' 
+    ENCLOSED BY '\"' 
+    LINES TERMINATED BY '\n';"
+
+# 6. Create backup manifest
+log "📋 Creating backup manifest..."
+cat > "$BACKUP_DIR/backup-manifest.json" << EOF
+{
+    "backup_date": "$(date -I)",
+    "backup_time": "$(date '+%H:%M:%S')",
+    "qbcore_version": "$(grep -o 'version.*[0-9]' $SERVER_DIR/resources/[qb]/qb-core/version.lua || echo 'unknown')",
+    "server_path": "$SERVER_DIR",
+    "database_name": "$DB_NAME",
+    "player_count": $(mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -se "SELECT COUNT(*) FROM players;"),
+    "backup_size": "$(du -sh "$BACKUP_DIR" | cut -f1)",
+    "files_backed_up": [
+        $(find "$BACKUP_DIR" -type f | wc -l)
+    ],
+    "integrity_hash": "$(find "$BACKUP_DIR" -type f -exec md5sum {} \; | sort | md5sum | cut -d' ' -f1)"
+}
+EOF
+
+# 7. Compress backup
+log "🗜️  Compressing backup..."
+cd "$BACKUP_BASE_DIR"
+tar -czf "$(basename "$BACKUP_DIR").tar.gz" "$(basename "$BACKUP_DIR")"
+COMPRESSED_SIZE=$(du -h "$(basename "$BACKUP_DIR").tar.gz" | cut -f1)
+log "✅ Backup compressed: $COMPRESSED_SIZE"
+
+# 8. Cleanup old backups
+log "🧹 Cleaning up old backups (older than $RETENTION_DAYS days)..."
+find "$BACKUP_BASE_DIR" -name "qbcore-backup-*" -type d -mtime +$RETENTION_DAYS -exec rm -rf {} +
+find "$BACKUP_BASE_DIR" -name "qbcore-backup-*.tar.gz" -mtime +$RETENTION_DAYS -delete
+
+# 9. Restart server
+log "🔄 Restarting FiveM server..."
+cd "$SERVER_DIR"
+nohup ./run.sh > /dev/null 2>&1 &
+sleep 5
+
+if pgrep -f "FXServer" > /dev/null; then
+    log "✅ Server restarted successfully"
+else
+    log "⚠️  Server restart may have failed, check manually"
+fi
+
+# 10. Backup verification
+log "🔍 Verifying backup integrity..."
+if [ -f "$BACKUP_DIR/database.sql" ] && [ -d "$BACKUP_DIR/server-files" ]; then
+    log "✅ Backup completed successfully!"
+    log "📊 Backup Summary:"
+    log "   Location: $BACKUP_DIR"
+    log "   Size: $(du -sh "$BACKUP_DIR" | cut -f1)"
+    log "   Compressed: $COMPRESSED_SIZE"
+    log "   Player count: $(mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -se "SELECT COUNT(*) FROM players;")"
+else
+    handle_error "Backup verification failed"
+fi
+
+echo "🎉 Backup completed successfully!"
+```
+
+#### Automated Scheduling
+
+```bash
+# Add to crontab for automated backups
+crontab -e
+
+# Daily backup at 3 AM
+0 3 * * * /opt/fivem-server/scripts/backup-complete.sh >> /var/log/fivem-backup.log 2>&1
+
+# Weekly full backup on Sundays at 2 AM  
+0 2 * * 0 /opt/fivem-server/scripts/backup-complete.sh --full >> /var/log/fivem-backup.log 2>&1
+
+# Quick database backup every 6 hours
+0 */6 * * * /opt/fivem-server/scripts/backup-database.sh >> /var/log/fivem-backup.log 2>&1
+```
+
+### 2. Incremental Backup System
+
+For large servers, incremental backups save space and time:
+
+```bash
+#!/bin/bash
+# backup-incremental.sh - Incremental backup system
+
+BACKUP_BASE="/backups"
+LAST_BACKUP_FILE="$BACKUP_BASE/.last-backup"
+CURRENT_TIME=$(date +%s)
+
+# Find last backup timestamp
+if [ -f "$LAST_BACKUP_FILE" ]; then
+    LAST_BACKUP=$(cat "$LAST_BACKUP_FILE")
+else
+    LAST_BACKUP=0
+fi
+
+log "Starting incremental backup since $(date -d @$LAST_BACKUP)"
+
+# Database incremental backup (changes since last backup)
+mysqldump -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" \
+    --where="last_updated > FROM_UNIXTIME($LAST_BACKUP)" \
+    --single-transaction \
+    > "$BACKUP_DIR/database-incremental.sql"
+
+# File system changes
+find "$SERVER_DIR" -type f -newer "$LAST_BACKUP_FILE" \
+    -not -path "*/cache/*" \
+    -not -path "*/logs/*" \
+    | tar -czf "$BACKUP_DIR/files-incremental.tar.gz" -T -
+
+# Update last backup timestamp
+echo "$CURRENT_TIME" > "$LAST_BACKUP_FILE"
+```
+
+### 3. Database-Specific Backup
+
+```bash
+#!/bin/bash
+# backup-database.sh - Comprehensive database backup
+
+# Hot backup with binary logs
+mysqldump -u"$DB_USER" -p"$DB_PASS" \
+    --single-transaction \
+    --routines \
+    --triggers \
+    --flush-logs \
+    --master-data=2 \
+    "$DB_NAME" > "db-backup-$(date +%Y%m%d-%H%M%S).sql"
+
+# Table-specific backups for critical data
+mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" << 'EOF'
+SELECT * INTO OUTFILE '/tmp/players_backup.csv'
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"'
+LINES TERMINATED BY '\n'
+FROM players;
+
+SELECT * INTO OUTFILE '/tmp/player_vehicles_backup.csv' 
+FIELDS TERMINATED BY ','
+ENCLOSED BY '"' 
+LINES TERMINATED BY '\n'
+FROM player_vehicles;
+EOF
+
+# Verify backup integrity
+mysql -u"$DB_USER" -p"$DB_PASS" < "db-backup-$(date +%Y%m%d-%H%M%S).sql" \
+    --database="test_restore_db" && echo "✅ Database backup verified"
+```
+
+## Restore Procedures
+
+### 1. Complete Server Restore
+
+```bash
+#!/bin/bash
+# restore-complete.sh - Complete server restore
+
+BACKUP_ARCHIVE=$1
+RESTORE_DIR="/tmp/restore-$(date +%s)"
+
+if [ -z "$BACKUP_ARCHIVE" ]; then
+    echo "Usage: $0 <backup-archive.tar.gz>"
+    exit 1
+fi
+
+echo "🔄 Starting complete server restore from $BACKUP_ARCHIVE"
+
+# Extract backup
+mkdir -p "$RESTORE_DIR"
+tar -xzf "$BACKUP_ARCHIVE" -C "$RESTORE_DIR" --strip-components=1
+
+# Verify backup integrity
+if [ ! -f "$RESTORE_DIR/backup-manifest.json" ]; then
+    echo "❌ Invalid backup archive - missing manifest"
+    exit 1
+fi
+
+# Display backup information
+echo "📊 Backup Information:"
+cat "$RESTORE_DIR/backup-manifest.json" | jq '.'
+
+read -p "Continue with restore? (y/N): " confirm
+if [ "$confirm" != "y" ]; then
+    echo "Restore cancelled"
+    exit 0
+fi
+
+# Stop server
+echo "⏹️  Stopping server..."
+pkill -f "FXServer"
+sleep 10
+
+# Backup current state before restore
+echo "💾 Creating pre-restore backup..."
+mv "$SERVER_DIR" "${SERVER_DIR}-pre-restore-$(date +%s)"
+
+# Restore database
+echo "📊 Restoring database..."
+mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$RESTORE_DIR/database.sql"
+
+# Restore server files  
+echo "📁 Restoring server files..."
+mkdir -p "$SERVER_DIR"
+cp -r "$RESTORE_DIR/server-files/"* "$SERVER_DIR/"
+
+# Set correct permissions
+chmod +x "$SERVER_DIR/run.sh"
+chmod -R 755 "$SERVER_DIR/resources"
+
+# Restart server
+echo "🚀 Starting server..."
+cd "$SERVER_DIR"
+nohup ./run.sh > /dev/null 2>&1 &
+
+# Verify restore
+sleep 10
+if pgrep -f "FXServer" > /dev/null; then
+    echo "✅ Server restore completed successfully!"
+else
+    echo "⚠️  Server may not have started correctly"
+fi
+
+# Cleanup
+rm -rf "$RESTORE_DIR"
+```
+
+### 2. Selective Restore
+
+```bash
+#!/bin/bash
+# restore-selective.sh - Restore specific components
+
+BACKUP_DIR=$1
+COMPONENT=$2
+
+case "$COMPONENT" in
+    "database")
+        echo "📊 Restoring database only..."
+        mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$BACKUP_DIR/database.sql"
+        ;;
+    "resources")
+        echo "📁 Restoring resources only..."
+        cp -r "$BACKUP_DIR/server-files/resources/"* "$SERVER_DIR/resources/"
+        ;;
+    "config")
+        echo "⚙️  Restoring configurations only..."
+        find "$BACKUP_DIR" -name "config*.lua" -exec cp {} "$SERVER_DIR/resources/[qb]/" \;
+        ;;
+    "players")
+        echo "👥 Restoring player data only..."
+        mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" << EOF
+        DELETE FROM players;
+        LOAD DATA INFILE '$BACKUP_DIR/players-data.csv'
+        INTO TABLE players
+        FIELDS TERMINATED BY ','
+        ENCLOSED BY '"'
+        LINES TERMINATED BY '\n';
+EOF
+        ;;
+    *)
+        echo "Usage: $0 <backup_dir> <component>"
+        echo "Components: database, resources, config, players"
+        exit 1
+        ;;
+esac
+```
+
+### 3. Database Point-in-Time Recovery
+
+```bash
+#!/bin/bash
+# restore-point-in-time.sh - Restore database to specific point in time
+
+TARGET_DATE="$1"  # Format: YYYY-MM-DD HH:MM:SS
+
+if [ -z "$TARGET_DATE" ]; then
+    echo "Usage: $0 'YYYY-MM-DD HH:MM:SS'"
+    exit 1
+fi
+
+echo "🕐 Restoring database to point in time: $TARGET_DATE"
+
+# Find appropriate backup
+BACKUP_FILE=$(find /backups -name "*.sql" -newermt "$TARGET_DATE" | head -1)
+
+if [ -z "$BACKUP_FILE" ]; then
+    echo "❌ No backup found for the specified date"
+    exit 1
+fi
+
+# Create test database for verification
+mysql -u"$DB_USER" -p"$DB_PASS" -e "DROP DATABASE IF EXISTS test_restore; CREATE DATABASE test_restore;"
+
+# Restore to test database
+mysql -u"$DB_USER" -p"$DB_PASS" test_restore < "$BACKUP_FILE"
+
+# Show data at target time
+mysql -u"$DB_USER" -p"$DB_PASS" test_restore -e "
+    SELECT 
+        COUNT(*) as player_count,
+        MAX(last_updated) as latest_update
+    FROM players 
+    WHERE last_updated <= '$TARGET_DATE';"
+
+read -p "Proceed with restore to production? (y/N): " confirm
+if [ "$confirm" = "y" ]; then
+    mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$BACKUP_FILE"
+    echo "✅ Point-in-time restore completed"
+else
+    echo "Restore cancelled"
+fi
+
+# Cleanup test database
+mysql -u"$DB_USER" -p"$DB_PASS" -e "DROP DATABASE test_restore;"
+```
+
+## Backup Validation & Testing
+
+### 1. Backup Integrity Verification
+
+```bash
+#!/bin/bash
+# verify-backup.sh - Comprehensive backup verification
+
+BACKUP_DIR=$1
+
+echo "🔍 Verifying backup integrity: $BACKUP_DIR"
+
+# Check backup completeness
+required_files=(
+    "database.sql"
+    "server-files"
+    "backup-manifest.json"
+)
+
+for file in "${required_files[@]}"; do
+    if [ ! -e "$BACKUP_DIR/$file" ]; then
+        echo "❌ Missing required file: $file"
+        exit 1
+    fi
+done
+
+# Verify database backup
+echo "📊 Verifying database backup..."
+mysql -u"$DB_USER" -p"$DB_PASS" -e "CREATE DATABASE backup_test;"
+mysql -u"$DB_USER" -p"$DB_PASS" backup_test < "$BACKUP_DIR/database.sql"
+
+# Check table integrity
+EXPECTED_TABLES=("players" "player_vehicles" "apartments" "bank_accounts")
+for table in "${EXPECTED_TABLES[@]}"; do
+    count=$(mysql -u"$DB_USER" -p"$DB_PASS" backup_test -se "SELECT COUNT(*) FROM $table;")
+    echo "  ✅ Table $table: $count records"
+done
+
+# Verify data integrity
+mysql -u"$DB_USER" -p"$DB_PASS" backup_test -e "CHECK TABLE players, player_vehicles;"
+
+# Cleanup
+mysql -u"$DB_USER" -p"$DB_PASS" -e "DROP DATABASE backup_test;"
+
+echo "✅ Backup verification completed"
+```
+
+### 2. Automated Backup Testing
+
+```bash
+#!/bin/bash
+# test-backup-restore.sh - Automated backup/restore testing
+
+TEST_SERVER_DIR="/tmp/test-server"
+TEST_DB_NAME="qbcore_test"
+
+echo "🧪 Starting automated backup/restore test"
+
+# Create test environment
+mkdir -p "$TEST_SERVER_DIR"
+mysql -u"$DB_USER" -p"$DB_PASS" -e "DROP DATABASE IF EXISTS $TEST_DB_NAME; CREATE DATABASE $TEST_DB_NAME;"
+
+# Copy current server to test location
+cp -r "$SERVER_DIR/"* "$TEST_SERVER_DIR/"
+
+# Create test backup
+echo "💾 Creating test backup..."
+./backup-complete.sh --target "$TEST_SERVER_DIR" --database "$TEST_DB_NAME"
+
+# Simulate data corruption
+echo "💥 Simulating data corruption..."
+mysql -u"$DB_USER" -p"$DB_PASS" "$TEST_DB_NAME" -e "DELETE FROM players LIMIT 10;"
+
+# Restore from backup
+echo "🔄 Testing restore..."
+LATEST_BACKUP=$(ls -t /backups/qbcore-backup-*.tar.gz | head -1)
+./restore-complete.sh "$LATEST_BACKUP" --target "$TEST_SERVER_DIR" --database "$TEST_DB_NAME"
+
+# Verify restoration
+PLAYER_COUNT=$(mysql -u"$DB_USER" -p"$DB_PASS" "$TEST_DB_NAME" -se "SELECT COUNT(*) FROM players;")
+ORIGINAL_COUNT=$(mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" -se "SELECT COUNT(*) FROM players;")
+
+if [ "$PLAYER_COUNT" -eq "$ORIGINAL_COUNT" ]; then
+    echo "✅ Backup/restore test PASSED"
+else
+    echo "❌ Backup/restore test FAILED"
+    echo "   Expected: $ORIGINAL_COUNT players"
+    echo "   Got: $PLAYER_COUNT players"
+fi
+
+# Cleanup test environment
+rm -rf "$TEST_SERVER_DIR"
+mysql -u"$DB_USER" -p"$DB_PASS" -e "DROP DATABASE $TEST_DB_NAME;"
+```
+
+## Cloud Backup Integration
+
+### 1. AWS S3 Integration
+
+```bash
+#!/bin/bash
+# backup-to-s3.sh - Upload backups to Amazon S3
+
+S3_BUCKET="your-qbcore-backups"
+AWS_REGION="us-east-1"
+LOCAL_BACKUP_DIR="/backups"
+
+# Install AWS CLI if not present
+if ! command -v aws &> /dev/null; then
+    echo "Installing AWS CLI..."
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    unzip awscliv2.zip
+    sudo ./aws/install
+fi
+
+# Upload latest backup to S3
+LATEST_BACKUP=$(ls -t "$LOCAL_BACKUP_DIR"/qbcore-backup-*.tar.gz | head -1)
+
+echo "☁️  Uploading to S3: $(basename "$LATEST_BACKUP")"
+
+aws s3 cp "$LATEST_BACKUP" "s3://$S3_BUCKET/$(date +%Y/%m/%d)/" \
+    --storage-class STANDARD_IA \
+    --metadata "server-name=$(hostname),backup-date=$(date -I)"
+
+# Lifecycle management - delete old backups
+aws s3api list-objects-v2 --bucket "$S3_BUCKET" \
+    --query "Contents[?LastModified<=\`$(date -d '30 days ago' --iso-8601)\`].[Key]" \
+    --output text | xargs -I {} aws s3 rm "s3://$S3_BUCKET/{}"
+
+echo "✅ S3 upload completed"
+```
+
+### 2. Google Cloud Storage Integration
+
+```bash
+#!/bin/bash
+# backup-to-gcs.sh - Upload backups to Google Cloud Storage
+
+GCS_BUCKET="your-qbcore-backups"
+LOCAL_BACKUP_DIR="/backups"
+
+# Upload to Google Cloud Storage
+LATEST_BACKUP=$(ls -t "$LOCAL_BACKUP_DIR"/qbcore-backup-*.tar.gz | head -1)
+
+echo "☁️  Uploading to GCS: $(basename "$LATEST_BACKUP")"
+
+gsutil cp "$LATEST_BACKUP" "gs://$GCS_BUCKET/$(date +%Y/%m/%d)/"
+
+# Set lifecycle policy for automatic deletion
+gsutil lifecycle set lifecycle-config.json "gs://$GCS_BUCKET"
+
+echo "✅ GCS upload completed"
+```
+
+### 3. Encryption for Cloud Storage
+
+```bash
+#!/bin/bash
+# encrypt-backup.sh - Encrypt backups before cloud upload
+
+BACKUP_FILE=$1
+ENCRYPTION_KEY_FILE="/secure/backup-key.txt"
+
+if [ ! -f "$ENCRYPTION_KEY_FILE" ]; then
+    echo "Generating encryption key..."
+    openssl rand -base64 32 > "$ENCRYPTION_KEY_FILE"
+    chmod 600 "$ENCRYPTION_KEY_FILE"
+fi
+
+# Encrypt backup
+echo "🔒 Encrypting backup..."
+openssl aes-256-cbc -salt -in "$BACKUP_FILE" \
+    -out "${BACKUP_FILE}.enc" \
+    -kfile "$ENCRYPTION_KEY_FILE"
+
+# Upload encrypted file
+aws s3 cp "${BACKUP_FILE}.enc" "s3://$S3_BUCKET/"
+
+# Clean up local encrypted file
+rm "${BACKUP_FILE}.enc"
+```
+
+## Disaster Recovery Planning
+
+### 1. Complete Server Rebuild
+
+```bash
+#!/bin/bash
+# disaster-recovery.sh - Complete server rebuild from backup
+
+BACKUP_LOCATION=$1  # S3 URL or local path
+NEW_SERVER_PATH="/opt/fivem-server-new"
+
+echo "🆘 Starting disaster recovery process"
+
+# Download backup from cloud if needed
+if [[ "$BACKUP_LOCATION" == s3://* ]]; then
+    echo "☁️  Downloading backup from S3..."
+    aws s3 cp "$BACKUP_LOCATION" ./disaster-backup.tar.gz
+    BACKUP_LOCATION="./disaster-backup.tar.gz"
+fi
+
+# Create new server directory
+mkdir -p "$NEW_SERVER_PATH"
+
+# Extract backup
+tar -xzf "$BACKUP_LOCATION" -C "$NEW_SERVER_PATH" --strip-components=1
+
+# Install dependencies
+echo "📦 Installing dependencies..."
+apt-get update
+apt-get install -y mysql-server nodejs npm
+
+# Setup database
+echo "📊 Setting up database..."
+mysql_secure_installation
+mysql -u root -p -e "CREATE DATABASE qbcore; CREATE USER 'qbcore'@'localhost' IDENTIFIED BY 'secure_password';"
+mysql -u qbcore -p qbcore < "$NEW_SERVER_PATH/database.sql"
+
+# Configure FiveM server
+echo "🎮 Configuring FiveM server..."
+# Download latest FiveM artifacts
+wget https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/latest.tar.xz
+tar -xf latest.tar.xz -C "$NEW_SERVER_PATH"
+
+# Start server
+cd "$NEW_SERVER_PATH"
+chmod +x run.sh
+./run.sh
+
+echo "✅ Disaster recovery completed"
+```
+
+### 2. Data Recovery from Corruption
+
+```bash
+#!/bin/bash
+# recover-corrupted-data.sh - Recover from data corruption
+
+echo "🩹 Starting data corruption recovery"
+
+# Create backup of corrupted state
+mysqldump -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" > "corrupted-state-$(date +%s).sql"
+
+# Identify corruption extent
+mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" << 'EOF'
+-- Check for data inconsistencies
+SELECT 'Invalid JSON in money column' as issue, COUNT(*) as count
+FROM players WHERE NOT JSON_VALID(money)
+UNION ALL
+SELECT 'Missing character info', COUNT(*)
+FROM players WHERE charinfo IS NULL OR charinfo = ''
+UNION ALL
+SELECT 'Duplicate citizen IDs', COUNT(*) - COUNT(DISTINCT citizenid)
+FROM players;
+EOF
+
+# Restore from most recent clean backup
+echo "🔄 Restoring from clean backup..."
+CLEAN_BACKUP=$(find /backups -name "*.sql" -mtime -7 | head -1)
+mysql -u"$DB_USER" -p"$DB_PASS" "$DB_NAME" < "$CLEAN_BACKUP"
+
+echo "✅ Data recovery completed"
+```
+
+## Monitoring & Alerting
+
+### 1. Backup Health Monitoring
+
+```bash
+#!/bin/bash
+# monitor-backup-health.sh - Monitor backup system health
+
+BACKUP_DIR="/backups"
+ALERT_EMAIL="admin@yourserver.com"
+MAX_AGE_HOURS=26  # Alert if no backup in 26 hours
+
+# Check last backup age
+LAST_BACKUP=$(find "$BACKUP_DIR" -name "*.tar.gz" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)
+LAST_BACKUP_TIME=$(stat -c %Y "$LAST_BACKUP")
+CURRENT_TIME=$(date +%s)
+AGE_HOURS=$(( (CURRENT_TIME - LAST_BACKUP_TIME) / 3600 ))
+
+if [ "$AGE_HOURS" -gt "$MAX_AGE_HOURS" ]; then
+    echo "🚨 ALERT: Last backup is $AGE_HOURS hours old" | \
+        mail -s "QBCore Backup Alert - $(hostname)" "$ALERT_EMAIL"
+fi
+
+# Check backup integrity
+if ! tar -tzf "$LAST_BACKUP" >/dev/null 2>&1; then
+    echo "🚨 ALERT: Latest backup appears to be corrupted" | \
+        mail -s "QBCore Backup Corruption Alert - $(hostname)" "$ALERT_EMAIL"
+fi
+
+# Check disk space
+BACKUP_USAGE=$(df "$BACKUP_DIR" | awk 'NR==2{print $5}' | sed 's/%//')
+if [ "$BACKUP_USAGE" -gt 90 ]; then
+    echo "🚨 ALERT: Backup disk usage at ${BACKUP_USAGE}%" | \
+        mail -s "QBCore Backup Disk Space Alert - $(hostname)" "$ALERT_EMAIL"
+fi
+```
+
+### 2. Slack Integration
+
+```bash
+#!/bin/bash
+# slack-backup-notification.sh - Send backup notifications to Slack
+
+SLACK_WEBHOOK_URL="your-slack-webhook-url"
+
+send_slack_notification() {
+    local message=$1
+    local color=$2
+    
+    curl -X POST -H 'Content-type: application/json' \
+        --data "{
+            \"attachments\": [{
+                \"color\": \"$color\",
+                \"fields\": [{
+                    \"title\": \"QBCore Backup Status - $(hostname)\",
+                    \"value\": \"$message\",
+                    \"short\": false
+                }]
+            }]
+        }" \
+        "$SLACK_WEBHOOK_URL"
+}
+
+# Success notification
+send_slack_notification "✅ Backup completed successfully at $(date)" "good"
+
+# Error notification  
+send_slack_notification "❌ Backup failed at $(date)" "danger"
+```
+
+---
+
+<div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 mt-8">
+  <h4 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">
+    ✅ Backup Best Practices Summary
+  </h4>
+  <ul className="text-green-800 dark:text-green-200 space-y-1">
+    <li>• **3-2-1 Rule**: 3 copies, 2 different media, 1 offsite</li>
+    <li>• **Test regularly**: Verify backups can be restored</li>
+    <li>• **Automate everything**: Use scripts and scheduling</li>
+    <li>• **Monitor health**: Set up alerts for backup failures</li>
+    <li>• **Document procedures**: Keep recovery steps updated</li>
+    <li>• **Encrypt sensitive data**: Use encryption for cloud storage</li>
+  </ul>
+</div>
+
+## Additional Resources
+
+- [Database Migration Tools](/docs/migration/tools/migration-script)
+- [Compatibility Checker](/docs/migration/tools/compatibility-checker)
+- [Breaking Changes Reference](/docs/migration/breaking-changes)
+- [Troubleshooting Guide](/docs/troubleshooting)

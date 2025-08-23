@@ -1,0 +1,627 @@
+# Compatibility Checker
+
+The QBCore Compatibility Checker is a comprehensive tool that analyzes your resources and server setup to identify compatibility issues before and after migrations. It helps prevent problems by detecting outdated code patterns, deprecated functions, and configuration conflicts.
+
+## Overview
+
+The compatibility checker performs static code analysis on your QBCore resources to identify:
+
+- **Deprecated functions** and outdated API calls
+- **Breaking changes** that need attention
+- **Configuration conflicts** between resources
+- **Event system incompatibilities**
+- **Database schema mismatches**
+- **Version dependency conflicts**
+
+<div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
+  <h4 className="text-blue-900 dark:text-blue-100 font-semibold mb-2">💡 Pro Tip</h4>
+  <p className="text-blue-800 dark:text-blue-200">
+    Run the compatibility checker before any major update to identify issues early and plan your migration strategy accordingly.
+  </p>
+</div>
+
+## Installation
+
+### Download Compatibility Checker
+
+```bash
+# Clone the compatibility checker tool
+git clone https://github.com/qbcore-framework/qb-compatibility-checker.git
+cd qb-compatibility-checker
+
+# Install dependencies
+npm install
+# or
+pip install -r requirements.txt  # If using Python version
+```
+
+### Configuration
+
+```bash
+# Copy example configuration
+cp config.example.json config.json
+
+# Edit configuration
+nano config.json
+```
+
+```json
+{
+  "server_path": "/path/to/your/fivem/server",
+  "resources_path": "resources/[qb]",
+  "qbcore_version": "2.0.0",
+  "target_version": "2.1.0",
+  "checks": {
+    "deprecated_functions": true,
+    "event_compatibility": true,
+    "config_conflicts": true,
+    "database_schema": true,
+    "dependency_versions": true
+  },
+  "exclude_resources": [
+    "resource-to-ignore"
+  ],
+  "output_format": "json"
+}
+```
+
+## Usage
+
+### Quick Compatibility Check
+
+```bash
+# Run basic compatibility check
+./check-compatibility.sh
+
+# Check specific resource
+./check-compatibility.sh --resource qb-inventory
+
+# Check for specific version migration
+./check-compatibility.sh --from v1.0 --to v2.0
+
+# Generate detailed report
+./check-compatibility.sh --detailed --output report.json
+```
+
+### Advanced Usage
+
+```bash
+# Check only deprecated functions
+./check-compatibility.sh --check deprecated-functions
+
+# Check configuration conflicts
+./check-compatibility.sh --check config-conflicts
+
+# Check database compatibility
+./check-compatibility.sh --check database-schema
+
+# Batch check multiple servers
+./check-compatibility.sh --batch servers.list
+```
+
+## Compatibility Checks
+
+### 1. Deprecated Functions Check
+
+Identifies outdated function calls that need updating:
+
+```bash
+# Example output
+Deprecated Functions Found:
+==========================
+
+Resource: qb-inventory
+├── File: server/main.lua:45
+│   └── QBCore.Functions.GetRPName(source) 
+│       ➜ Replace with: Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
+│
+├── File: client/main.lua:123
+│   └── TriggerEvent('QBCore:PlayerLoaded')
+│       ➜ Replace with: RegisterNetEvent('QBCore:Client:OnPlayerLoaded')
+
+Resource: qb-customs  
+├── File: server/server.lua:67
+│   └── Player.PlayerData.money['cash']
+│       ➜ Replace with: Player.Functions.GetMoney('cash')
+```
+
+#### Custom Deprecated Function Patterns
+
+Create custom patterns to check for:
+
+```json
+{
+  "custom_patterns": [
+    {
+      "pattern": "QBConfig\\.",
+      "replacement": "Config.",
+      "severity": "high",
+      "description": "QBConfig namespace changed to Config in v2.0"
+    },
+    {
+      "pattern": "\\.PlayerData\\.money\\['(\\w+)'\\]",
+      "replacement": ".Functions.GetMoney('$1')",
+      "severity": "critical",
+      "description": "Direct money access deprecated, use GetMoney function"
+    }
+  ]
+}
+```
+
+### 2. Event System Compatibility
+
+Checks for event name changes and registration patterns:
+
+```bash
+# Event Compatibility Report
+Event System Issues:
+===================
+
+Resource: qb-ambulancejob
+├── Deprecated Event: 'QBCore:PlayerLoaded'
+│   └── Found in: client/main.lua:15
+│   └── Replace with: 'QBCore:Client:OnPlayerLoaded'
+│
+├── Missing Event Handler: 'QBCore:Client:OnPlayerUnload'
+│   └── Should handle player logout in: client/main.lua
+│
+└── Event Parameter Mismatch: 'hospital:client:Revive'
+    └── Expected 2 parameters, found 1 in: server/main.lua:234
+```
+
+#### Event Migration Mapping
+
+```json
+{
+  "event_mappings": {
+    "QBCore:PlayerLoaded": "QBCore:Client:OnPlayerLoaded",
+    "QBCore:PlayerLogout": "QBCore:Client:OnPlayerUnload", 
+    "QBCore:PlayerMoneyChanged": "QBCore:Client:OnMoneyChange",
+    "QBCore:ClientJobUpdate": "QBCore:Client:OnJobUpdate"
+  }
+}
+```
+
+### 3. Configuration Conflicts
+
+Detects configuration inconsistencies and conflicts:
+
+```bash
+# Configuration Conflicts
+Config Issues Found:
+===================
+
+Global Conflicts:
+├── qb-inventory & qb-shops both define 'UseTarget = false'
+│   └── May cause targeting conflicts
+│
+├── qb-garages & qb-apartments both use spawn location vector4(123, 456, 78, 90)
+│   └── Overlapping spawn points detected
+│
+Resource-specific Issues:
+├── qb-fuel: Missing required config option 'PumpModels'
+├── qb-banking: Deprecated config option 'UseOldBanking' should be removed
+└── qb-phone: Config version mismatch - using v1.5 format in v2.0 resource
+```
+
+#### Configuration Schema Validation
+
+```json
+{
+  "config_schemas": {
+    "qb-inventory": {
+      "required_fields": ["MaxInventoryWeight", "MaxDropDistance"],
+      "deprecated_fields": ["UseOldInventory", "LegacyMode"],
+      "version_requirements": {
+        "min_version": "2.0.0",
+        "config_version": "2.1"
+      }
+    }
+  }
+}
+```
+
+### 4. Database Schema Compatibility
+
+Validates database structure against QBCore requirements:
+
+```bash
+# Database Schema Check
+Database Compatibility:
+======================
+
+Missing Tables:
+├── player_outfits (Required for qb-clothing v2.0+)
+├── player_phone_messages (Required for qb-phone v2.0+)
+
+Missing Columns:
+├── players.phone_number (Required for v2.0)
+├── players.metadata (Required for v2.0)
+├── player_vehicles.metadata (Required for enhanced vehicle system)
+
+Index Recommendations:
+├── CREATE INDEX idx_phone_number ON players (phone_number);
+├── CREATE INDEX idx_citizenid ON player_vehicles (citizenid);
+
+Data Format Issues:
+├── 15 players with invalid JSON in 'money' column
+└── 3 players with NULL metadata (should be '{}')
+```
+
+#### Schema Validation Rules
+
+```sql
+-- schema-validation.sql
+-- Define expected database structure
+
+-- Required tables for QBCore v2.0+
+CREATE TABLE IF NOT EXISTS schema_requirements (
+    table_name VARCHAR(64),
+    column_name VARCHAR(64),
+    data_type VARCHAR(32),
+    is_nullable BOOLEAN,
+    default_value TEXT,
+    version_required VARCHAR(10)
+);
+
+INSERT INTO schema_requirements VALUES
+('players', 'phone_number', 'VARCHAR(20)', true, NULL, '2.0.0'),
+('players', 'metadata', 'LONGTEXT', true, '{}', '2.0.0'),
+('player_outfits', 'id', 'INT', false, NULL, '2.0.0');
+```
+
+### 5. Dependency Version Analysis
+
+Checks resource dependencies and version compatibility:
+
+```bash
+# Dependency Analysis
+Dependency Issues:
+=================
+
+Version Conflicts:
+├── qb-inventory requires qb-core ^2.0.0, found 1.9.5
+├── qb-phone requires qb-inventory ^2.1.0, found 2.0.3
+└── custom-banking requires qb-banking 1.x, but v2.0 installed
+
+Missing Dependencies:
+├── qb-customs requires ox_lib (not installed)
+├── qb-racing requires qb-phone v2.0+ (v1.5 found)
+
+Resource Compatibility Matrix:
+┌─────────────────┬─────────────┬─────────────┬─────────────┐
+│ Resource        │ Current     │ Required    │ Compatible  │
+├─────────────────┼─────────────┼─────────────┼─────────────┤
+│ qb-core         │ 2.0.0       │ -           │ ✓           │
+│ qb-inventory    │ 2.1.0       │ qb-core^2.0 │ ✓           │
+│ qb-phone        │ 1.9.0       │ qb-core^2.0 │ ✗           │
+│ custom-banking  │ 1.0.0       │ qb-core^1.0 │ ✗           │
+└─────────────────┴─────────────┴─────────────┴─────────────┘
+```
+
+## Automated Fix Suggestions
+
+### Auto-Fix Common Issues
+
+The compatibility checker can automatically fix some common issues:
+
+```bash
+# Apply automatic fixes (creates backup first)
+./check-compatibility.sh --auto-fix --backup
+
+# Preview fixes without applying
+./check-compatibility.sh --auto-fix --dry-run
+
+# Fix specific types of issues
+./check-compatibility.sh --auto-fix deprecated-functions
+```
+
+#### Auto-Fix Rules
+
+```json
+{
+  "auto_fixes": [
+    {
+      "name": "Update Config Namespace",
+      "find": "QBConfig\\.",
+      "replace": "Config.",
+      "files": ["**/config*.lua"],
+      "backup": true
+    },
+    {
+      "name": "Update Money Access",
+      "find": "Player\\.PlayerData\\.money\\['(\\w+)'\\]",
+      "replace": "Player.Functions.GetMoney('$1')",
+      "files": ["**/*.lua"],
+      "manual_review": true
+    },
+    {
+      "name": "Update Event Names", 
+      "mappings": {
+        "QBCore:PlayerLoaded": "QBCore:Client:OnPlayerLoaded",
+        "QBCore:PlayerLogout": "QBCore:Client:OnPlayerUnload"
+      },
+      "files": ["**/*.lua"]
+    }
+  ]
+}
+```
+
+## Custom Compatibility Rules
+
+### Create Custom Rules
+
+Define project-specific compatibility rules:
+
+```json
+{
+  "custom_rules": [
+    {
+      "id": "custom_money_system",
+      "name": "Custom Money System Check", 
+      "description": "Check for custom money system compatibility",
+      "pattern": "customMoney\\.|CustomBanking\\.",
+      "severity": "warning",
+      "message": "Custom money system detected - verify compatibility with QBCore v2.0",
+      "files": ["**/*.lua"]
+    },
+    {
+      "id": "third_party_inventory",
+      "name": "Third-party Inventory Check",
+      "description": "Detect third-party inventory systems",
+      "files": ["**/inventory/**/*.lua"],
+      "exclude_patterns": ["qb-inventory"],
+      "severity": "info",
+      "message": "Third-party inventory system detected - ensure compatibility"
+    }
+  ]
+}
+```
+
+### Rule Testing
+
+```bash
+# Test custom rules
+./check-compatibility.sh --test-rules custom_rules.json
+
+# Validate rule syntax
+./check-compatibility.sh --validate-rules
+
+# Debug rule matching
+./check-compatibility.sh --debug-rules custom_money_system
+```
+
+## Integration with CI/CD
+
+### GitHub Actions Integration
+
+```yaml
+# .github/workflows/compatibility-check.yml
+name: QBCore Compatibility Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  compatibility-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup Compatibility Checker
+      run: |
+        git clone https://github.com/qbcore-framework/qb-compatibility-checker.git
+        cd qb-compatibility-checker
+        npm install
+    
+    - name: Run Compatibility Check
+      run: |
+        cd qb-compatibility-checker
+        ./check-compatibility.sh --server-path ../ --output ../compatibility-report.json
+    
+    - name: Upload Results
+      uses: actions/upload-artifact@v2
+      with:
+        name: compatibility-report
+        path: compatibility-report.json
+    
+    - name: Comment PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('compatibility-report.json', 'utf8'));
+          
+          let comment = '## 🔍 Compatibility Check Results\n\n';
+          
+          if (report.issues.length === 0) {
+            comment += '✅ No compatibility issues found!';
+          } else {
+            comment += `⚠️ Found ${report.issues.length} compatibility issues:\n\n`;
+            report.issues.forEach(issue => {
+              comment += `- **${issue.severity}**: ${issue.message}\n`;
+            });
+          }
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+```
+
+### Pre-commit Hook
+
+```bash
+#!/bin/bash
+# .git/hooks/pre-commit
+
+echo "Running QBCore compatibility check..."
+
+# Run compatibility check on staged files
+if ! ./tools/check-compatibility.sh --staged-only --quiet; then
+    echo "❌ Compatibility issues found. Please fix before committing."
+    echo "Run './tools/check-compatibility.sh --staged-only' for details."
+    exit 1
+fi
+
+echo "✅ Compatibility check passed."
+```
+
+## Reporting and Analysis
+
+### Generate Detailed Reports
+
+```bash
+# Generate comprehensive report
+./check-compatibility.sh --report-format html --output compatibility-report.html
+
+# Generate JSON report for processing
+./check-compatibility.sh --report-format json --output report.json
+
+# Generate executive summary
+./check-compatibility.sh --summary --email admin@yourserver.com
+```
+
+### Report Formats
+
+#### HTML Report Example
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QBCore Compatibility Report</title>
+</head>
+<body>
+    <h1>Compatibility Analysis Summary</h1>
+    
+    <div class="summary">
+        <h2>Overall Score: 78/100</h2>
+        <p>Status: <span class="warning">Needs Attention</span></p>
+    </div>
+    
+    <div class="issues">
+        <h2>Critical Issues (2)</h2>
+        <ul>
+            <li>qb-inventory: Deprecated money access pattern</li>
+            <li>qb-phone: Missing required database table</li>
+        </ul>
+    </div>
+</body>
+</html>
+```
+
+#### JSON Report Structure
+
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "server_info": {
+    "qbcore_version": "2.0.0",
+    "total_resources": 45,
+    "checked_resources": 42
+  },
+  "summary": {
+    "compatibility_score": 78,
+    "total_issues": 15,
+    "critical_issues": 2,
+    "warnings": 8,
+    "info": 5
+  },
+  "issues": [
+    {
+      "severity": "critical",
+      "category": "deprecated_functions",
+      "resource": "qb-inventory",
+      "file": "server/main.lua",
+      "line": 45,
+      "message": "Direct money access deprecated",
+      "suggestion": "Use Player.Functions.GetMoney('cash')",
+      "auto_fixable": true
+    }
+  ],
+  "recommendations": [
+    "Update qb-phone to version 2.0+",
+    "Run database migration script",
+    "Review custom resources for compatibility"
+  ]
+}
+```
+
+## Troubleshooting
+
+### Common Issues
+
+**Issue: "Permission denied when accessing resources"**
+```bash
+# Fix file permissions
+chmod +x check-compatibility.sh
+chmod -R 755 /path/to/fivem/resources
+```
+
+**Issue: "Database connection failed"**
+```bash
+# Test database connection
+mysql -h localhost -u username -p database_name -e "SELECT 1;"
+
+# Update database credentials in config.json
+```
+
+**Issue: "False positive deprecated function warnings"**
+```json
+{
+  "whitelist": [
+    {
+      "pattern": "Player.PlayerData.money",
+      "reason": "Custom implementation maintains compatibility",
+      "resources": ["custom-banking"]
+    }
+  ]
+}
+```
+
+### Performance Optimization
+
+For large servers with many resources:
+
+```bash
+# Use parallel processing
+./check-compatibility.sh --parallel 4
+
+# Skip large files
+./check-compatibility.sh --skip-large-files
+
+# Cache results
+./check-compatibility.sh --cache-results
+
+# Incremental checking
+./check-compatibility.sh --incremental --since last-check
+```
+
+---
+
+<div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6 mt-8">
+  <h4 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-2">
+    ⚠️ Important Notes
+  </h4>
+  <ul className="text-amber-800 dark:text-amber-200 space-y-1">
+    <li>• Compatibility checking is advisory - manual testing is still required</li>
+    <li>• Auto-fixes create backups, but verify changes before going live</li>
+    <li>• Some compatibility issues may only appear at runtime</li>
+    <li>• Custom resources may have unique compatibility requirements</li>
+  </ul>
+</div>
+
+## Additional Resources
+
+- [Breaking Changes Reference](/docs/migration/breaking-changes)
+- [Resource Update Guide](/docs/migration/resource-updates)
+- [Migration Script Tools](/docs/migration/tools/migration-script)
+- [Troubleshooting Guide](/docs/troubleshooting)

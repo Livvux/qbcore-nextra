@@ -1,0 +1,568 @@
+# Database Migration Tools
+
+Automated scripts and tools to help you safely migrate your QBCore database between versions. These tools handle schema updates, data migration, and validation to ensure your player data remains intact during upgrades.
+
+## Overview
+
+Database migration is one of the most critical aspects of upgrading QBCore. These tools provide automated, tested, and reversible migration procedures to minimize downtime and data loss risks.
+
+<div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-6">
+  <h4 className="text-yellow-900 dark:text-yellow-100 font-semibold mb-2">⚠️ Critical Warning</h4>
+  <p className="text-yellow-800 dark:text-yellow-200">
+    Always backup your database before running any migration scripts. Test migrations on a copy of your production database first.
+  </p>
+</div>
+
+## Quick Start
+
+### 1. Download Migration Tools
+
+```bash
+# Clone the migration toolkit
+git clone https://github.com/qbcore-framework/qb-migration-tools.git
+cd qb-migration-tools
+
+# Make scripts executable
+chmod +x scripts/*.sh
+```
+
+### 2. Configure Database Connection
+
+```bash
+# Copy example configuration
+cp config/database.example.conf config/database.conf
+
+# Edit configuration with your database details
+nano config/database.conf
+```
+
+```bash
+# database.conf
+DB_HOST="localhost"
+DB_PORT="3306"
+DB_USER="your_username"
+DB_PASS="your_password"
+DB_NAME="your_database"
+BACKUP_DIR="/path/to/backups"
+```
+
+### 3. Run Pre-Migration Check
+
+```bash
+# Validate current database state
+./scripts/pre-migration-check.sh
+```
+
+### 4. Execute Migration
+
+```bash
+# Run the migration (example: v1 to v2)
+./scripts/migrate-v1-to-v2.sh
+```
+
+## Migration Scripts
+
+### QBCore v1.0 to v2.0 Migration
+
+#### Pre-Migration Script (`pre-migration-v2.sql`)
+
+```sql
+-- QBCore v1 to v2 Database Pre-Migration
+-- Run this BEFORE installing QBCore v2.0
+
+-- Create backup table for rollback
+CREATE TABLE IF NOT EXISTS `players_backup_v1` LIKE `players`;
+INSERT INTO `players_backup_v1` SELECT * FROM `players`;
+
+-- Add new required columns
+ALTER TABLE `players` 
+ADD COLUMN IF NOT EXISTS `phone_number` VARCHAR(20) DEFAULT NULL,
+ADD COLUMN IF NOT EXISTS `last_updated` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+ADD COLUMN IF NOT EXISTS `metadata` LONGTEXT DEFAULT NULL;
+
+-- Create indexes for performance
+CREATE INDEX IF NOT EXISTS `idx_phone_number` ON `players` (`phone_number`);
+CREATE INDEX IF NOT EXISTS `idx_last_updated` ON `players` (`last_updated`);
+CREATE INDEX IF NOT EXISTS `idx_citizenid` ON `players` (`citizenid`);
+
+-- Initialize metadata column
+UPDATE `players` SET `metadata` = '{}' WHERE `metadata` IS NULL;
+
+-- Validate money data format
+UPDATE `players` SET 
+`money` = CASE 
+    WHEN JSON_VALID(`money`) = 0 THEN '{"cash": 0, "bank": 0, "crypto": 0}'
+    ELSE `money`
+END;
+
+-- Add missing money types
+UPDATE `players` SET `money` = JSON_SET(
+    `money`,
+    '$.cash', COALESCE(JSON_EXTRACT(`money`, '$.cash'), 0),
+    '$.bank', COALESCE(JSON_EXTRACT(`money`, '$.bank'), 0),
+    '$.crypto', COALESCE(JSON_EXTRACT(`money`, '$.crypto'), 0)
+) WHERE JSON_EXTRACT(`money`, '$.cash') IS NULL 
+   OR JSON_EXTRACT(`money`, '$.bank') IS NULL 
+   OR JSON_EXTRACT(`money`, '$.crypto') IS NULL;
+```
+
+#### Main Migration Script (`migrate-v1-to-v2.sql`)
+
+```sql
+-- QBCore v1 to v2 Database Migration
+-- Run this AFTER installing QBCore v2.0
+
+-- Update job structure for new format
+UPDATE `players` SET `job` = JSON_SET(
+    `job`,
+    '$.type', CASE 
+        WHEN JSON_EXTRACT(`job`, '$.name') IN ('police', 'bcso', 'sahp') THEN 'leo'
+        WHEN JSON_EXTRACT(`job`, '$.name') IN ('ambulance', 'doctor') THEN 'ems'
+        WHEN JSON_EXTRACT(`job`, '$.name') = 'mechanic' THEN 'mechanic'
+        ELSE 'civilian'
+    END,
+    '$.onduty', COALESCE(JSON_EXTRACT(`job`, '$.onduty'), true)
+) WHERE JSON_EXTRACT(`job`, '$.type') IS NULL;
+
+-- Update gang structure for new format  
+UPDATE `players` SET `gang` = JSON_SET(
+    `gang`,
+    '$.type', 'gang',
+    '$.onduty', COALESCE(JSON_EXTRACT(`gang`, '$.onduty'), false)
+) WHERE JSON_EXTRACT(`gang`, '$.type') IS NULL AND JSON_EXTRACT(`gang`, '$.name') != 'none';
+
+-- Convert old phone numbers to new format
+UPDATE `players` SET 
+`phone_number` = CONCAT('555-', LPAD(FLOOR(RAND() * 10000), 4, '0'))
+WHERE `phone_number` IS NULL;
+
+-- Ensure unique phone numbers
+SET @row_number = 0;
+UPDATE `players` SET 
+`phone_number` = CONCAT('555-', LPAD((@row_number := @row_number + 1), 4, '0'))
+WHERE `phone_number` IS NULL OR `phone_number` = '';
+
+-- Migrate character info to new format
+UPDATE `players` SET `charinfo` = JSON_SET(
+    `charinfo`,
+    '$.backstory', COALESCE(JSON_EXTRACT(`charinfo`, '$.backstory'), 'No backstory available'),
+    '$.nationality', COALESCE(JSON_EXTRACT(`charinfo`, '$.nationality'), 'American'),
+    '$.phone', COALESCE(JSON_EXTRACT(`charinfo`, '$.phone'), `phone_number`)
+) WHERE JSON_EXTRACT(`charinfo`, '$.backstory') IS NULL;
+
+-- Create new tables for v2 features
+CREATE TABLE IF NOT EXISTS `player_outfits` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `citizenid` VARCHAR(50) NOT NULL,
+    `outfit_name` VARCHAR(50) NOT NULL,
+    `outfit_data` LONGTEXT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_citizenid` (`citizenid`),
+    CONSTRAINT `fk_player_outfits_players` FOREIGN KEY (`citizenid`) REFERENCES `players`(`citizenid`) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS `player_phone_messages` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `citizenid` VARCHAR(50) NOT NULL,
+    `number` VARCHAR(20) NOT NULL,
+    `messages` LONGTEXT NOT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    KEY `idx_citizenid` (`citizenid`),
+    KEY `idx_number` (`number`)
+);
+
+-- Migration validation
+SELECT 
+    COUNT(*) as total_players,
+    COUNT(CASE WHEN `metadata` IS NOT NULL THEN 1 END) as players_with_metadata,
+    COUNT(CASE WHEN `phone_number` IS NOT NULL THEN 1 END) as players_with_phone,
+    COUNT(CASE WHEN JSON_VALID(`money`) THEN 1 END) as players_with_valid_money
+FROM `players`;
+```
+
+#### Post-Migration Validation (`post-migration-check.sql`)
+
+```sql
+-- Post-migration validation script
+-- Verify data integrity after migration
+
+-- Check for missing required data
+SELECT 'Missing phone numbers' as issue, COUNT(*) as count
+FROM `players` WHERE `phone_number` IS NULL OR `phone_number` = ''
+UNION ALL
+SELECT 'Invalid money data' as issue, COUNT(*) as count  
+FROM `players` WHERE JSON_VALID(`money`) = 0
+UNION ALL
+SELECT 'Missing metadata' as issue, COUNT(*) as count
+FROM `players` WHERE `metadata` IS NULL
+UNION ALL
+SELECT 'Duplicate phone numbers' as issue, COUNT(*) - COUNT(DISTINCT `phone_number`) as count
+FROM `players` WHERE `phone_number` IS NOT NULL;
+
+-- Validate job structure
+SELECT 
+    JSON_EXTRACT(`job`, '$.name') as job_name,
+    COUNT(*) as player_count,
+    COUNT(CASE WHEN JSON_EXTRACT(`job`, '$.type') IS NULL THEN 1 END) as missing_type
+FROM `players` 
+GROUP BY JSON_EXTRACT(`job`, '$.name')
+HAVING missing_type > 0;
+
+-- Check database performance
+ANALYZE TABLE `players`;
+SHOW INDEX FROM `players`;
+```
+
+## Migration Script Usage
+
+### Automated Migration Tool
+
+```bash
+#!/bin/bash
+# migrate-qbcore.sh - Complete migration automation
+
+source config/database.conf
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+echo -e "${GREEN}QBCore Database Migration Tool${NC}"
+echo "=================================="
+
+# Function to execute SQL file
+execute_sql() {
+    local file=$1
+    local description=$2
+    
+    echo -e "${YELLOW}Executing: $description${NC}"
+    
+    if mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME < $file; then
+        echo -e "${GREEN}✓ Success: $description${NC}"
+        return 0
+    else
+        echo -e "${RED}✗ Failed: $description${NC}"
+        return 1
+    fi
+}
+
+# Create backup
+echo -e "${YELLOW}Creating database backup...${NC}"
+BACKUP_FILE="$BACKUP_DIR/qbcore-backup-$(date +%Y%m%d-%H%M%S).sql"
+mkdir -p $BACKUP_DIR
+
+if mysqldump -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME > $BACKUP_FILE; then
+    echo -e "${GREEN}✓ Backup created: $BACKUP_FILE${NC}"
+else
+    echo -e "${RED}✗ Backup failed! Aborting migration.${NC}"
+    exit 1
+fi
+
+# Pre-migration checks
+echo -e "${YELLOW}Running pre-migration checks...${NC}"
+if ! execute_sql "sql/pre-migration-check.sql" "Pre-migration validation"; then
+    echo -e "${RED}Pre-migration checks failed. Please resolve issues before continuing.${NC}"
+    exit 1
+fi
+
+# Execute pre-migration script
+if ! execute_sql "sql/pre-migration-v2.sql" "Pre-migration schema updates"; then
+    echo -e "${RED}Pre-migration failed. Restoring backup...${NC}"
+    mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME < $BACKUP_FILE
+    exit 1
+fi
+
+# Execute main migration
+if ! execute_sql "sql/migrate-v1-to-v2.sql" "Main migration v1 to v2"; then
+    echo -e "${RED}Migration failed. Restoring backup...${NC}"
+    mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME < $BACKUP_FILE
+    exit 1
+fi
+
+# Post-migration validation
+if ! execute_sql "sql/post-migration-check.sql" "Post-migration validation"; then
+    echo -e "${YELLOW}⚠ Post-migration validation found issues. Check output above.${NC}"
+fi
+
+echo -e "${GREEN}Migration completed successfully!${NC}"
+echo "Backup location: $BACKUP_FILE"
+echo "Please test your server thoroughly before removing the backup."
+```
+
+### Manual Step-by-Step Migration
+
+If you prefer manual control:
+
+```bash
+# Step 1: Create backup
+mysqldump -u username -p database_name > backup-$(date +%Y%m%d).sql
+
+# Step 2: Test connection
+mysql -u username -p database_name -e "SELECT COUNT(*) FROM players;"
+
+# Step 3: Run pre-migration
+mysql -u username -p database_name < sql/pre-migration-v2.sql
+
+# Step 4: Verify pre-migration
+mysql -u username -p database_name < sql/pre-migration-check.sql
+
+# Step 5: Run main migration
+mysql -u username -p database_name < sql/migrate-v1-to-v2.sql
+
+# Step 6: Validate results
+mysql -u username -p database_name < sql/post-migration-check.sql
+```
+
+## Rollback Procedures
+
+### Automatic Rollback Script
+
+```bash
+#!/bin/bash
+# rollback-migration.sh
+
+source config/database.conf
+
+echo "QBCore Migration Rollback Tool"
+echo "=============================="
+
+# List available backups
+echo "Available backups:"
+ls -la $BACKUP_DIR/*.sql
+
+read -p "Enter backup file name (full path): " BACKUP_FILE
+
+if [ ! -f "$BACKUP_FILE" ]; then
+    echo "Backup file not found: $BACKUP_FILE"
+    exit 1
+fi
+
+echo "WARNING: This will completely restore your database to the backup state."
+echo "All data created after the backup will be lost."
+read -p "Are you sure? (type 'YES' to continue): " confirm
+
+if [ "$confirm" = "YES" ]; then
+    echo "Restoring database from backup..."
+    mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME < $BACKUP_FILE
+    echo "Database restored successfully."
+else
+    echo "Rollback cancelled."
+fi
+```
+
+### Selective Rollback
+
+For partial rollbacks of specific changes:
+
+```sql
+-- Rollback specific migration changes
+-- Example: Restore original money format
+
+-- Restore from backup table
+UPDATE `players` p1
+JOIN `players_backup_v1` p2 ON p1.citizenid = p2.citizenid
+SET p1.money = p2.money;
+
+-- Remove added columns (if needed)
+-- ALTER TABLE `players` DROP COLUMN `phone_number`;
+-- ALTER TABLE `players` DROP COLUMN `metadata`;
+```
+
+## Migration Validation Tools
+
+### Data Integrity Checker
+
+```bash
+#!/bin/bash
+# validate-migration.sh
+
+echo "QBCore Migration Validation"
+echo "==========================="
+
+# Check player count consistency
+ORIGINAL_COUNT=$(mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME -se "SELECT COUNT(*) FROM players_backup_v1;")
+CURRENT_COUNT=$(mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME -se "SELECT COUNT(*) FROM players;")
+
+echo "Player count comparison:"
+echo "Original: $ORIGINAL_COUNT"
+echo "Current:  $CURRENT_COUNT"
+
+if [ "$ORIGINAL_COUNT" -eq "$CURRENT_COUNT" ]; then
+    echo "✓ Player count matches"
+else
+    echo "✗ Player count mismatch!"
+fi
+
+# Check data completeness
+mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME << 'EOF'
+SELECT 
+    'Phone Numbers' as check_type,
+    COUNT(*) as total,
+    COUNT(phone_number) as with_data,
+    COUNT(*) - COUNT(phone_number) as missing
+FROM players
+UNION ALL
+SELECT 
+    'Metadata' as check_type,
+    COUNT(*) as total,
+    COUNT(CASE WHEN metadata != '{}' THEN 1 END) as with_data,
+    COUNT(CASE WHEN metadata = '{}' OR metadata IS NULL THEN 1 END) as missing  
+FROM players
+UNION ALL
+SELECT 
+    'Valid Money' as check_type,
+    COUNT(*) as total,
+    COUNT(CASE WHEN JSON_VALID(money) THEN 1 END) as with_data,
+    COUNT(CASE WHEN NOT JSON_VALID(money) THEN 1 END) as missing
+FROM players;
+EOF
+```
+
+### Performance Impact Analysis
+
+```sql
+-- Check query performance after migration
+-- Run BEFORE and AFTER migration, compare results
+
+-- Test common queries
+EXPLAIN SELECT * FROM players WHERE citizenid = 'ABC12345';
+EXPLAIN SELECT * FROM players WHERE phone_number = '555-1234';
+EXPLAIN SELECT * FROM players WHERE JSON_EXTRACT(job, '$.name') = 'police';
+
+-- Check index usage
+SHOW INDEX FROM players;
+
+-- Analyze table statistics
+ANALYZE TABLE players;
+SHOW TABLE STATUS LIKE 'players';
+```
+
+## Custom Migration Scripts
+
+### Creating Custom Migration Scripts
+
+For custom resources or modifications:
+
+```sql
+-- Template for custom migration script
+-- custom-migration-template.sql
+
+-- Header comment with description
+-- Custom Migration: [Your Resource Name]
+-- Version: [From] to [To] 
+-- Date: [Date]
+-- Description: [What this migration does]
+
+-- Create backup
+CREATE TABLE IF NOT EXISTS `your_table_backup` LIKE `your_table`;
+INSERT INTO `your_table_backup` SELECT * FROM `your_table`;
+
+-- Your migration logic here
+ALTER TABLE `your_table` ADD COLUMN `new_column` VARCHAR(255);
+UPDATE `your_table` SET `new_column` = 'default_value';
+
+-- Validation
+SELECT 
+    COUNT(*) as total_records,
+    COUNT(`new_column`) as records_with_new_column
+FROM `your_table`;
+
+-- Rollback instructions (commented)
+/*
+DROP TABLE `your_table`;
+RENAME TABLE `your_table_backup` TO `your_table`;
+*/
+```
+
+## Troubleshooting Migration Issues
+
+### Common Error Solutions
+
+**Error: "Table doesn't exist"**
+```bash
+# Check if you're using the correct database
+mysql -u username -p -e "USE your_database; SHOW TABLES;"
+```
+
+**Error: "Duplicate key error"**
+```sql
+-- Find and resolve duplicate data
+SELECT phone_number, COUNT(*) 
+FROM players 
+GROUP BY phone_number 
+HAVING COUNT(*) > 1;
+
+-- Fix duplicates
+UPDATE players SET phone_number = CONCAT(phone_number, '-', id) 
+WHERE phone_number IN (
+    SELECT phone_number FROM (
+        SELECT phone_number FROM players 
+        GROUP BY phone_number HAVING COUNT(*) > 1
+    ) dup
+);
+```
+
+**Error: "JSON format invalid"**
+```sql
+-- Find and fix invalid JSON
+SELECT citizenid, money FROM players WHERE JSON_VALID(money) = 0;
+
+-- Fix invalid JSON
+UPDATE players SET money = '{"cash": 0, "bank": 0, "crypto": 0}' 
+WHERE JSON_VALID(money) = 0;
+```
+
+## Migration Monitoring
+
+### Real-time Migration Monitoring
+
+```bash
+#!/bin/bash
+# monitor-migration.sh
+
+# Monitor migration progress
+while true; do
+    echo "$(date): Checking migration progress..."
+    
+    # Count processed records
+    PROCESSED=$(mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME -se "
+        SELECT COUNT(*) FROM players WHERE phone_number IS NOT NULL;
+    ")
+    
+    TOTAL=$(mysql -h$DB_HOST -P$DB_PORT -u$DB_USER -p$DB_PASS $DB_NAME -se "
+        SELECT COUNT(*) FROM players;
+    ")
+    
+    PERCENTAGE=$((PROCESSED * 100 / TOTAL))
+    echo "Progress: $PROCESSED/$TOTAL ($PERCENTAGE%)"
+    
+    sleep 10
+done
+```
+
+---
+
+<div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6 mt-8">
+  <h4 className="text-lg font-semibold text-green-900 dark:text-green-100 mb-2">
+    ✅ Migration Success Checklist
+  </h4>
+  <ul className="text-green-800 dark:text-green-200 space-y-1">
+    <li>• Database backup created and verified</li>
+    <li>• Migration scripts executed without errors</li>
+    <li>• Data integrity validation passed</li>
+    <li>• Performance tests show acceptable results</li>
+    <li>• Server starts and functions normally</li>
+    <li>• Player data accessible and accurate</li>
+  </ul>
+</div>
+
+## Additional Resources
+
+- [Breaking Changes Reference](/docs/migration/breaking-changes)
+- [Resource Update Guide](/docs/migration/resource-updates)
+- [Backup & Restore Guide](/docs/migration/tools/backup-restore)
+- [Troubleshooting Database Issues](/docs/troubleshooting)

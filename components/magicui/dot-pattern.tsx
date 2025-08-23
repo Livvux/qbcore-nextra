@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import React, { useId, useRef } from "react";
+import React, { useId } from "react";
 
 interface DotPatternProps {
   width?: number;
@@ -16,7 +16,7 @@ interface DotPatternProps {
   glow?: boolean;
 }
 
-export function DotPattern({
+export const DotPattern = React.forwardRef<SVGSVGElement, DotPatternProps>(({
   width = 16,
   height = 16,
   x = 0,
@@ -26,13 +26,12 @@ export function DotPattern({
   cr = 1.5,
   className,
   glow = false,
-}: DotPatternProps) {
+}, ref) => {
   const id = useId();
-  const containerRef = useRef<SVGSVGElement>(null);
 
   return (
     <motion.svg
-      ref={containerRef}
+      ref={ref}
       aria-hidden="true"
       className={cn(
         "pointer-events-none absolute inset-0 h-full w-full",
@@ -92,4 +91,6 @@ export function DotPattern({
       )}
     </motion.svg>
   );
-}
+});
+
+DotPattern.displayName = 'DotPattern';
