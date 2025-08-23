@@ -1,0 +1,631 @@
+---
+title: "FiveM Development Tutorial 2025 - Complete Guide for Beginners"
+description: "Master FiveM development from scratch! Complete tutorial covering server setup, QBCore installation, basic scripting, and resource creation. Perfect for beginners starting their FiveM development journey."
+keywords: "fivem development tutorial, fivem server setup, qbcore tutorial, fivem scripting guide, lua scripting fivem, fivem development environment, learn fivem development 2025"
+---
+
+# FiveM Development Tutorial 2025 - Complete Guide for Beginners
+
+**⏱️ Estimated Time: 60-90 minutes | 🎯 Difficulty: Beginner | 📚 Step-by-Step Learning Path**
+
+Welcome to the most comprehensive FiveM development tutorial for 2025! This guide will take you from zero to creating your first custom FiveM server with QBCore framework. Whether you're completely new to FiveM or looking to upgrade your skills, this tutorial has everything you need.
+
+import { Cards, Callout, Steps, Tabs } from 'nextra/components'
+
+<Callout type="info">
+  **What You'll Learn**: By the end of this tutorial, you'll have a fully functional FiveM server running QBCore framework and understand the fundamentals of FiveM development.
+</Callout>
+
+## What is FiveM Development?
+
+FiveM development involves creating custom game modes, servers, and modifications for Grand Theft Auto V using the FiveM modification framework. It allows developers to:
+
+- **Create Custom Servers**: Build unique roleplay experiences
+- **Develop Resources**: Custom scripts and game modifications
+- **Manage Communities**: Admin tools and player management systems
+- **Monetize Projects**: Create revenue through server donations
+
+### Why Choose QBCore for FiveM Development?
+
+| Feature | QBCore Advantage | Developer Benefit |
+|---------|------------------|-------------------|
+| **Modern Architecture** | ✅ Clean, maintainable codebase | Faster development cycles |
+| **Built-in Features** | ✅ Jobs, inventory, phone system | Less custom coding required |
+| **Active Community** | ✅ Regular updates & support | Reliable long-term solution |
+| **Performance** | ✅ Optimized for large servers | Better player experience |
+| **Documentation** | ✅ Comprehensive guides | Easier learning curve |
+
+## Prerequisites & Requirements
+
+Before we begin, ensure you have:
+
+### System Requirements
+- **Operating System**: Windows 10+ or Linux (Ubuntu 18.04+)
+- **RAM**: Minimum 8GB (16GB recommended)
+- **Storage**: At least 10GB free space
+- **Internet**: Stable connection for downloads
+
+### Required Software
+- **FiveM Server Files**: Latest version
+- **Database**: MySQL or MariaDB
+- **Code Editor**: VS Code (recommended)
+- **Git**: For version control
+- **Steam Account**: For FiveM license key
+
+### Knowledge Prerequisites
+- **Basic Programming**: Understanding of variables and functions
+- **Command Line**: Basic terminal/command prompt usage
+- **Text Editing**: Comfortable with code editors
+
+<Callout type="warning">
+  **Important**: Never use pirated or cracked versions of GTA V. FiveM requires a legitimate copy of the game.
+</Callout>
+
+## Step 1: Setting Up Your Development Environment
+
+### Download & Install Required Software
+
+<Steps>
+### Install Code Editor
+
+Download and install VS Code with essential extensions:
+
+```bash
+# Recommended VS Code Extensions
+- Lua Language Server
+- FiveM Natives
+- GitLens
+- Code Spell Checker
+```
+
+### Install Database Server
+
+<Tabs items={['Windows', 'Linux']}>
+  <Tabs.Tab>
+    **Install XAMPP (Recommended for beginners)**:
+    1. Download from [xampp.apache.org](https://www.apachefriends.org)
+    2. Run installer as administrator
+    3. Select MySQL and Apache components
+    4. Start MySQL service from XAMPP panel
+  </Tabs.Tab>
+  <Tabs.Tab>
+    **Install MySQL Server**:
+    ```bash
+    sudo apt update
+    sudo apt install mysql-server
+    sudo mysql_secure_installation
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+### Install Git Version Control
+
+<Tabs items={['Windows', 'Linux']}>
+  <Tabs.Tab>
+    1. Download from [git-scm.com](https://git-scm.com/download/win)
+    2. Run installer with default settings
+    3. Verify installation: `git --version`
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    sudo apt install git
+    git --version
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+</Steps>
+
+## Step 2: Download & Setup FiveM Server
+
+### Get FiveM Server Files
+
+<Steps>
+### Create Project Directory
+
+```bash
+mkdir fivem-server
+cd fivem-server
+```
+
+### Download Server Files
+
+<Tabs items={['Windows', 'Linux']}>
+  <Tabs.Tab>
+    1. Visit [runtime.fivem.net](https://runtime.fivem.net/artifacts/fivem/build_server_windows/master/)
+    2. Download latest server build
+    3. Extract to your project directory
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    wget https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/[latest-build]/fx.tar.xz
+    tar -xf fx.tar.xz
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+### Get FiveM License Key
+
+1. Visit [keymaster.fivem.net](https://keymaster.fivem.net)
+2. Register/login with your account
+3. Create new server key
+4. Copy the generated license key
+
+</Steps>
+
+### Configure Basic Server
+
+Create `server.cfg` file in your server directory:
+
+```cfg
+# Server Information
+sv_hostname "^7My FiveM Development Server ^3[QBCore]"
+sv_projectName "FiveM Development Server"
+sv_projectDesc "Learning FiveM Development with QBCore"
+
+# Server Settings
+sv_maxclients 32
+sv_endpointprivacy true
+sv_listing_type "private"  # Change to "public" when ready
+
+# License Key (REPLACE WITH YOUR KEY)
+sv_licenseKey "YOUR_LICENSE_KEY_HERE"
+
+# Database Connection (Update with your MySQL details)
+set mysql_connection_string "mysql://root:password@localhost/qbcore?charset=utf8mb4"
+
+# Essential Resources
+ensure mapmanager
+ensure chat
+ensure spawnmanager
+ensure sessionmanager
+ensure basic-gamemode
+ensure hardcap
+ensure baseevents
+
+# QBCore Resources (We'll add these after installation)
+```
+
+<Callout type="error">
+  **Security Note**: Never share your license key publicly or commit it to version control. Consider using environment variables in production.
+</Callout>
+
+## Step 3: Install QBCore Framework
+
+### Download QBCore
+
+<Steps>
+### Clone QBCore Repository
+
+```bash
+cd resources
+git clone https://github.com/qbcore-framework/qb-core.git [qb-core]
+```
+
+### Install Essential Resources
+
+```bash
+# Core Framework Components
+git clone https://github.com/qbcore-framework/qb-multicharacter.git [qb-multicharacter]
+git clone https://github.com/qbcore-framework/qb-spawn.git [qb-spawn]
+git clone https://github.com/qbcore-framework/qb-hud.git [qb-hud]
+git clone https://github.com/qbcore-framework/qb-inventory.git [qb-inventory]
+git clone https://github.com/qbcore-framework/qb-menu.git [qb-menu]
+```
+
+### Setup Database
+
+1. Open your database management tool (phpMyAdmin for XAMPP users)
+2. Create new database named `qbcore`
+3. Import the SQL files from `qb-core/import.sql`
+
+</Steps>
+
+### Update Server Configuration
+
+Add QBCore resources to your `server.cfg`:
+
+```cfg
+# QBCore Framework
+ensure qb-core
+ensure qb-multicharacter
+ensure qb-spawn
+ensure qb-hud
+ensure qb-inventory
+ensure qb-menu
+
+# Additional QBCore Resources
+ensure qb-vehiclekeys
+ensure qb-garages
+ensure qb-fuel
+ensure qb-shops
+ensure qb-banking
+```
+
+## Step 4: First Server Launch & Testing
+
+### Start Your Server
+
+<Tabs items={['Windows', 'Linux']}>
+  <Tabs.Tab>
+    ```cmd
+    # Navigate to server directory
+    cd C:\path\to\your\fivem-server
+    
+    # Start server
+    run.cmd +exec server.cfg
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```bash
+    # Make run script executable
+    chmod +x run.sh
+    
+    # Start server
+    ./run.sh +exec server.cfg
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+### Connect to Your Server
+
+1. Open FiveM client
+2. Go to "Play" → "Connect"
+3. Enter: `localhost:30120`
+4. Click "Connect"
+
+<Callout type="success">
+  **Success Indicators**:
+  - Server starts without errors
+  - You can connect and spawn in-game
+  - Character creation system appears
+  - Basic QBCore features work (inventory, phone, etc.)
+</Callout>
+
+## Step 5: Understanding FiveM Development Basics
+
+### Resource Structure
+
+Every FiveM resource follows this structure:
+
+```
+resource-name/
+├── fxmanifest.lua      # Resource configuration
+├── config.lua          # Settings and options
+├── server/
+│   └── main.lua        # Server-side code
+├── client/
+│   └── main.lua        # Client-side code
+├── shared/
+│   └── shared.lua      # Code available on both sides
+└── html/               # UI files (optional)
+    ├── index.html
+    ├── style.css
+    └── script.js
+```
+
+### Your First Custom Resource
+
+Let's create a simple "Hello World" resource:
+
+<Steps>
+### Create Resource Directory
+
+```bash
+cd resources
+mkdir [hello-world]
+cd [hello-world]
+```
+
+### Create fxmanifest.lua
+
+```lua
+fx_version 'cerulean'
+game 'gta5'
+
+name 'hello-world'
+description 'My first FiveM resource'
+author 'Your Name'
+version '1.0.0'
+
+client_scripts {
+    'client/main.lua'
+}
+
+server_scripts {
+    'server/main.lua'
+}
+```
+
+### Create Server Script
+
+Create `server/main.lua`:
+
+```lua
+-- Server-side code runs on the server
+print("^2[Hello World] ^7Server-side script loaded successfully!")
+
+-- Register a server event
+RegisterServerEvent('hello-world:serverTest')
+AddEventHandler('hello-world:serverTest', function()
+    print("^3[Hello World] ^7Server event triggered by player: " .. GetPlayerName(source))
+end)
+
+-- Register a command
+RegisterCommand('hello', function(source, args, rawCommand)
+    if source == 0 then
+        print("^5[Hello World] ^7Hello from server console!")
+    else
+        TriggerClientEvent('hello-world:clientResponse', source, "Hello from server!")
+    end
+end, false)
+```
+
+### Create Client Script
+
+Create `client/main.lua`:
+
+```lua
+-- Client-side code runs on each player's game
+print("^2[Hello World] ^7Client-side script loaded successfully!")
+
+-- Register client event
+RegisterNetEvent('hello-world:clientResponse')
+AddEventHandler('hello-world:clientResponse', function(message)
+    print("^4[Hello World] ^7Received message: " .. message)
+    
+    -- Show notification to player
+    SetNotificationTextEntry("STRING")
+    AddTextComponentString(message)
+    DrawNotification(false, false)
+end)
+
+-- Trigger server event when player spawns
+AddEventHandler('onClientResourceStart', function(resourceName)
+    if resourceName == GetCurrentResourceName() then
+        TriggerServerEvent('hello-world:serverTest')
+    end
+end)
+```
+
+### Add Resource to Server
+
+Add to your `server.cfg`:
+```cfg
+ensure hello-world
+```
+
+</Steps>
+
+### Test Your Resource
+
+1. Restart your server or use `refresh` and `ensure hello-world` in server console
+2. Connect to your server
+3. Type `/hello` in chat
+4. Check both server console and game for messages
+
+<Callout type="success">
+  **Congratulations!** You've created your first FiveM resource. This demonstrates the basic client-server architecture that powers all FiveM development.
+</Callout>
+
+## Step 6: QBCore Integration Basics
+
+### Understanding QBCore Structure
+
+QBCore provides several key objects and functions:
+
+```lua
+-- Get QBCore object (use in any script)
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Common QBCore functions
+local Player = QBCore.Functions.GetPlayer(source)  -- Get player object
+local PlayerData = QBCore.Functions.GetPlayerData() -- Get client player data
+QBCore.Functions.Notify("Hello!", "success")        -- Show notification
+```
+
+### Creating a QBCore Resource
+
+Let's modify our hello-world resource to use QBCore:
+
+Update `client/main.lua`:
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+RegisterNetEvent('hello-world:clientResponse')
+AddEventHandler('hello-world:clientResponse', function(message)
+    -- Use QBCore notification instead of GTA notification
+    QBCore.Functions.Notify(message, "success", 3000)
+end)
+```
+
+Update `server/main.lua`:
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+RegisterCommand('hello', function(source, args, rawCommand)
+    if source == 0 then
+        print("^5[Hello World] ^7Hello from server console!")
+    else
+        local Player = QBCore.Functions.GetPlayer(source)
+        if Player then
+            local playerName = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
+            TriggerClientEvent('hello-world:clientResponse', source, "Hello " .. playerName .. "!")
+        end
+    end
+end, false)
+```
+
+## Step 7: Essential Development Tools & Tips
+
+### Debugging Tools
+
+<Cards>
+  <Cards.Card title="Server Console">
+    Monitor server-side errors and print statements
+  </Cards.Card>
+  
+  <Cards.Card title="F8 Console (In-Game)">
+    Access client-side console for debugging
+  </Cards.Card>
+  
+  <Cards.Card title="Network Monitor">
+    Use browser dev tools to debug NUI issues
+  </Cards.Card>
+  
+  <Cards.Card title="Database Tools">
+    phpMyAdmin, MySQL Workbench for database management
+  </Cards.Card>
+</Cards>
+
+### Common Development Commands
+
+```bash
+# Server console commands
+refresh                    # Reload all resources
+ensure [resource-name]     # Start specific resource  
+stop [resource-name]       # Stop specific resource
+restart [resource-name]    # Restart specific resource
+
+# In-game commands (if you have admin permissions)
+/dev                      # Toggle development mode
+/coords                   # Get current coordinates
+/car [vehicle-name]       # Spawn vehicle
+```
+
+### Performance Best Practices
+
+1. **Efficient Event Usage**: Don't spam server events
+2. **Proper Threading**: Use `Wait()` in loops to prevent blocking
+3. **Resource Cleanup**: Clean up blips, entities, and events
+4. **Minimal Database Queries**: Cache frequently accessed data
+5. **Optimized Loops**: Avoid unnecessary iterations
+
+```lua
+-- Bad: Blocking loop
+while true do
+    -- This will freeze the server/client
+    DoSomething()
+end
+
+-- Good: Non-blocking loop with wait
+CreateThread(function()
+    while true do
+        DoSomething()
+        Wait(1000) -- Wait 1 second between iterations
+    end
+end)
+```
+
+## Step 8: Next Steps & Resources
+
+### Continue Learning
+
+<Cards>
+  <Cards.Card 
+    title="Lua Scripting for FiveM" 
+    href="/tutorials/beginner/lua-scripting-fivem"
+  >
+    **⏱️ 45 mins** | Master Lua programming specific to FiveM development
+  </Cards.Card>
+  
+  <Cards.Card 
+    title="QBCore Architecture" 
+    href="/tutorials/beginner/architecture"
+  >
+    **⏱️ 30 mins** | Understand QBCore's internal structure and design patterns
+  </Cards.Card>
+  
+  <Cards.Card 
+    title="Advanced QBCore Features" 
+    href="/tutorials/intermediate"
+  >
+    **⏱️ Varies** | Jobs, inventory, UI development, and more
+  </Cards.Card>
+  
+  <Cards.Card 
+    title="QBCore vs ESX Comparison" 
+    href="/tutorials/qbcore-vs-esx-comparison"
+  >
+    **⏱️ 15 mins** | Detailed framework comparison and migration guide
+  </Cards.Card>
+</Cards>
+
+### Ready-Made Resources
+
+Save development time with professional QBCore resources:
+
+<Callout type="info" emoji="🚀">
+  **Accelerate Your Development**: Check out [FiveMX QBCore Scripts](https://fivemx.com/qbcore-scripts) for production-ready resources including advanced job systems, unique activities, and custom features.
+</Callout>
+
+<Callout type="info" emoji="🎮">
+  **Complete Server Solutions**: Get started faster with [FiveMX QBCore Server Packs](https://fivemx.com/qbcore-server-packs/) - fully configured servers with all essential resources pre-installed.
+</Callout>
+
+### Essential Documentation
+
+- **[QBCore Installation Guide](/docs/installation)** - Detailed installation instructions
+- **[QBCore Functions Reference](/docs/core/functions)** - Complete API documentation  
+- **[Resource Development Guide](/docs/guides/scripting)** - Advanced scripting techniques
+- **[Database Schema](/docs/database)** - Understanding QBCore's data structure
+
+### Community & Support
+
+- **[GitHub Discussions](https://github.com/qbcore-framework/qb-core/discussions)** - Official QBCore community
+- **[QBCore Discord](https://discord.gg/qbcore)** - Real-time help and discussions
+- **[Support Page](/support)** - Direct support channels and troubleshooting
+
+## Common Issues & Solutions
+
+### Server Won't Start
+
+**Problem**: Server crashes or won't start
+**Solutions**:
+- Check `server.cfg` syntax for errors
+- Verify MySQL connection string
+- Ensure license key is valid
+- Check resource dependencies
+
+### Can't Connect to Server
+
+**Problem**: Connection timeout or failed
+**Solutions**:
+- Verify server is running (check console)
+- Check firewall settings (port 30120)
+- Ensure IP address is correct
+- Try `localhost:30120` for local testing
+
+### Resource Errors
+
+**Problem**: Custom resources not working
+**Solutions**:
+- Check `fxmanifest.lua` syntax
+- Verify file paths in manifest
+- Look for Lua syntax errors in console
+- Ensure resource is added to `server.cfg`
+
+### Database Connection Issues
+
+**Problem**: MySQL connection errors
+**Solutions**:
+- Verify MySQL server is running
+- Check connection string credentials
+- Ensure database exists
+- Import required SQL files
+
+<Callout type="success">
+  **Congratulations!** You've completed the FiveM Development Tutorial. You now have a solid foundation to start creating amazing FiveM servers and resources with QBCore framework.
+</Callout>
+
+## What's Next?
+
+1. **Practice**: Experiment with the code examples and create variations
+2. **Explore**: Browse existing QBCore resources to understand different patterns
+3. **Build**: Start your first real project - maybe a custom job or activity
+4. **Connect**: Join the QBCore community and share your progress
+5. **Level Up**: Move on to intermediate tutorials for advanced features
+
+---
+
+**Ready to dive deeper?** Continue your journey with our [Lua Scripting for FiveM](/tutorials/beginner/lua-scripting-fivem) tutorial, or explore our [complete QBCore vs ESX comparison](/tutorials/qbcore-vs-esx-comparison) to understand why QBCore is the right choice for your project.

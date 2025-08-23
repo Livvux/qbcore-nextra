@@ -1,0 +1,1176 @@
+---
+title: "Lua Scripting for FiveM 2025 - Complete Programming Guide"
+description: "Master Lua programming for FiveM development! Complete guide covering Lua basics, FiveM natives, QBCore integration, client-server communication, and advanced scripting techniques."
+keywords: "lua scripting fivem, fivem lua tutorial, lua programming fivem, fivem scripting guide, lua natives fivem, qbcore lua scripting, fivem resource development"
+---
+
+# Lua Scripting for FiveM 2025 - Complete Programming Guide
+
+**⏱️ Estimated Time: 45-60 minutes | 🎯 Difficulty: Beginner to Intermediate | 💻 Hands-On Learning**
+
+Master Lua programming for FiveM development with this comprehensive guide. Learn everything from basic Lua syntax to advanced FiveM-specific patterns, QBCore integration, and performance optimization techniques.
+
+import { Cards, Callout, Tabs, Steps } from 'nextra/components'
+
+<Callout type="info">
+  **What You'll Master**: Lua fundamentals, FiveM natives, client-server architecture, event systems, database integration, and QBCore-specific patterns for professional FiveM development.
+</Callout>
+
+## Why Lua for FiveM Development?
+
+Lua was chosen as FiveM's scripting language for several key reasons:
+
+### Advantages of Lua in FiveM
+
+| Feature | Benefit | FiveM Application |
+|---------|---------|-------------------|
+| **Lightweight** | Fast execution, low memory usage | Smooth gameplay with many resources |
+| **Embeddable** | Easy integration with C++ engine | Direct access to GTA V functions |
+| **Simple Syntax** | Easy to learn and read | Faster development and debugging |
+| **Flexible** | Dynamic typing and metaprogramming | Adaptable to different server needs |
+| **Coroutines** | Built-in threading support | Handle multiple operations efficiently |
+
+### FiveM's Lua Environment
+
+FiveM provides several enhancements to standard Lua:
+
+- **Native Functions**: Direct access to GTA V game functions
+- **Event System**: Client-server communication framework
+- **Coroutine Management**: Automatic thread handling
+- **JSON Support**: Built-in JSON encoding/decoding
+- **HTTP Client**: Web request capabilities
+- **File System Access**: Read/write server files
+
+## Lua Fundamentals for FiveM
+
+### 1. Basic Syntax and Variables
+
+```lua
+-- Comments in Lua start with double dashes
+-- This is a single line comment
+
+--[[
+This is a multi-line comment
+Very useful for documentation
+--]]
+
+-- Variables (no need to declare type)
+local playerName = "John Doe"           -- String
+local playerMoney = 5000                -- Number
+local isAdmin = true                    -- Boolean
+local playerData = nil                  -- Nil (empty value)
+
+-- Numbers can be integers or floats
+local playerId = 1                      -- Integer
+local playerHealth = 100.0              -- Float
+local temperature = -5.5                -- Negative float
+
+-- Strings
+local message = "Hello World"
+local longMessage = [[
+This is a multi-line string
+Very useful for HTML or SQL
+]]
+local formattedMessage = string.format("Player %s has $%d", playerName, playerMoney)
+
+print(formattedMessage) -- Output: Player John Doe has $5000
+```
+
+### 2. Tables (Arrays and Objects)
+
+Tables are Lua's primary data structure - they work as both arrays and objects:
+
+```lua
+-- Array-like table (indexed from 1, not 0!)
+local weapons = {"pistol", "rifle", "shotgun"}
+print(weapons[1]) -- Output: pistol (NOT weapons[0])
+
+-- Object-like table (key-value pairs)
+local player = {
+    name = "John",
+    money = 5000,
+    job = "police",
+    position = {x = 100.0, y = 200.0, z = 30.0}
+}
+
+-- Accessing table values
+print(player.name)      -- Output: John
+print(player["money"])  -- Output: 5000 (alternative syntax)
+
+-- Adding new values
+player.level = 5
+player["experience"] = 1500
+
+-- Nested table access
+print(player.position.x) -- Output: 100.0
+
+-- Table with mixed content
+local mixedTable = {
+    "first item",           -- Index 1
+    "second item",          -- Index 2
+    name = "Mixed Table",   -- Key "name"
+    count = 42              -- Key "count"
+}
+
+print(mixedTable[1])        -- Output: first item
+print(mixedTable.name)      -- Output: Mixed Table
+```
+
+### 3. Functions
+
+Functions are first-class values in Lua and essential for FiveM development:
+
+```lua
+-- Basic function declaration
+function greetPlayer(playerName)
+    print("Hello, " .. playerName .. "!")
+    return "Welcome to the server"
+end
+
+-- Function with multiple parameters and return values
+function calculateDistance(x1, y1, x2, y2)
+    local dx = x2 - x1
+    local dy = y2 - y1
+    local distance = math.sqrt(dx * dx + dy * dy)
+    return distance, dx, dy  -- Multiple return values
+end
+
+-- Using the functions
+greetPlayer("Alice")
+local dist, deltaX, deltaY = calculateDistance(0, 0, 3, 4)
+print("Distance: " .. dist) -- Output: Distance: 5.0
+
+-- Anonymous functions (very common in FiveM)
+local onPlayerJoin = function(playerId, playerName)
+    print(playerName .. " joined the server!")
+end
+
+-- Functions can be stored in tables
+local playerActions = {
+    heal = function(playerId)
+        -- Heal player logic
+        print("Healing player " .. playerId)
+    end,
+    
+    giveWeapon = function(playerId, weapon)
+        -- Give weapon logic
+        print("Giving " .. weapon .. " to player " .. playerId)
+    end
+}
+
+-- Call functions from table
+playerActions.heal(1)
+playerActions.giveWeapon(1, "pistol")
+```
+
+### 4. Control Structures
+
+```lua
+-- If statements
+local playerMoney = 1000
+local itemPrice = 500
+
+if playerMoney >= itemPrice then
+    print("Player can afford the item")
+    playerMoney = playerMoney - itemPrice
+elseif playerMoney > 0 then
+    print("Player doesn't have enough money")
+else
+    print("Player is broke!")
+end
+
+-- While loops
+local countdown = 5
+while countdown > 0 do
+    print("Countdown: " .. countdown)
+    countdown = countdown - 1
+end
+
+-- For loops (numeric)
+for i = 1, 5 do
+    print("Number: " .. i)
+end
+
+-- For loops (with step)
+for i = 10, 1, -2 do  -- Start at 10, end at 1, step by -2
+    print("Countdown: " .. i) -- Output: 10, 8, 6, 4, 2
+end
+
+-- For loops (iterate over tables)
+local players = {"Alice", "Bob", "Charlie"}
+
+-- Iterate over array values
+for index, name in ipairs(players) do
+    print(index .. ": " .. name)
+end
+
+-- Iterate over all key-value pairs
+local playerData = {name = "Alice", money = 1000, job = "police"}
+for key, value in pairs(playerData) do
+    print(key .. " = " .. tostring(value))
+end
+```
+
+### 5. Error Handling
+
+```lua
+-- Basic error handling with pcall (protected call)
+local success, result = pcall(function()
+    -- This might fail
+    local data = JSON.decode(someJsonString)
+    return data.playerName
+end)
+
+if success then
+    print("Player name: " .. result)
+else
+    print("Error occurred: " .. result)
+end
+
+-- Custom error handling
+function safeDivide(a, b)
+    if b == 0 then
+        error("Cannot divide by zero!")
+    end
+    return a / b
+end
+
+-- Using xpcall for more detailed error info
+local function errorHandler(err)
+    print("Error: " .. err)
+    print("Stack trace: " .. debug.traceback())
+end
+
+local success, result = xpcall(function()
+    return safeDivide(10, 0)
+end, errorHandler)
+```
+
+## FiveM-Specific Lua Concepts
+
+### 1. Client vs Server Scripts
+
+Understanding the difference between client and server scripts is crucial:
+
+```lua
+-- SERVER SCRIPT (server/main.lua)
+-- Runs on the server, has access to all players
+print("This runs on the SERVER")
+
+-- Server can access all players
+local players = GetPlayers()
+for _, playerId in ipairs(players) do
+    local playerName = GetPlayerName(playerId)
+    print("Server sees player: " .. playerName)
+end
+
+-- Server events
+RegisterServerEvent('myResource:serverEvent')
+AddEventHandler('myResource:serverEvent', function(data)
+    local source = source  -- Player who triggered the event
+    print("Server received data from player " .. source .. ": " .. data)
+end)
+
+-- Trigger client event for specific player
+TriggerClientEvent('myResource:clientEvent', playerId, "Hello from server!")
+
+-- Trigger client event for all players
+TriggerClientEvent('myResource:clientEvent', -1, "Hello everyone!")
+```
+
+```lua
+-- CLIENT SCRIPT (client/main.lua)
+-- Runs on each player's client, only sees local player
+print("This runs on the CLIENT")
+
+-- Client can only access local player
+local playerId = PlayerId()
+local playerPed = PlayerPedId()
+local playerName = GetPlayerName(playerId)
+
+print("Client script for player: " .. playerName)
+
+-- Client events
+RegisterNetEvent('myResource:clientEvent')
+AddEventHandler('myResource:clientEvent', function(message)
+    print("Client received: " .. message)
+    
+    -- Show notification to this player only
+    SetNotificationTextEntry("STRING")
+    AddTextComponentString(message)
+    DrawNotification(false, false)
+end)
+
+-- Trigger server event
+TriggerServerEvent('myResource:serverEvent', "Hello from client!")
+```
+
+### 2. FiveM Natives
+
+FiveM provides access to hundreds of GTA V functions called "natives":
+
+```lua
+-- Player and Ped natives
+local playerId = PlayerId()                    -- Get local player ID
+local playerPed = PlayerPedId()               -- Get local player's character
+local playerName = GetPlayerName(playerId)     -- Get player name
+
+-- Position natives
+local x, y, z = table.unpack(GetEntityCoords(playerPed))
+print(string.format("Player position: %.2f, %.2f, %.2f", x, y, z))
+
+-- Set player position
+SetEntityCoords(playerPed, 100.0, 200.0, 30.0, false, false, false, true)
+
+-- Vehicle natives
+local vehicle = GetVehiclePedIsIn(playerPed, false)
+if vehicle ~= 0 then
+    local speed = GetEntitySpeed(vehicle)
+    local speedMph = speed * 2.236936  -- Convert m/s to mph
+    print("Vehicle speed: " .. math.floor(speedMph) .. " mph")
+    
+    -- Vehicle modification
+    SetVehicleColours(vehicle, 12, 12)  -- Set primary and secondary color
+    SetVehicleNumberPlateText(vehicle, "QBCORE")
+end
+
+-- Weapon natives
+GiveWeaponToPed(playerPed, GetHashKey("WEAPON_PISTOL"), 100, false, true)
+SetPedCurrentWeaponVisible(playerPed, true, true, true, true)
+
+-- UI natives
+SetTextFont(4)
+SetTextProportional(true)
+SetTextScale(0.5, 0.5)
+SetTextColour(255, 255, 255, 255)
+SetTextEntry("STRING")
+AddTextComponentString("Hello World!")
+DrawText(0.1, 0.1)  -- Draw at 10% from left, 10% from top
+
+-- Weather and time natives
+SetWeatherTypeNowPersist("CLEAR")
+NetworkOverrideClockTime(12, 0, 0)  -- Set time to 12:00:00
+```
+
+### 3. Threading and Coroutines
+
+FiveM automatically manages coroutines for you:
+
+```lua
+-- CreateThread creates a new coroutine
+CreateThread(function()
+    while true do
+        Wait(1000)  -- Wait 1 second (1000ms)
+        print("This runs every second")
+    end
+end)
+
+-- Multiple threads can run simultaneously
+CreateThread(function()
+    while true do
+        Wait(5000)  -- Wait 5 seconds
+        print("This runs every 5 seconds")
+    end
+end)
+
+-- Thread with exit condition
+CreateThread(function()
+    local count = 0
+    while count < 10 do
+        Wait(1000)
+        count = count + 1
+        print("Count: " .. count)
+    end
+    print("Thread finished!")
+end)
+
+-- IMPORTANT: Always use Wait() in loops!
+-- This is WRONG and will crash the server/client:
+--[[
+while true do
+    -- No Wait() here will freeze the game!
+    DoSomething()
+end
+--]]
+
+-- This is CORRECT:
+CreateThread(function()
+    while true do
+        Wait(0)  -- Minimum wait, allows other threads to run
+        DoSomething()
+    end
+end)
+```
+
+### 4. Event System
+
+Events are the backbone of FiveM client-server communication:
+
+```lua
+-- SERVER SIDE: Register and handle events
+RegisterServerEvent('playerManager:updateMoney')
+AddEventHandler('playerManager:updateMoney', function(amount)
+    local source = source  -- Player who triggered event
+    local player = QBCore.Functions.GetPlayer(source)
+    
+    if player then
+        player.Functions.AddMoney('cash', amount)
+        TriggerClientEvent('playerManager:moneyUpdated', source, player.PlayerData.money.cash)
+    end
+end)
+
+-- SERVER SIDE: Trigger events for clients
+RegisterCommand('heal', function(source, args, rawCommand)
+    -- Heal specific player
+    TriggerClientEvent('playerManager:healPlayer', source)
+    
+    -- Or heal all players
+    TriggerClientEvent('playerManager:healPlayer', -1)
+end, false)
+
+-- CLIENT SIDE: Register and handle events
+RegisterNetEvent('playerManager:moneyUpdated')
+AddEventHandler('playerManager:moneyUpdated', function(newAmount)
+    print("Your new money amount: $" .. newAmount)
+    
+    -- Update UI or show notification
+    QBCore.Functions.Notify("Money updated: $" .. newAmount, "success")
+end)
+
+RegisterNetEvent('playerManager:healPlayer')
+AddEventHandler('playerManager:healPlayer', function()
+    local playerPed = PlayerPedId()
+    SetEntityHealth(playerPed, GetEntityMaxHealth(playerPed))
+    print("Player healed!")
+end)
+
+-- CLIENT SIDE: Trigger server events
+RegisterCommand('requestmoney', function(source, args)
+    local amount = tonumber(args[1]) or 100
+    TriggerServerEvent('playerManager:updateMoney', amount)
+end, false)
+```
+
+## QBCore Lua Patterns
+
+### 1. Getting QBCore Object
+
+```lua
+-- Standard QBCore initialization (CLIENT or SERVER)
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Alternative method (older scripts)
+local QBCore = nil
+TriggerEvent('QBCore:GetObject', function(obj) QBCore = obj end)
+
+-- Ensure QBCore is loaded before using
+if not QBCore then
+    print("Error: QBCore not found!")
+    return
+end
+```
+
+### 2. Player Management
+
+```lua
+-- SERVER SIDE: Working with players
+RegisterServerEvent('myScript:doSomething')
+AddEventHandler('myScript:doSomething', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then
+        print("Player not found!")
+        return
+    end
+    
+    -- Access player data
+    local playerName = Player.PlayerData.charinfo.firstname .. " " .. Player.PlayerData.charinfo.lastname
+    local playerJob = Player.PlayerData.job.name
+    local playerMoney = Player.PlayerData.money.cash
+    
+    print(string.format("Player: %s | Job: %s | Money: $%d", playerName, playerJob, playerMoney))
+    
+    -- Modify player data
+    Player.Functions.AddMoney('cash', 1000)
+    Player.Functions.SetJob('police', 2)  -- Job name, grade
+    Player.Functions.AddItem('water', 5)  -- Item name, amount
+    
+    -- Send notification
+    TriggerClientEvent('QBCore:Notify', src, 'You received $1000!', 'success')
+end)
+
+-- CLIENT SIDE: Get local player data
+local PlayerData = QBCore.Functions.GetPlayerData()
+
+print("My character: " .. PlayerData.charinfo.firstname)
+print("My job: " .. PlayerData.job.label)
+print("My cash: $" .. PlayerData.money.cash)
+
+-- Update local player data when it changes
+RegisterNetEvent('QBCore:Player:SetPlayerData')
+AddEventHandler('QBCore:Player:SetPlayerData', function(val)
+    PlayerData = val
+    print("Player data updated!")
+end)
+```
+
+### 3. Job System Integration
+
+```lua
+-- SERVER SIDE: Job-specific functionality
+RegisterServerEvent('police:arrestPlayer')
+AddEventHandler('police:arrestPlayer', function(targetId)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    local TargetPlayer = QBCore.Functions.GetPlayer(targetId)
+    
+    if not Player or not TargetPlayer then return end
+    
+    -- Check if player is police
+    if Player.PlayerData.job.name == 'police' and Player.PlayerData.job.onduty then
+        -- Arrest logic
+        TriggerClientEvent('police:arrestAnimation', targetId)
+        TriggerClientEvent('QBCore:Notify', src, 'Player arrested!', 'success')
+        TriggerClientEvent('QBCore:Notify', targetId, 'You have been arrested!', 'error')
+    else
+        TriggerClientEvent('QBCore:Notify', src, 'You are not on duty!', 'error')
+    end
+end)
+
+-- CLIENT SIDE: Job-specific features
+CreateThread(function()
+    while true do
+        Wait(1000)
+        
+        if PlayerData.job and PlayerData.job.name == 'police' and PlayerData.job.onduty then
+            -- Police-only functionality
+            local playerPed = PlayerPedId()
+            local coords = GetEntityCoords(playerPed)
+            
+            -- Check for nearby criminals or create police blips
+            -- This runs only for on-duty police officers
+        end
+    end
+end)
+```
+
+### 4. Database Operations
+
+```lua
+-- SERVER SIDE: Database queries with QBCore
+local QBCore = exports['qb-core']:GetCoreObject()
+
+-- Simple query
+RegisterServerEvent('myScript:savePlayerData')
+AddEventHandler('myScript:savePlayerData', function(data)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    
+    if not Player then return end
+    
+    local citizenid = Player.PlayerData.citizenid
+    
+    -- Insert new record
+    MySQL.insert('INSERT INTO my_table (citizenid, data) VALUES (?, ?)', {
+        citizenid,
+        json.encode(data)
+    })
+    
+    -- Update existing record
+    MySQL.update('UPDATE my_table SET data = ? WHERE citizenid = ?', {
+        json.encode(data),
+        citizenid
+    })
+    
+    -- Query with callback
+    MySQL.query('SELECT * FROM my_table WHERE citizenid = ?', {citizenid}, function(result)
+        if result[1] then
+            local savedData = json.decode(result[1].data)
+            TriggerClientEvent('myScript:dataLoaded', src, savedData)
+        end
+    end)
+end)
+
+-- Async query (modern approach)
+RegisterServerEvent('myScript:getPlayerStats')
+AddEventHandler('myScript:getPlayerStats', function()
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return end
+    
+    CreateThread(function()
+        local citizenid = Player.PlayerData.citizenid
+        local result = MySQL.query.await('SELECT * FROM player_stats WHERE citizenid = ?', {citizenid})
+        
+        if result[1] then
+            TriggerClientEvent('myScript:statsLoaded', src, result[1])
+        else
+            -- Create default stats
+            MySQL.insert('INSERT INTO player_stats (citizenid, kills, deaths) VALUES (?, ?, ?)', {
+                citizenid, 0, 0
+            })
+        end
+    end)
+end)
+```
+
+### 5. Item and Inventory System
+
+```lua
+-- SERVER SIDE: Item management
+RegisterServerEvent('myScript:useSpecialItem')
+AddEventHandler('myScript:useSpecialItem', function(itemName)
+    local src = source
+    local Player = QBCore.Functions.GetPlayer(src)
+    if not Player then return end
+    
+    -- Check if player has item
+    local item = Player.Functions.GetItemByName(itemName)
+    if not item then
+        TriggerClientEvent('QBCore:Notify', src, 'You dont have this item', 'error')
+        return
+    end
+    
+    -- Remove item
+    if Player.Functions.RemoveItem(itemName, 1) then
+        -- Item removed successfully, do something
+        TriggerClientEvent('QBCore:Notify', src, 'Item used!', 'success')
+        
+        -- Add different item
+        Player.Functions.AddItem('empty_bottle', 1)
+        
+        -- Trigger client effect
+        TriggerClientEvent('myScript:itemEffect', src)
+    end
+end)
+
+-- Register usable item
+QBCore.Functions.CreateUseableItem('my_special_item', function(source, item)
+    local Player = QBCore.Functions.GetPlayer(source)
+    if not Player then return end
+    
+    -- Custom item usage logic
+    TriggerClientEvent('myScript:useItem', source, item.name)
+end)
+```
+
+## Advanced Lua Patterns for FiveM
+
+### 1. Callback System
+
+```lua
+-- SERVER SIDE: Create callback
+QBCore.Functions.CreateCallback('myScript:getPlayerStats', function(source, cb, playerId)
+    local targetPlayer = QBCore.Functions.GetPlayer(playerId)
+    if targetPlayer then
+        cb(targetPlayer.PlayerData)
+    else
+        cb(nil)
+    end
+end)
+
+-- CLIENT SIDE: Use callback
+QBCore.Functions.TriggerCallback('myScript:getPlayerStats', function(playerData)
+    if playerData then
+        print("Player job: " .. playerData.job.name)
+        print("Player money: " .. playerData.money.cash)
+    else
+        print("Player not found")
+    end
+end, targetPlayerId)
+```
+
+### 2. Command System with Arguments
+
+```lua
+-- SERVER SIDE: Advanced command handling
+QBCore.Commands.Add('givemoney', 'Give money to player', {
+    {name = 'id', help = 'Player ID'},
+    {name = 'amount', help = 'Amount of money'}
+}, true, function(source, args)
+    local src = source
+    local targetId = tonumber(args[1])
+    local amount = tonumber(args[2])
+    
+    if not targetId or not amount then
+        TriggerClientEvent('QBCore:Notify', src, 'Invalid arguments', 'error')
+        return
+    end
+    
+    local TargetPlayer = QBCore.Functions.GetPlayer(targetId)
+    if not TargetPlayer then
+        TriggerClientEvent('QBCore:Notify', src, 'Player not found', 'error')
+        return
+    end
+    
+    TargetPlayer.Functions.AddMoney('cash', amount)
+    TriggerClientEvent('QBCore:Notify', src, 'Money given!', 'success')
+    TriggerClientEvent('QBCore:Notify', targetId, 'You received $' .. amount, 'success')
+end, 'admin')  -- Admin permission required
+```
+
+### 3. Performance Optimization Patterns
+
+```lua
+-- Cache frequently used values
+local QBCore = exports['qb-core']:GetCoreObject()
+local PlayerPedId = PlayerPedId  -- Cache native functions
+local GetEntityCoords = GetEntityCoords
+local Wait = Wait
+
+-- Efficient distance checking
+local function GetDistance(coords1, coords2)
+    local dx = coords1.x - coords2.x
+    local dy = coords1.y - coords2.y
+    local dz = coords1.z - coords2.z
+    return math.sqrt(dx*dx + dy*dy + dz*dz)
+end
+
+-- Optimized main loop
+CreateThread(function()
+    local sleepTime = 1000  -- Default sleep
+    
+    while true do
+        local playerPed = PlayerPedId()
+        local playerCoords = GetEntityCoords(playerPed)
+        local nearbyAction = false
+        
+        -- Check for nearby interactions
+        for _, location in pairs(interactionLocations) do
+            local distance = GetDistance(playerCoords, location.coords)
+            
+            if distance < 3.0 then
+                nearbyAction = true
+                sleepTime = 0  -- No sleep when near interaction
+                
+                -- Draw text or show interaction
+                DrawText3D(location.coords, "[E] Interact")
+                
+                if IsControlJustPressed(0, 38) then -- E key
+                    TriggerServerEvent('myScript:interact', location.id)
+                end
+                break
+            end
+        end
+        
+        -- Dynamic sleep time for performance
+        if not nearbyAction then
+            sleepTime = 1000  -- Sleep longer when not near anything
+        end
+        
+        Wait(sleepTime)
+    end
+end)
+```
+
+### 4. Error Handling and Validation
+
+```lua
+-- Server-side validation
+RegisterServerEvent('myScript:processPayment')
+AddEventHandler('myScript:processPayment', function(amount, targetId)
+    local src = source
+    
+    -- Input validation
+    if type(amount) ~= 'number' or amount <= 0 then
+        print(('Invalid amount from player %d: %s'):format(src, tostring(amount)))
+        return
+    end
+    
+    if type(targetId) ~= 'number' then
+        print(('Invalid target ID from player %d: %s'):format(src, tostring(targetId)))
+        return
+    end
+    
+    -- Player validation
+    local Player = QBCore.Functions.GetPlayer(src)
+    local TargetPlayer = QBCore.Functions.GetPlayer(targetId)
+    
+    if not Player or not TargetPlayer then
+        TriggerClientEvent('QBCore:Notify', src, 'Invalid players', 'error')
+        return
+    end
+    
+    -- Business logic with error handling
+    local success, error = pcall(function()
+        if Player.PlayerData.money.cash < amount then
+            error('Insufficient funds')
+        end
+        
+        Player.Functions.RemoveMoney('cash', amount)
+        TargetPlayer.Functions.AddMoney('cash', amount)
+        
+        return true
+    end)
+    
+    if success then
+        TriggerClientEvent('QBCore:Notify', src, 'Payment sent!', 'success')
+        TriggerClientEvent('QBCore:Notify', targetId, 'Payment received!', 'success')
+    else
+        TriggerClientEvent('QBCore:Notify', src, error, 'error')
+        print(('Payment error for player %d: %s'):format(src, error))
+    end
+end)
+```
+
+## Common FiveM Lua Patterns
+
+### 1. Resource Communication
+
+```lua
+-- Cross-resource communication
+-- From resource A to resource B
+exports['qb-phone']:SendMessage(playerId, "Someone", "Hello!")
+
+-- Check if resource exists before using
+if GetResourceState('qb-phone') == 'started' then
+    exports['qb-phone']:SendMessage(playerId, "Someone", "Hello!")
+else
+    print("qb-phone resource not available")
+end
+
+-- Export functions from your resource
+-- In your resource (server/main.lua or client/main.lua)
+exports('myFunction', function(parameter1, parameter2)
+    return "Result: " .. parameter1 .. " + " .. parameter2
+end)
+
+-- Use from another resource
+local result = exports['my-resource']:myFunction("Hello", "World")
+```
+
+### 2. Configuration Management
+
+```lua
+-- config.lua
+Config = {}
+
+Config.Locations = {
+    {
+        name = "Police Station",
+        coords = vector3(428.23, -984.28, 29.76),
+        jobs = {"police"},
+        items = {"handcuffs", "radio"}
+    },
+    {
+        name = "Hospital",
+        coords = vector3(307.27, -1433.68, 29.80),
+        jobs = {"ambulance"},
+        items = {"medkit", "bandage"}
+    }
+}
+
+Config.Settings = {
+    enableNotifications = true,
+    checkInterval = 5000,
+    maxDistance = 3.0
+}
+
+-- Using config in main script
+for _, location in pairs(Config.Locations) do
+    print("Location: " .. location.name)
+    
+    -- Create blips, set up interactions, etc.
+    CreateThread(function()
+        while true do
+            Wait(Config.Settings.checkInterval)
+            
+            local playerPed = PlayerPedId()
+            local playerCoords = GetEntityCoords(playerPed)
+            local distance = #(playerCoords - location.coords)
+            
+            if distance < Config.Settings.maxDistance then
+                -- Player is near location
+                if Config.Settings.enableNotifications then
+                    -- Show notification
+                end
+            end
+        end
+    end)
+end
+```
+
+### 3. Utility Functions
+
+```lua
+-- Useful utility functions for FiveM development
+
+-- Round number to decimal places
+function round(num, decimals)
+    local mult = 10^(decimals or 0)
+    return math.floor(num * mult + 0.5) / mult
+end
+
+-- Format money display
+function formatMoney(amount)
+    local formatted = tostring(amount)
+    local k
+    while true do
+        formatted, k = string.gsub(formatted, "^(-?%d+)(%d%d%d)", '%1,%2')
+        if k == 0 then break end
+    end
+    return "$" .. formatted
+end
+
+-- Get random table element
+function getRandomTableElement(tbl)
+    if #tbl == 0 then return nil end
+    return tbl[math.random(#tbl)]
+end
+
+-- Deep copy table
+function deepCopy(orig)
+    local copy
+    if type(orig) == 'table' then
+        copy = {}
+        for orig_key, orig_value in next, orig, nil do
+            copy[deepCopy(orig_key)] = deepCopy(orig_value)
+        end
+        setmetatable(copy, deepCopy(getmetatable(orig)))
+    else
+        copy = orig
+    end
+    return copy
+end
+
+-- Usage examples
+local money = 1234567
+print(formatMoney(money)) -- Output: $1,234,567
+
+local weapons = {"pistol", "rifle", "shotgun"}
+local randomWeapon = getRandomTableElement(weapons)
+print("Random weapon: " .. randomWeapon)
+```
+
+## Best Practices for FiveM Lua Development
+
+### 1. Code Organization
+
+```lua
+-- Good: Clear variable names and structure
+local QBCore = exports['qb-core']:GetCoreObject()
+
+local INTERACTION_DISTANCE = 3.0
+local CHECK_INTERVAL = 1000
+
+local policeStations = {
+    {name = "LSPD", coords = vector3(428.23, -984.28, 29.76)},
+    {name = "BCSO", coords = vector3(-449.04, 6008.14, 31.72)}
+}
+
+local function isPlayerNearPoliceStation(playerCoords)
+    for _, station in pairs(policeStations) do
+        local distance = #(playerCoords - station.coords)
+        if distance <= INTERACTION_DISTANCE then
+            return true, station
+        end
+    end
+    return false, nil
+end
+
+-- Bad: Unclear naming and magic numbers
+local a = exports['qb-core']:GetCoreObject()
+local b = {
+    {n = "LSPD", c = {428.23, -984.28, 29.76}},
+    {n = "BCSO", c = {-449.04, 6008.14, 31.72}}
+}
+
+local function c(d)
+    for _, e in pairs(b) do
+        if #(d - vector3(e.c[1], e.c[2], e.c[3])) <= 3 then
+            return true
+        end
+    end
+    return false
+end
+```
+
+### 2. Performance Tips
+
+```lua
+-- Cache frequently used functions
+local PlayerPedId = PlayerPedId
+local GetEntityCoords = GetEntityCoords
+local Wait = Wait
+
+-- Use local variables for better performance
+CreateThread(function()
+    while true do
+        local playerPed = PlayerPedId()  -- Local variable
+        local coords = GetEntityCoords(playerPed)
+        
+        -- Your logic here
+        
+        Wait(1000)
+    end
+end)
+
+-- Avoid creating tables in loops
+-- Bad:
+CreateThread(function()
+    while true do
+        local data = {x = 1, y = 2, z = 3}  -- Creates new table every iteration
+        DoSomething(data)
+        Wait(1000)
+    end
+end)
+
+-- Good:
+local reusableData = {x = 1, y = 2, z = 3}  -- Create once outside loop
+CreateThread(function()
+    while true do
+        DoSomething(reusableData)
+        Wait(1000)
+    end
+end)
+```
+
+### 3. Security Considerations
+
+```lua
+-- Always validate server events
+RegisterServerEvent('myScript:buyItem')
+AddEventHandler('myScript:buyItem', function(itemName, quantity)
+    local src = source
+    
+    -- Validate input types
+    if type(itemName) ~= 'string' or type(quantity) ~= 'number' then
+        print(('Invalid input from player %d'):format(src))
+        return
+    end
+    
+    -- Validate ranges
+    if quantity <= 0 or quantity > 100 then
+        print(('Invalid quantity from player %d: %d'):format(src, quantity))
+        return
+    end
+    
+    -- Validate allowed items
+    local allowedItems = {
+        'water', 'bread', 'bandage'
+    }
+    
+    local itemAllowed = false
+    for _, allowed in pairs(allowedItems) do
+        if itemName == allowed then
+            itemAllowed = true
+            break
+        end
+    end
+    
+    if not itemAllowed then
+        print(('Invalid item from player %d: %s'):format(src, itemName))
+        return
+    end
+    
+    -- Proceed with validated data
+    local Player = QBCore.Functions.GetPlayer(src)
+    if Player then
+        -- Business logic here
+    end
+end)
+```
+
+## Next Steps & Advanced Topics
+
+### Continue Your FiveM Development Journey
+
+<Cards>
+  <Cards.Card 
+    title="Complete FiveM Development Tutorial" 
+    href="/tutorials/beginner/fivem-development-tutorial"
+  >
+    **⏱️ 90 mins** | Build your first complete FiveM server with QBCore
+  </Cards.Card>
+  
+  <Cards.Card 
+    title="QBCore Framework Architecture" 
+    href="/tutorials/beginner/architecture"
+  >
+    **⏱️ 30 mins** | Deep dive into QBCore's internal structure
+  </Cards.Card>
+  
+  <Cards.Card 
+    title="Advanced QBCore Development" 
+    href="/tutorials/intermediate"
+  >
+    **⏱️ Varies** | Jobs, inventory, UI development, and custom systems
+  </Cards.Card>
+  
+  <Cards.Card 
+    title="QBCore vs ESX Comparison" 
+    href="/tutorials/qbcore-vs-esx-comparison"
+  >
+    **⏱️ 15 mins** | Why QBCore is the better choice for modern development
+  </Cards.Card>
+</Cards>
+
+### Professional Resources
+
+<Callout type="info" emoji="⚡">
+  **Save Development Time**: Explore [FiveMX QBCore Scripts](https://fivemx.com/qbcore-scripts) for professional, optimized Lua scripts that demonstrate advanced patterns and save weeks of development time.
+</Callout>
+
+<Callout type="info" emoji="🎮">
+  **Complete Solutions**: Get [FiveMX QBCore Server Packs](https://fivemx.com/qbcore-server-packs/) with pre-written, production-ready Lua scripts for all essential server features.
+</Callout>
+
+### Essential Documentation
+
+- **[QBCore Functions Reference](/docs/core/functions)** - Complete API documentation
+- **[Event System Guide](/docs/core/events)** - Master client-server communication
+- **[Database Integration](/docs/database)** - Learn MySQL with QBCore
+- **[Resource Development Guide](/docs/guides/scripting)** - Advanced scripting techniques
+
+### Practice Projects
+
+Try building these projects to practice your Lua skills:
+
+1. **Simple Bank Robbery**: Create a bank robbery script with timer, police alerts, and rewards
+2. **Custom Job System**: Build a delivery job with routes and payments  
+3. **Player Statistics**: Track and display player stats like playtime, deaths, and money earned
+4. **Custom Items**: Create usable items with special effects and animations
+
+### Common Mistakes to Avoid
+
+<Callout type="error">
+  **Performance Killers**:
+  - Forgetting `Wait()` in loops (will freeze server/client)
+  - Creating objects/tables inside frequently called functions
+  - Not caching native functions
+  - Using `while true` without proper wait times
+</Callout>
+
+<Callout type="warning">
+  **Security Issues**:
+  - Trusting client-side data without validation
+  - Not checking player permissions for sensitive actions
+  - Exposing sensitive data to clients
+  - Missing input validation on server events
+</Callout>
+
+## Conclusion
+
+You now have a solid foundation in Lua programming for FiveM development! Key takeaways:
+
+### What You've Learned
+- **Lua Fundamentals**: Syntax, tables, functions, and control structures
+- **FiveM Patterns**: Client-server architecture, events, and natives
+- **QBCore Integration**: Player management, jobs, items, and database operations
+- **Best Practices**: Performance optimization, security, and code organization
+
+### Your Next Steps
+1. **Practice**: Build small scripts using the patterns learned
+2. **Experiment**: Modify existing QBCore resources to understand their structure
+3. **Join Community**: Connect with other developers for help and collaboration
+4. **Build Projects**: Start with simple features and gradually increase complexity
+
+### Professional Development
+Consider investing in professional resources to accelerate your learning and get production-ready code examples that follow industry best practices.
+
+---
+
+**Ready to build amazing FiveM servers?** Continue with our [FiveM Development Tutorial](/tutorials/beginner/fivem-development-tutorial) to put your new Lua skills into practice, or explore our [QBCore vs ESX comparison](/tutorials/qbcore-vs-esx-comparison) to understand why QBCore is the best framework for your projects.
+
+*Happy scripting! 🚀*

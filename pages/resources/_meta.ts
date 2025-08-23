@@ -1,3 +1,5 @@
-const meta = {}
+const meta = {
+  inventory: 'Inventory',
+}
 
 export default meta
