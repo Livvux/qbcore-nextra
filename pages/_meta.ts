@@ -4,6 +4,7 @@ const meta = {
   tutorials: 'Tutorials',
   resources: 'Resources',
   tools: 'Tools',
+  'hardware-guide': '🖥️ Hardware Guide',
   scripts: 'Scripts',
   inventory: 'Inventory',
   hud: 'HUD',
