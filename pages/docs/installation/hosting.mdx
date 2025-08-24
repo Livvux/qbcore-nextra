@@ -1,0 +1,770 @@
+# FiveM Server Hosting Guide 2025 - Complete Setup Tutorial
+
+The ultimate FiveM server hosting guide for 2025. Learn how to choose the perfect hosting solution, set up your FiveM server, and optimize performance for the best gaming experience.
+
+## What is FiveM Server Hosting?
+
+FiveM server hosting refers to the infrastructure and services needed to run a FiveM multiplayer server. Unlike standard web hosting, FiveM servers require specific configurations, adequate resources, and game-optimized environments to deliver smooth gameplay for multiple concurrent players.
+
+### Why Proper Hosting Matters
+
+Choosing the right hosting solution directly impacts:
+
+- **Player Experience**: Low latency, smooth gameplay, minimal crashes
+- **Server Performance**: Handle more concurrent players without lag
+- **Stability**: Reduce downtime and connection issues
+- **Scalability**: Easily upgrade resources as your community grows
+- **Management**: Simplified administration and maintenance
+
+## Hosting Types Comparison
+
+Understanding your hosting options is crucial for making the right choice for your FiveM server.
+
+### 1. Shared Game Hosting
+
+**Best for:** Small communities (10-32 players), beginners, tight budgets
+
+**Advantages:**
+- Lowest cost option (€5-15/month)
+- Pre-configured for FiveM
+- Managed updates and maintenance
+- User-friendly control panels
+- Built-in mod support
+
+**Disadvantages:**
+- Limited customization
+- Shared resources affect performance
+- Restricted access to server files
+- Limited plugin/mod flexibility
+
+### 2. VPS (Virtual Private Server) Hosting
+
+**Best for:** Medium communities (32-128 players), experienced users
+
+**Advantages:**
+- Dedicated resources allocation
+- Full root/administrator access
+- Custom configurations possible
+- Better performance than shared hosting
+- Reasonable pricing (€15-50/month)
+
+**Disadvantages:**
+- Requires technical knowledge
+- Self-managed (updates, security, backups)
+- More complex initial setup
+- Troubleshooting responsibility
+
+### 3. Dedicated Server Hosting
+
+**Best for:** Large communities (128+ players), professional servers
+
+**Advantages:**
+- Maximum performance and resources
+- Complete control over hardware
+- No resource sharing
+- Excellent for high-traffic servers
+- Custom hardware configurations
+
+**Disadvantages:**
+- High cost (€100-500+/month)
+- Requires advanced technical skills
+- Full responsibility for maintenance
+- Complex setup and management
+
+### 4. Game-Specific Managed Hosting
+
+**Best for:** All skill levels, focus on gameplay over server management
+
+**Advantages:**
+- FiveM-optimized infrastructure
+- Professional support
+- Automated backups and updates
+- DDoS protection included
+- Easy scaling options
+
+**Disadvantages:**
+- Higher cost than DIY solutions
+- Less flexibility than VPS/dedicated
+- Dependency on hosting provider
+
+## Hosting Comparison Table
+
+| Feature | Shared | VPS | Dedicated | Managed |
+|---------|--------|-----|-----------|---------|
+| **Price Range** | €5-15/month | €15-50/month | €100-500+/month | €20-100/month |
+| **Players** | 10-32 | 32-128 | 128+ | 10-200+ |
+| **Performance** | Basic | Good | Excellent | Very Good |
+| **Control** | Limited | Full | Full | Moderate |
+| **Technical Skills** | None | Moderate | Advanced | Basic |
+| **Support** | Basic | Self-managed | Self-managed | Professional |
+| **Customization** | Low | High | Highest | Moderate |
+
+## Recommended FiveM Hosting Providers
+
+### 🏆 GPortal - Top Recommended
+
+**Why We Recommend GPortal:**
+- Specialized in game server hosting
+- Excellent FiveM optimization
+- Global server locations
+- Professional DDoS protection
+- 24/7 multilingual support
+
+**Plans Available:**
+- **Starter**: 32 slots - €9.90/month
+- **Advanced**: 64 slots - €19.90/month  
+- **Professional**: 128 slots - €39.90/month
+- **Enterprise**: Custom solutions available
+
+**[Get GPortal Hosting →](https://five-rp.de/go/gpi)** (International)
+
+**[GPortal Deutschland →](https://five-rp.de/go/gp)** (For German users)
+
+**GPortal Features:**
+- ✅ One-click FiveM installation
+- ✅ Automatic mod/resource management
+- ✅ Real-time performance monitoring
+- ✅ Integrated backup system
+- ✅ FTP/Web-based file manager
+- ✅ MySQL database included
+- ✅ Free subdomain included
+- ✅ Mobile app for server management
+
+### Other Quality Providers
+
+#### ZAP-Hosting
+- **Strengths**: European focus, competitive pricing
+- **Best For**: European communities
+- **Price Range**: €8-40/month
+
+#### Nitrado
+- **Strengths**: Large game library, reliable infrastructure  
+- **Best For**: Multi-game communities
+- **Price Range**: €10-50/month
+
+#### ServerFactory
+- **Strengths**: Budget-friendly VPS options
+- **Best For**: Technical users wanting VPS control
+- **Price Range**: €5-30/month
+
+## Step-by-Step Setup Guide
+
+### Method 1: GPortal Quick Setup (Recommended for Beginners)
+
+#### Step 1: Order Your Server
+
+1. Visit **[GPortal](https://five-rp.de/go/gpi)** and select FiveM hosting
+2. Choose your server location (closest to your target audience)
+3. Select slot count based on expected players
+4. Complete registration and payment
+
+#### Step 2: Initial Configuration
+
+1. **Access Control Panel**
+   - Log into your GPortal dashboard
+   - Navigate to your FiveM server
+
+2. **Basic Settings**
+   ```
+   Server Name: Your Server Name
+   Server Description: Describe your server
+   Max Players: Your slot count
+   Password: Optional server password
+   ```
+
+3. **Game Settings**
+   ```
+   Game Mode: Freeroam/Roleplay/Custom
+   Map: Default GTA V map
+   Voice Chat: Enable/Disable
+   ```
+
+*[Screenshot placeholder: GPortal control panel interface]*
+
+#### Step 3: Install QBCore Framework
+
+1. **Access File Manager**
+   - Use GPortal's web-based file manager
+   - Navigate to `/resources/` folder
+
+2. **Download QBCore**
+   ```bash
+   # Use the built-in Git integration or upload manually
+   git clone https://github.com/qbcore-framework/qb-core.git [qb-core]
+   ```
+
+3. **Configure server.cfg**
+   ```cfg
+   # Add to your server.cfg
+   ensure qb-core
+   ensure qb-adminmenu  
+   ensure qb-clothing
+   ensure qb-weathersync
+   ```
+
+*[Screenshot placeholder: File manager with QBCore installation]*
+
+#### Step 4: Database Setup
+
+1. **Create MySQL Database**
+   - Access GPortal database manager
+   - Create new database for your server
+   - Note credentials (host, username, password, database name)
+
+2. **Configure QBCore Database**
+   ```lua
+   -- In qb-core/shared/config.lua
+   Config.Server = {
+       database = 'your_database_name',
+       hostname = 'your_database_host', 
+       username = 'your_database_user',
+       password = 'your_database_password'
+   }
+   ```
+
+*[Screenshot placeholder: Database configuration interface]*
+
+#### Step 5: Start Your Server
+
+1. **Start Server**
+   - Click "Start" in GPortal control panel
+   - Monitor console for any errors
+   - Wait for "Server started" message
+
+2. **Connect and Test**
+   - Use F8 console in GTA V
+   - Type: `connect your-server-ip:30120`
+   - Test basic functionality
+
+*[Screenshot placeholder: Server console showing successful startup]*
+
+### Method 2: VPS Setup Guide (Intermediate Users)
+
+#### Requirements
+- VPS with at least 4GB RAM, 2 CPU cores
+- Ubuntu 20.04 LTS or Windows Server 2019+
+- Basic command line knowledge
+
+#### Step 1: VPS Selection and Setup
+
+**Recommended VPS Providers:**
+- **Contabo**: €4.99/month (4GB RAM, 2 cores)
+- **Hetzner**: €4.51/month (4GB RAM, 2 cores)  
+- **DigitalOcean**: $6/month (1GB RAM, 1 core)
+
+#### Step 2: Server Preparation (Ubuntu)
+
+```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install dependencies
+sudo apt install -y curl wget git unzip screen mysql-server
+
+# Install Node.js 16+
+curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+# Create FiveM user
+sudo useradd -m -s /bin/bash fivem
+sudo usermod -aG sudo fivem
+```
+
+#### Step 3: FiveM Server Installation
+
+```bash
+# Switch to FiveM user
+su - fivem
+
+# Create server directory
+mkdir ~/fivem-server && cd ~/fivem-server
+
+# Download FiveM server
+wget https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/7290-150b66d65ccd4023e8dbb7c6abf9606e16e6e82c/fx.tar.xz
+
+# Extract server files
+tar -xf fx.tar.xz
+rm fx.tar.xz
+
+# Create resources folder
+mkdir resources
+```
+
+#### Step 4: QBCore Installation on VPS
+
+```bash
+# Navigate to resources
+cd ~/fivem-server/resources
+
+# Clone QBCore
+git clone https://github.com/qbcore-framework/qb-core.git [qb-core]
+git clone https://github.com/qbcore-framework/qb-adminmenu.git [qb-adminmenu]
+git clone https://github.com/qbcore-framework/qb-multicharacter.git [qb-multicharacter]
+
+# Set permissions
+chmod +x ~/fivem-server/run.sh
+```
+
+#### Step 5: Database Configuration
+
+```bash
+# Secure MySQL installation
+sudo mysql_secure_installation
+
+# Create database
+sudo mysql -e "CREATE DATABASE qbcore;"
+sudo mysql -e "CREATE USER 'qbcore'@'localhost' IDENTIFIED BY 'your_secure_password';"
+sudo mysql -e "GRANT ALL PRIVILEGES ON qbcore.* TO 'qbcore'@'localhost';"
+sudo mysql -e "FLUSH PRIVILEGES;"
+```
+
+#### Step 6: Server Configuration
+
+Create `server.cfg`:
+```cfg
+# Basic server configuration
+endpoint_add_tcp "0.0.0.0:30120"
+endpoint_add_udp "0.0.0.0:30120"
+
+# Server info
+sv_hostname "Your FiveM Server"
+sv_maxclients 32
+
+# Game type and map
+gametype "QBCore"
+mapname "Los Santos"
+
+# Resources
+ensure mapmanager
+ensure chat
+ensure spawnmanager
+ensure sessionmanager
+ensure basic-gamemode
+ensure hardcap
+
+# QBCore Resources
+ensure qb-core
+ensure qb-adminmenu
+ensure qb-multicharacter
+
+# License key (get from https://keymaster.fivem.net)
+sv_licenseKey "your_license_key_here"
+```
+
+*[Screenshot placeholder: VPS terminal showing server startup]*
+
+### Method 3: Dedicated Server Setup (Advanced)
+
+For high-performance dedicated servers, consider these specifications:
+
+**Minimum Dedicated Server Specs:**
+- **CPU**: Intel i7-8700 or AMD Ryzen 7 2700X
+- **RAM**: 32GB DDR4
+- **Storage**: 500GB NVMe SSD
+- **Network**: 1Gbps connection
+- **OS**: Ubuntu 20.04 LTS or Windows Server 2019
+
+**Setup Process:**
+1. **Hardware Setup**: Configure RAID, install OS
+2. **Network Configuration**: Set up firewall, port forwarding
+3. **Software Installation**: Same as VPS but with performance tuning
+4. **Load Balancing**: Consider multiple server instances
+5. **Monitoring**: Implement comprehensive monitoring solutions
+
+## Server Configuration and Optimization
+
+### Essential Configuration Settings
+
+#### 1. Performance Optimization
+
+**server.cfg Optimization:**
+```cfg
+# Performance settings
+set sv_enforceGameBuild 2944
+set sv_maxClients 32
+set onesync on
+
+# Network optimization  
+sv_endpoint_private_timeout 10000
+set sv_timeout 30
+
+# Resource limits
+set sv_scriptHookAllowed false
+set sv_memoryLimit 2048
+
+# OneSync settings (for 32+ players)
+set onesync legacy
+set onesync_enabled 1
+```
+
+#### 2. Security Configuration
+
+**Security Best Practices:**
+```cfg
+# Disable unnecessary features
+set sv_scriptHookAllowed false
+set sv_useCDN false
+
+# Rate limiting
+set sv_rateLimit_enable true  
+set sv_rateLimit_interval 100
+set sv_rateLimit_burst 25
+
+# Connection filtering
+set sv_filterRequestControl true
+set sv_maxUploadSize 16384
+```
+
+#### 3. Database Optimization
+
+**MySQL Configuration (my.cnf):**
+```ini
+[mysqld]
+innodb_buffer_pool_size = 2G
+innodb_log_file_size = 256M
+innodb_flush_log_at_trx_commit = 2
+innodb_flush_method = O_DIRECT
+max_connections = 200
+query_cache_size = 64M
+tmp_table_size = 64M
+max_heap_table_size = 64M
+```
+
+### Resource Management
+
+#### Memory Usage Guidelines
+
+| Player Count | Recommended RAM | Minimum RAM |
+|--------------|----------------|-------------|
+| 10-32 | 4GB | 2GB |
+| 32-64 | 8GB | 4GB |
+| 64-128 | 16GB | 8GB |
+| 128+ | 32GB+ | 16GB |
+
+#### Storage Requirements
+
+- **Base FiveM Server**: ~500MB
+- **QBCore Framework**: ~50MB
+- **Essential Resources**: ~200MB per resource
+- **Maps and Assets**: 1-10GB depending on custom content
+- **Logs and Backups**: Plan for 10-20GB monthly
+
+*[Screenshot placeholder: Resource monitor showing optimal usage]*
+
+## Management and Monitoring
+
+### Control Panel Features
+
+Most hosting providers offer control panels with:
+
+- **Server Start/Stop/Restart**: Basic server control
+- **File Manager**: Upload, edit, and organize server files
+- **Console Access**: Real-time server console monitoring
+- **Database Manager**: MySQL database administration
+- **Backup System**: Automated and manual backup creation
+- **Performance Metrics**: CPU, RAM, and network usage
+- **Player Management**: View connected players, kick/ban functions
+- **Plugin Manager**: Install and configure server plugins
+
+*[Screenshot placeholder: Hosting control panel dashboard]*
+
+### Performance Monitoring Tools
+
+#### Built-in FiveM Commands
+```
+# Monitor server performance
+resmon           # Resource monitor
+status           # Server status
+clientkick [id]  # Kick problematic players
+restart [resource] # Restart specific resource
+```
+
+#### Third-party Monitoring
+- **UptimeRobot**: Monitor server uptime and response time
+- **Grafana + InfluxDB**: Advanced metrics visualization
+- **Discord Bots**: Automated status updates and alerts
+- **Custom Dashboards**: Player count, performance graphs
+
+### Backup Strategies
+
+#### Automated Backup Solutions
+
+**Daily Backup Schedule:**
+1. **Database Backup**: MySQL dump at 3 AM daily
+2. **Resource Backup**: Full resources folder weekly
+3. **Configuration Backup**: server.cfg and configs daily
+4. **Player Data**: Character data backup every 6 hours
+
+**Backup Script Example:**
+```bash
+#!/bin/bash
+# Automated backup script
+DATE=$(date +%Y-%m-%d_%H-%M-%S)
+BACKUP_DIR="/home/fivem/backups"
+
+# Database backup
+mysqldump -u qbcore -p qbcore > "$BACKUP_DIR/database_$DATE.sql"
+
+# Resources backup
+tar -czf "$BACKUP_DIR/resources_$DATE.tar.gz" /home/fivem/fivem-server/resources/
+
+# Cleanup old backups (keep 7 days)
+find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
+find $BACKUP_DIR -name "*.tar.gz" -mtime +7 -delete
+```
+
+## Common Issues and Troubleshooting
+
+### Connection Problems
+
+#### Issue: "Server not responding"
+**Symptoms:** Players can't connect, server appears offline
+**Solutions:**
+- Check firewall settings (ports 30120, 40120)
+- Verify server is actually running
+- Check IP address configuration
+- Test from different networks
+
+#### Issue: "Connection timeout"
+**Symptoms:** Players disconnect frequently, unstable connections
+**Solutions:**
+```cfg
+# Increase timeout values in server.cfg
+set sv_timeout 120
+set sv_endpoint_private_timeout 10000
+```
+
+### Performance Issues
+
+#### Issue: High server latency
+**Symptoms:** Player complaints about lag, delayed actions
+**Solutions:**
+- Monitor resource usage with `resmon`
+- Identify resource-heavy scripts
+- Optimize database queries
+- Consider server hardware upgrade
+
+#### Issue: Memory leaks
+**Symptoms:** RAM usage constantly increasing, eventual crashes
+**Solutions:**
+- Regular server restarts (every 6-12 hours)
+- Audit custom scripts for memory leaks
+- Monitor resource usage patterns
+- Implement automatic restart scheduling
+
+### Database Problems
+
+#### Issue: Database connection errors
+**Symptoms:** Player data not saving, login failures
+**Solutions:**
+```lua
+-- Check database configuration
+-- Verify MySQL service status
+sudo systemctl status mysql
+
+-- Test database connection
+mysql -u qbcore -p qbcore -e "SHOW TABLES;"
+
+-- Check connection limits
+mysql -e "SHOW GLOBAL STATUS LIKE 'Max_used_connections';"
+```
+
+### Resource Loading Errors
+
+#### Issue: Resources failing to load
+**Symptoms:** Missing features, script errors in console
+**Solutions:**
+- Check resource dependencies
+- Verify file permissions
+- Ensure proper folder structure
+- Check for conflicting resources
+
+**Common Error Messages:**
+```
+Error parsing script: syntax error
+Solution: Check Lua syntax in affected files
+
+Could not load resource: missing dependency  
+Solution: Install required dependencies first
+
+Access denied: insufficient permissions
+Solution: Check file/folder permissions
+```
+
+## Advanced Optimization Techniques
+
+### CPU Optimization
+
+**Multi-threading Configuration:**
+```cfg
+# Enable multi-threading for better performance
+set sv_maxclients 64
+set onesync on
+set sv_enforceGameBuild 2944
+
+# CPU thread allocation
+set sv_threadCount 4  # Match your CPU cores
+```
+
+### Network Optimization
+
+**Bandwidth Management:**
+```cfg
+# Network optimization
+set sv_lan false
+set sv_maxrate 10000    # Kbps per client
+set sv_minrate 30000    # Minimum total bandwidth
+```
+
+### Storage Optimization
+
+**SSD vs HDD Performance Impact:**
+- SSD: 2-5ms average response time
+- HDD: 15-20ms average response time  
+- **Recommendation**: Always use SSD for game servers
+
+**File System Optimization:**
+```bash
+# For Linux servers - optimize mount options
+/dev/sda1 /home/fivem ext4 noatime,nodiratime 0 2
+```
+
+## Scaling Your Server
+
+### Horizontal Scaling (Multiple Servers)
+
+For communities exceeding 128 players, consider:
+
+**Multi-Server Architecture:**
+- **Server 1**: Main roleplay server
+- **Server 2**: Racing/events server  
+- **Server 3**: Development/testing server
+- **Load Balancer**: Distribute players across servers
+
+### Vertical Scaling (Hardware Upgrades)
+
+**Upgrade Path:**
+1. **RAM**: Increase from 8GB → 16GB → 32GB
+2. **CPU**: Upgrade to higher core count/frequency
+3. **Storage**: Add more SSD storage, implement RAID
+4. **Network**: Upgrade to faster internet connection
+
+### Geographic Distribution
+
+**Multi-Region Setup:**
+- **US East**: Primary server for American players
+- **EU West**: European server for reduced latency
+- **Asia Pacific**: Server for Asian communities
+- **Load Balancing**: Route players to nearest server
+
+## Cost Analysis and Budgeting
+
+### Monthly Hosting Costs Breakdown
+
+#### Small Community Server (10-32 players)
+- **Hosting**: €15-25/month
+- **Additional Resources**: €5-10/month  
+- **Backup Storage**: €3-5/month
+- **Total**: €23-40/month
+
+#### Medium Community Server (32-64 players)  
+- **Hosting**: €30-50/month
+- **Additional Resources**: €10-20/month
+- **Professional Support**: €10-15/month
+- **Total**: €50-85/month
+
+#### Large Community Server (64-128+ players)
+- **Hosting**: €80-150/month
+- **Development Resources**: €20-50/month
+- **Professional Management**: €50-100/month
+- **Total**: €150-300/month
+
+### Cost Optimization Tips
+
+1. **Annual Payments**: Often 10-20% discount
+2. **Resource Monitoring**: Avoid over-provisioning  
+3. **Efficient Scripting**: Reduce server load
+4. **Community Donations**: Player contributions
+5. **Sponsored Content**: Partner with resource creators
+
+## Security Best Practices
+
+### Server Hardening
+
+**Essential Security Measures:**
+```cfg
+# Disable dangerous features
+set sv_scriptHookAllowed false
+set sv_debugQueue false  
+set sv_enableNetworkedPhysics false
+
+# Connection security
+set sv_filterRequestControl true
+set sv_rateLimit_enable true
+```
+
+### DDoS Protection
+
+**Protection Strategies:**
+- Use hosting providers with built-in DDoS protection
+- Implement CloudFlare proxy for additional protection
+- Configure fail2ban for automated IP blocking
+- Monitor unusual traffic patterns
+
+### Access Control
+
+**Admin Security:**
+```lua
+-- Use secure permission systems
+-- Never hardcode admin IDs
+-- Implement role-based access control
+-- Regular audit of admin permissions
+```
+
+## Getting Help and Support
+
+### Community Resources
+
+- **QBCore Discord**: Real-time help from developers
+- **Reddit Communities**: r/FiveM, r/QBCore discussions  
+- **GitHub Issues**: Report bugs and technical problems
+- **YouTube Tutorials**: Visual learning resources
+
+### Professional Support Options
+
+- **Hosting Provider Support**: Technical infrastructure help
+- **QBCore Developers**: Framework-specific assistance
+- **Freelance Developers**: Custom development work
+- **Server Management Services**: Full server administration
+
+### Documentation and Learning
+
+- **Official QBCore Docs**: Comprehensive framework documentation
+- **FiveM Native Reference**: Complete API documentation
+- **Community Wikis**: User-generated guides and tutorials
+- **Video Tutorials**: Step-by-step visual guides
+
+## Conclusion
+
+Choosing the right FiveM server hosting solution is crucial for your community's success. Whether you opt for managed hosting like **[GPortal](https://five-rp.de/go/gpi)** for simplicity, or prefer the control of a VPS setup, the key is matching your technical skills with your community's needs.
+
+### Quick Recommendations:
+
+- **Beginners**: Start with GPortal managed hosting
+- **Intermediate Users**: Consider VPS for better control and value
+- **Advanced Users**: Dedicated servers for maximum performance  
+- **Large Communities**: Multi-server architecture with load balancing
+
+### Next Steps
+
+1. **Choose Your Hosting**: Based on community size and technical skills
+2. **Follow Setup Guide**: Use our step-by-step instructions above
+3. **Install QBCore**: Get the framework running
+4. **Configure and Optimize**: Fine-tune for your specific needs
+5. **Monitor and Maintain**: Keep your server running smoothly
+
+**Ready to get started?** **[Get GPortal Hosting →](https://five-rp.de/go/gpi)** and launch your FiveM server today!
+
+---
+
+*Last updated: August 2025 | Guide covers latest FiveM and QBCore versions*
