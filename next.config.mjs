@@ -3,10 +3,10 @@ import nextra from 'nextra'
 const withNextra = nextra({
   theme: 'nextra-theme-docs',
   themeConfig: './theme.config.tsx',
-  // Enable search indexing for better SEO
-  search: {
-    codeblocks: true,
-  },
+  // Temporarily disable search to isolate auth issue
+  // search: {
+  //   codeblocks: true,
+  // },
   // MDX options for better SEO
   mdxOptions: {
     rehypePlugins: [

@@ -11,7 +11,6 @@ keywords: "fivem development tutorial, fivem server setup, qbcore tutorial, five
 Welcome to the most comprehensive FiveM development tutorial for 2025! This guide will take you from zero to creating your first custom FiveM server with QBCore framework. Whether you're completely new to FiveM or looking to upgrade your skills, this tutorial has everything you need.
 
 import { Cards, Callout, Steps, Tabs } from 'nextra/components'
-import SmartAmazonCard from '../../../components/amazon/SmartAmazonCard'
 
 <Callout type="info">
   **What You'll Learn**: By the end of this tutorial, you'll have a fully functional FiveM server running QBCore framework and understand the fundamentals of FiveM development.
@@ -52,19 +51,15 @@ Before we begin, ensure you have:
 
 ### Development Setup Essentials
 
-<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 my-6">
-  <SmartAmazonCard asin="B08B3MHX4P" variant="compact" />
-  <SmartAmazonCard asin="B07ZGDPT4M" variant="compact" />
-  <SmartAmazonCard asin="B09H6YX7G4" variant="compact" />
-</div>
+For optimal FiveM development, consider:
+- **High-performance SSD**: Faster loading and compilation times
+- **16GB+ RAM**: Handle multiple development tools and test servers
+- **Modern CPU**: Better performance for code compilation and testing
 
 ### Learning Resources
 Perfect for beginners starting their development journey:
-
-<div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
-  <SmartAmazonCard asin="B08XJNP5VP" variant="compact" />
-  <SmartAmazonCard asin="B07H8B1J4M" variant="compact" />
-</div>
+- Programming fundamentals books
+- Online coding courses and tutorials
 
 **Pro Tip**: A good mouse and mechanical keyboard make coding sessions much more comfortable during long development sessions!
 
