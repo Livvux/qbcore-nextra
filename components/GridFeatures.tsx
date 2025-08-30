@@ -122,10 +122,8 @@ Lang:t('info.received_paycheck', {
   }
 
   return (
-    <section className="relative overflow-hidden bg-black py-24">
-      {/* Background Elements */}
-      <div className="grid-pattern absolute inset-0 opacity-10"></div>
-      <div className="bg-mesh absolute inset-0 opacity-30"></div>
+    <section className="relative overflow-hidden py-24">
+      {/* Background removed to let GradientBlinds show through */}
 
       <div className="container relative z-10 mx-auto px-6">
         <motion.div

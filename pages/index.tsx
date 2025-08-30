@@ -8,7 +8,6 @@ import StatsGrid from '../components/StatsGrid'
 import CodeExample from '../components/CodeExample'
 import Testimonials from '../components/Testimonials'
 import Footer from '../components/Footer'
-import GradientBlinds from '../components/GradientBlinds'
 
 export default function HomePage() {
   useEffect(() => {
@@ -31,21 +30,7 @@ export default function HomePage() {
         />
       </Head>
 
-      <div className="landing-page relative min-h-screen bg-black text-white">
-        <GradientBlinds
-          className="absolute inset-0 -z-10 pointer-events-none"
-          gradientColors={['#DB123E', '#FF4B6E']}
-          angle={0}
-          noise={0.3}
-          blindCount={12}
-          blindMinWidth={50}
-          spotlightRadius={0.5}
-          spotlightSoftness={1}
-          spotlightOpacity={1}
-          mouseDampening={0.15}
-          distortAmount={0}
-          shineDirection="left"
-        />
+      <div className="landing-page relative min-h-screen text-white">
         {/* Navigation */}
         <Navigation />
 

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Code, Download, Users, Zap, Copy } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
-// Background handled by GradientBlinds at the page level
+import FlickeringGrid from './FlickeringGrid'
 
 const Hero = () => {
   const [copied, setCopied] = useState(false)
@@ -57,9 +57,18 @@ const Hero = () => {
   }, [])
 
   return (
-    <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black pt-16">
+    <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-16">
+      {/* Background Flickering Grid */}
+      <FlickeringGrid
+        className="absolute inset-0 z-0 pointer-events-none"
+        color="#ff0000"
+        maxOpacity={0.15}
+        squareSize={4}
+        gridGap={6}
+        flickerChance={0.3}
+      />
 
-      <div className="container relative z-10 mx-auto px-6 py-12 text-center">
+      <div className="container relative z-20 mx-auto px-6 py-12 text-center">
         <motion.div
           variants={staggerChildren}
           initial="initial"

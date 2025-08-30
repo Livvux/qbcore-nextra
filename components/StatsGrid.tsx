@@ -134,9 +134,8 @@ const StatsGrid = () => {
   }
 
   return (
-    <section className="relative overflow-hidden bg-black py-24">
-      {/* Background Elements */}
-      <div className="grid-pattern absolute inset-0 opacity-20"></div>
+    <section className="relative overflow-hidden py-24">
+      {/* Background removed to let GradientBlinds show through */}
 
       <div className="container relative z-10 mx-auto px-6">
         <div className="grid items-center gap-16 lg:grid-cols-2">

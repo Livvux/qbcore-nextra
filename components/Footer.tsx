@@ -89,7 +89,7 @@ const Footer = () => {
 
   return (
     <footer className="relative mt-24 border-t border-white/10 bg-black/80 backdrop-blur-md">
-      <div className="bg-mesh absolute inset-0 opacity-30" />
+      {/* Background mesh removed to show GradientBlinds */}
 
       <div className="relative mx-auto max-w-7xl px-6 py-16 lg:px-8">
         <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-4">
