@@ -33,7 +33,7 @@ export default function HomePage() {
 
       <div className="landing-page relative min-h-screen bg-black text-white">
         <GradientBlinds
-          className="absolute inset-0 -z-10"
+          className="absolute inset-0 -z-10 pointer-events-none"
           gradientColors={['#DB123E', '#FF4B6E']}
           angle={0}
           noise={0.3}

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Code, Download, Users, Zap, Copy } from 'lucide-react'
 import Link from 'next/link'
 import { useState, useRef, useEffect } from 'react'
-import { DotPattern } from './magicui/dot-pattern'
+// Background handled by GradientBlinds at the page level
 
 const Hero = () => {
   const [copied, setCopied] = useState(false)
@@ -58,32 +58,6 @@ const Hero = () => {
 
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden bg-black pt-16">
-      {/* Background Elements */}
-      <DotPattern
-        glow={true}
-        className="absolute inset-0 opacity-50 [mask-image:radial-gradient(400px_circle_at_center,white,transparent)]"
-      />
-      <div className="bg-mesh absolute inset-0 opacity-40"></div>
-      <div className="absolute inset-0">
-        <div
-          className="animate-float absolute left-1/4 top-1/4 h-96 w-96 rounded-full opacity-30 mix-blend-multiply blur-3xl filter"
-          style={{ background: 'radial-gradient(circle, #DB123E 0%, transparent 70%)' }}
-        ></div>
-        <div
-          className="animate-float absolute right-1/4 top-1/3 h-80 w-80 rounded-full opacity-20 mix-blend-multiply blur-3xl filter"
-          style={{
-            animationDelay: '2s',
-            background: 'radial-gradient(circle, #FF4B6E 0%, transparent 70%)',
-          }}
-        ></div>
-        <div
-          className="animate-float absolute bottom-1/4 left-1/3 h-72 w-72 rounded-full opacity-25 mix-blend-multiply blur-3xl filter"
-          style={{
-            animationDelay: '4s',
-            background: 'radial-gradient(circle, #DB123E 0%, transparent 70%)',
-          }}
-        ></div>
-      </div>
 
       <div className="container relative z-10 mx-auto px-6 py-12 text-center">
         <motion.div
