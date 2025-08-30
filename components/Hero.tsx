@@ -60,11 +60,11 @@ const Hero = () => {
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-16">
       {/* Background Flickering Grid */}
       <FlickeringGrid
-        className="absolute inset-0 z-0 pointer-events-none"
-        color="#ff0000"
-        maxOpacity={0.15}
-        squareSize={4}
-        gridGap={6}
+        className="absolute inset-0 z-0 pointer-events-none mix-blend-screen opacity-30"
+        color="#db123e"
+        maxOpacity={0.25}
+        squareSize={6}
+        gridGap={5}
         flickerChance={0.3}
       />
 
