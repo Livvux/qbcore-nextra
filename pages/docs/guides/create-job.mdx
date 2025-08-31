@@ -1,0 +1,46 @@
+---
+title: "Guide: Create a Job"
+description: "Add a simple job to QB-Core."
+slug: create-job
+tags: ["qb-core", "jobs"]
+updated: 2025-01-01
+difficulty: intermediate
+prerequisites: ["Core Concepts"]
+tested-on: ["FiveM b2845", "QB-Core v2.0"]
+time-to-complete: "20m"
+owner: "@docs-team"
+---
+
+# Goal
+
+Create a new job and make it selectable in-game.
+
+## Steps
+
+1. **Define job** in `qb-core/shared/jobs.lua`:
+   ```lua
+   QBShared.Jobs['delivery'] = {
+     label = 'Delivery',
+     defaultDuty = true,
+     grades = {
+       ['0'] = { name = 'rookie', payment = 200 },
+     }
+   }
+   ```
+2. **Grant job** via server command:
+   ```lua
+   QBCore.Functions.CreateCallback('myresource:server:setJob', function(source, cb)
+     local Player = QBCore.Functions.GetPlayer(source)
+     Player.Functions.SetJob('delivery')
+     cb(true)
+   end)
+   ```
+
+## Verification
+
+Run `/setjob id delivery 0` and ensure duty toggles.
+
+## Next Steps
+
+- [Troubleshooting](../troubleshooting)
+- [Jobs Reference](../reference)

@@ -1,0 +1,36 @@
+---
+title: "QB-Core Core Concepts"
+description: "Fundamental building blocks like players, jobs and inventory."
+slug: core-concepts
+tags: ["qb-core", "concepts"]
+updated: 2025-01-01
+difficulty: beginner
+prerequisites: ["Getting Started"]
+tested-on: ["FiveM b2845", "QB-Core v2.0"]
+time-to-complete: "15m"
+owner: "@docs-team"
+---
+
+# Core Concepts
+
+Understand the main systems that power QB-Core.
+
+## Players
+
+Each player has a persistent identifier and metadata stored in the database.
+
+## Jobs
+
+Jobs define roles and permissions. Switch duty using:
+```lua
+TriggerServerEvent('QBCore:ToggleDuty')
+```
+
+## Inventory
+
+Items are defined in `qb-core/shared/items.lua` and synchronized between client and server.
+
+## Next Steps
+
+- [Guides](../guides)
+- [Reference](../reference)

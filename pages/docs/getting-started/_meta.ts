@@ -1,4 +1,4 @@
 const meta = {
-  index: 'Guides'
+  index: 'Getting Started'
 }
 export default meta

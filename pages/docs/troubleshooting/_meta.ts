@@ -1,5 +1,4 @@
 const meta = {
-  index: 'Overview',
+  index: 'Troubleshooting'
 }
-
 export default meta

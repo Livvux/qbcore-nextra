@@ -1,4 +1,4 @@
 const meta = {
-  index: 'Guides'
+  index: 'Core Concepts'
 }
 export default meta
