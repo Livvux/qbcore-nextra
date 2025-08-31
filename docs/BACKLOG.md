@@ -2,10 +2,6 @@
 
 | Priority | Topic | Target Keyword | Intent | Notes |
 |---|---|---|---|---|
-| P1 | Getting Started: Linux Install | qb-core install | Informational | Walkthrough for Ubuntu/Debian setup |
-| P1 | Core Concepts: Jobs | qb-core jobs | Informational | Explain job definitions and duty system |
-| P1 | Troubleshooting: Connection Issues | fivem qb-core connection refused | Troubleshooting | Common server start and join errors |
-| P2 | Guide: Item Use Effects | qb-core item userevent | How-to | Creating items with client-side effects |
 | P2 | Guide: NUI Form with Callback | qb-core nui callback | How-to | Submit form data to server and respond |
 | P2 | Performance: Resmon Basics | qb-core resmon | Informational | Using resmon to profile resources |
 | P3 | Security: Safe Server Events | qb-core security events | Informational | Validating inputs and permissions |

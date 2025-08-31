@@ -1,4 +1,5 @@
 const meta = {
-  index: 'Getting Started'
+  index: 'Getting Started',
+  'linux-install': 'Linux Install',
 }
 export default meta

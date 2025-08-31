@@ -1,0 +1,55 @@
+---
+title: "Connection Issues"
+description: "Diagnose FiveM connection refused or timed out errors."
+slug: connection-issues
+tags: ["qb-core", "troubleshooting"]
+updated: 2025-01-01
+difficulty: beginner
+prerequisites: ["Running QB-Core server"]
+tested-on: ["FiveM b2845", "QB-Core v2.0"]
+time-to-complete: "10m"
+owner: "@docs-team"
+---
+
+# Goal
+
+Resolve common errors when clients cannot connect to your server.
+
+## Symptoms
+
+- `Connecting failed. Failed to connect to server`
+- `Connection refused by server`
+- Server console shows `Could not start resource` or license key warnings
+
+## Steps
+
+1. **Verify server is listening**
+   ```bash
+   sudo ss -tulpn | grep 30120
+   ```
+   Ensure both TCP and UDP are open.
+2. **Check license key**
+   - Confirm `sv_licenseKey` is set in `server.cfg`
+   - Generate keys at [keymaster.fivem.net](https://keymaster.fivem.net)
+3. **Inspect firewall**
+   ```bash
+   sudo ufw allow 30120/tcp
+   sudo ufw allow 30120/udp
+   ```
+4. **Review server logs**
+   Look for missing resources or database errors in the console.
+
+## Verification
+
+- Clients reach the `Connecting to server` screen without errors
+- No `connection refused` messages in console
+
+## See also
+
+- [Linux Install](../getting-started/linux-install)
+- [Jobs](../core-concepts/jobs)
+- [Cfx.re Connection Guide](https://docs.fivem.net/docs/server-manual/troubleshooting/#networking)
+
+## Next steps
+
+If issues persist, capture full server logs and ask in [GitHub Discussions](https://github.com/qbcore-framework/qb-core/discussions).
