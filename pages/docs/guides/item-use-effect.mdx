@@ -1,0 +1,62 @@
+---
+title: "Item Use Effect"
+description: "Create an item that triggers a client-side effect when used."
+slug: item-use-effect
+tags: ["qb-core", "items", "guides"]
+updated: 2025-01-01
+difficulty: intermediate
+prerequisites: ["Basic QB-Core server"]
+tested-on: ["FiveM b2845", "QB-Core v2.0"]
+time-to-complete: "20m"
+owner: "@docs-team"
+---
+
+# Goal
+
+Add a `coffee` item that boosts player sprint speed for one minute.
+
+## Define the item
+
+```lua
+['coffee'] = {
+  label = 'Coffee',
+  weight = 200,
+  stack = true,
+  close = true,
+  description = 'Keeps you awake'
+}
+```
+
+## Register use effect
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+QBCore.Functions.CreateUseableItem('coffee', function(source, item)
+  TriggerClientEvent('tutorial:drinkCoffee', source)
+end)
+```
+
+```lua
+RegisterNetEvent('tutorial:drinkCoffee', function()
+  local player = PlayerPedId()
+  SetRunSprintMultiplierForPlayer(PlayerId(), 1.1)
+  Wait(60000)
+  SetRunSprintMultiplierForPlayer(PlayerId(), 1.0)
+end)
+```
+
+## Verification
+
+- Use `coffee` from inventory; sprint speed increases
+- After 60s, speed returns to normal
+
+## See also
+
+- [Jobs](../core-concepts/jobs)
+- [Connection Issues](../troubleshooting/connection-issues)
+- [QB-Core Items Source](https://github.com/qbcore-framework/qb-core/blob/main/shared/items.lua)
+
+## Next steps
+
+Combine with [NUI forms](./) or [Permissions](./how-to-become-admin).

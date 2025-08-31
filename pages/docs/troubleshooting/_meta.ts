@@ -1,4 +1,5 @@
 const meta = {
-  index: 'Troubleshooting'
+  index: 'Troubleshooting',
+  'connection-issues': 'Connection Issues',
 }
 export default meta

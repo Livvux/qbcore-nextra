@@ -1,0 +1,66 @@
+---
+title: "Jobs"
+description: "Understand QB-Core job roles and duty system."
+slug: jobs
+tags: ["qb-core", "jobs"]
+updated: 2025-01-01
+difficulty: intermediate
+prerequisites: ["Basic QB-Core server"]
+tested-on: ["FiveM b2845", "QB-Core v2.0"]
+time-to-complete: "15m"
+owner: "@docs-team"
+---
+
+# Goal
+
+Learn how jobs are defined and assigned in QB-Core.
+
+## Job definitions
+
+```lua
+QBCore = exports['qb-core']:GetCoreObject()
+
+QBCore.Shared.Jobs['tow'] = {
+  label = 'Tow Truck',
+  defaultDuty = true,
+  grades = {
+    ['0'] = { label = 'Rookie', salary = 50 },
+    ['1'] = { label = 'Driver', salary = 75 }
+  }
+}
+```
+
+## Assigning a job
+
+```lua
+local QBCore = exports['qb-core']:GetCoreObject()
+
+QBCore.Functions.CreateCallback('tutorial:setJob', function(source, cb)
+  local Player = QBCore.Functions.GetPlayer(source)
+  Player.Functions.SetJob('tow', 0)
+  cb(true)
+end)
+```
+
+## Going on duty
+
+```lua
+RegisterCommand('duty', function()
+  TriggerServerEvent('QBCore:ToggleDuty')
+end)
+```
+
+## Verification
+
+- Player job shows as `tow` in `/status`
+- Duty status toggles with `/duty`
+
+## See also
+
+- [Item Use Effects](../guides/item-use-effect)
+- [Connection Issues](../troubleshooting/connection-issues)
+- [QB-Core Jobs Source](https://github.com/qbcore-framework/qb-core/blob/main/shared/jobs.lua)
+
+## Next steps
+
+Explore [Permissions](../guides/how-to-become-admin) and other [Core Concepts](./).

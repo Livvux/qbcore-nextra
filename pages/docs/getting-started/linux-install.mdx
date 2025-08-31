@@ -1,0 +1,64 @@
+---
+title: "Install QB-Core on Ubuntu/Debian"
+description: "Set up a QB-Core server on a fresh Ubuntu or Debian host."
+slug: linux-install
+tags: ["qb-core", "installation", "linux"]
+updated: 2025-01-01
+difficulty: beginner
+prerequisites: ["SSH access", "sudo privileges"]
+tested-on: ["Ubuntu 22.04", "FiveM b2845", "QB-Core v2.0"]
+time-to-complete: "30m"
+owner: "@docs-team"
+---
+
+# Goal
+
+Prepare a minimal QB-Core server on a clean Ubuntu/Debian machine.
+
+## Prerequisites
+
+- Fresh Ubuntu or Debian installation
+- Open ports `30120` (TCP/UDP)
+- FiveM license key
+
+## Steps
+
+1. **Install packages**
+   ```bash
+   sudo apt update && sudo apt install git curl unzip screen xz-utils mariadb-server -y
+   ```
+2. **Download FiveM artifacts**
+   ```bash
+   cd /opt
+   curl -O https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/latest.tar.xz
+   tar xf latest.tar.xz
+   ```
+3. **Clone the QB-Core framework**
+   ```bash
+   git clone https://github.com/qbcore-framework/qb-core.git
+   cp -r qb-core/* /opt/fivem-server/resources/
+   ```
+4. **Create a basic `server.cfg`**
+   ```bash
+   echo 'ensure qb-core' > /opt/fivem-server/server.cfg
+   ```
+5. **Start the server**
+   ```bash
+   cd /opt/fivem-server
+   ./run.sh +exec server.cfg
+   ```
+
+## Verification
+
+- The console shows `Started resource qb-core`
+- Join the server at `localhost` from FiveM
+
+## See also
+
+- [Core Concepts](../core-concepts)
+- [Troubleshooting](../troubleshooting/connection-issues)
+- [Cfx.re Linux Setup](https://docs.fivem.net/docs/server-manual/setting-up-a-server/)
+
+## Next steps
+
+Continue with [Jobs](../core-concepts/jobs) and [Guides](../guides).
