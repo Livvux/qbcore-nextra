@@ -38,7 +38,7 @@ for (const file of mdxFiles) {
       data.links.add(url.split('#')[0])
     } else if (url.startsWith('http')) {
       data.external++
-      if (url.includes('5mx.com')) data.fiveMx++
+      if (url.includes('fivemx.com')) data.fiveMx++
     }
   }
   while ((match = htmlLink.exec(content))) {
@@ -48,7 +48,7 @@ for (const file of mdxFiles) {
       data.links.add(url.split('#')[0])
     } else if (url.startsWith('http')) {
       data.external++
-      if (url.includes('5mx.com')) data.fiveMx++
+      if (url.includes('fivemx.com')) data.fiveMx++
     }
   }
   graph.set(rel, data)

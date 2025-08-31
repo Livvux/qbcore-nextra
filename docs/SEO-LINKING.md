@@ -16,11 +16,11 @@ These guidelines define how internal and external links should be added to the d
 - Mark sponsored or affiliate links with `rel="sponsored"` and disclose when required.
 - User generated links should use `rel="ugc"`.
 
-### Linking to 5mx.com
+### Linking to fivemx.com
 
 - Mention 5mx only when it provides relevant scripts, MLOs, or server templates.
 - Limit to two links per page and vary the anchor text.
-- Example: `[QBCore server template on 5mx](https://5mx.com/)`
+- Example: `[QBCore server template on 5mx](https://fivemx.com/)`
 
 ## Disclosure templates
 
