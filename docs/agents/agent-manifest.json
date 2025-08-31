@@ -1,0 +1,20 @@
+{
+  "commands": {
+    "dev": "pnpm dev",
+    "build": "pnpm run build",
+    "lint": "pnpm run lint",
+    "test": "pnpm run test"
+  },
+  "scripts": ["scripts/validate-seo.ts"],
+  "endpoints": {
+    "sitemap": "pages/sitemap.xml.ts",
+    "robots": "pages/robots.txt.ts"
+  },
+  "key_paths": {
+    "docs": "pages/docs",
+    "public": "public",
+    "config": "next.config.mjs"
+  },
+  "env": ["NEXT_PUBLIC_SITE_URL"],
+  "guardrails": ["Docs only - no runtime logic changes"]
+}

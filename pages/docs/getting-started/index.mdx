@@ -1,0 +1,43 @@
+---
+title: "Getting Started with QB-Core"
+description: "Install and run a basic QB-Core server on FiveM."
+slug: getting-started
+tags: ["qb-core", "installation"]
+updated: 2025-01-01
+difficulty: beginner
+prerequisites: ["Git", "Node.js", "MariaDB"]
+tested-on: ["FiveM b2845", "QB-Core v2.0"]
+time-to-complete: "30m"
+owner: "@docs-team"
+---
+
+# Goal
+
+Set up a local QB-Core development server.
+
+## Prerequisites
+
+- FiveM server artifacts
+- MariaDB running
+
+## Steps
+
+1. Clone the base server: 
+   ```bash
+   git clone https://github.com/qbcore-framework/qb-core.git
+   ```
+2. Install dependencies and start:
+   ```bash
+   cd qb-core
+   npm install
+   npm start
+   ```
+
+## Verification
+
+Open FiveM and connect to `localhost`.
+
+## See also
+
+- [QB-Core Repository](https://github.com/qbcore-framework/qb-core)
+- [Core Concepts](../core-concepts)
